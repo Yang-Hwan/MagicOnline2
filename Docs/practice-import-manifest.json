@@ -1,0 +1,1105 @@
+{
+  "source": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionSingle\\MagicRenewal\\MagicRenewal",
+  "guids": {
+    "2fed163d05ad7f346980088d6be7b1ba": "3c53ca27d5cb4ec0afe2d37b47ebb066",
+    "61c11fbac4042d540b035f792376209b": "c296640125b74c81af0baaa2a4cbff00",
+    "a034093d0c9ff1d408bc0a7971d354d8": "8d8dc867746441e8a7b2ee241e95efdf",
+    "d985403ea514e7c46bf7c2fab31b9d95": "2ef71b8e5f3e4230a0ef89114c7ff061",
+    "a872c331525aada469bc82e86b30ab8a": "4bb7ae14573e4332ad123a08046a2a4d",
+    "936fb818e6403494fb54eb220df0b994": "4f08a984b4864d3a85052d5f673051c4",
+    "cb846acbda2e6f8419aaf280ece389e9": "15c8a56132cd49fd9657c0d68fa39c32",
+    "a2e72894db40ad5478597bb78cd6fb74": "3b95422607704aa3b84872d99675da81",
+    "2fea8ff7e7610a9469e6a587745babf6": "2dddb8f96a104b528b60351a3b444a1f",
+    "84b98206933271844bba93fa1faa0ebc": "08e58efa8009455ab4e213b809b20c94",
+    "c72487cc3cc89d64585f891a87a0058e": "7cb7eb983e254f478e43c1581cf243c7",
+    "b25ec56e3c579904da40d9f2ce7587c7": "bf4855620051480dab59bc8d215d8b3b",
+    "73337c0d356369f429d147cfad127259": "4004ca613ae64b35ac234366541f366a",
+    "79617c6089036fc4297ec529a84bab11": "60020ce0c2a74accb1a521ab86724738",
+    "33fa6c02a890c534caf4309917d78c9a": "961256f9b60a4cb4bb0dae830ab26888",
+    "a214fb53bdbdf1d4eabc96e5a356d78f": "6befae6e88c64a53a4beeb4e285d46b9",
+    "1976f3d938ddf08428c8c31c8b555187": "4ca8201e76b84df49dec7abf0ce58bef",
+    "ed4345d5c77c0b443a883532a2cee34b": "b3e0a3cb4c7246adb4df34f64fb6bb99",
+    "9d211d3b81ac936499cc5b029881246e": "5fa357696f484e0c80a30b9ca5be94f0",
+    "96a8fa85c2bab164586f045f97ee840c": "4a0ab5b96f6c4bad9c40cdec7d3d4e61",
+    "86ef9ab47280f244486fd8661ff31382": "0ef4a74ef90646ef8e72f23fc99627e0",
+    "e43696d754b949a45b342c70734678f2": "0a491cba43024099b3791f5c08bbb279",
+    "1771c35af9214e148a585d6a31ce4a32": "b13de981746d4f6d9b5cdec519e0e881",
+    "842a7cf3da01e7f4588f3a7386cec187": "11a8a763936e4cf4b5cdff487eff8f42",
+    "4aab677a23d1dec4aa9dd042ec658e83": "b7569b99ad0c41d78840c647c9affa33",
+    "922a02f3f4f731b489fdbf505f375d04": "be868f11c1e1402c8efed64c1ea776fb",
+    "2d241a9ba1815ae4596d8388ec0cfbf7": "4cf8f236cc1745b588a777d300e5a8b1",
+    "7eb721e7ceac71f4696cf6c74e80fce1": "0f71d9747d294871990c20bf1ae92cc8",
+    "30014f0fa950ed148907be27d09942e6": "d75708498b154753a53b37c1c7fde9a2",
+    "c88634f7a97f2664c872b2ebc864aa6e": "b95fe9a11f804d629e3eea362bf77590",
+    "c8e2ce6f72c87044d81417f9606bd47c": "19fc922406904707af49fc9965bb46bc",
+    "3936abfb95c8f5d44860e30563bf719e": "559b12754be24e05a63be25afca2564d",
+    "9b72b3296cd06d64cabf20fca3c98153": "1983572e2eb34c7f99208723050636b8",
+    "a78a809d36bf1c94ab0a1c12835dd078": "e14278838cf94da296ebaa49b969e5e0",
+    "a32a7d1e082f58d4698cdb2b105fa0ab": "686bde4136d74913923d65a7093905dc",
+    "5e8d7b04f63d37744b0f31dfda6eb5b0": "da4a996add5846979ba7074217506caf",
+    "f9f6f5cbf8e1e6745be4e95a42dbe0ae": "67825dc24df34753a1ebb46ae6aa5ebd",
+    "fb2f837bfe4ee80459e75f65e9a255d1": "17fdf6c0089246aebbcf474c8f620827",
+    "6017a83fa41c9af4690ea309cc8299bd": "3dcadf248fb54205b05d70f350b3b481",
+    "5cc3ec0ba3dc30d4991afef796c9abd9": "8ee2c342af9a4adb9fa2397f5b2f97f4",
+    "d3c9f5a1cfc55644897d72f7538fcb13": "a0b682b8c6c846398f3fe737ee31f347",
+    "bd9e145aeb7936f4082ffe1c563ec9e2": "8553447061e749d398a8445219526bdb",
+    "e59707e49de051742b1b6a889b4b6477": "200915a8b42041059b6d146d46d38d19",
+    "71724b11af421704b850edb3180436eb": "fb54e2fbbcea47e2a71c17d9fde51e79",
+    "ad0203948a0bc044bbed64e3bc47315f": "68a46dcae4bc487097b7a24c833c2dca",
+    "6ac00b4947389434a86d3f7972421d16": "24967f76a34a4a6d9a4cb7939e4a948a",
+    "3deda510b1fd24b4db0b56d8a90bae15": "873c826b5e4b47bcb28778fc645dd966",
+    "dbc8f8340057384479f11cba5e4ac4f2": "6c5d1e224df745fabf390c44e81a8fe9",
+    "fb9b84ec5f62e114880f304645fbe8ba": "d708857327e54471a640810ebead921c",
+    "5992d8ad06cac1149a7b6d4a6785babf": "236132f3ce5c4833b779aeda68fd9dfa",
+    "34c4b0b779f31ff4e9fc26bfdbe870d1": "189946e1b6ae4f17aa02b19cdb845ada",
+    "b71f8cd0aa2859d4ab15e5f096d30dcc": "7a3d9ff87eb94e0cb42cf0ba564f21ed",
+    "9459981ae34bbf640a75650c3b08b7d1": "0f53a822596d460aa3e2af7c9f3e073d",
+    "1c947f9a5284219448458401a7e1bbb0": "d0566acda3a64d5b9db7085902696a7c",
+    "180609c6dc90f274f97fa9defac819c7": "79b6916dc2904c33a0ed990f04e0b5ca",
+    "3aefe2e62b8737e45b25a7037f3a14bf": "898adfe64ada4e4c9d710215361880ae",
+    "ee80cd22123ac904e98a58f1d2d672cb": "1d0c78e0762a4cbb9892e79170583895",
+    "1826e91d132943f41afec7ae7887c270": "6f5d48ca128042e498fad19a19994019",
+    "a5f00c205652b924fb719e44b3cb7697": "4946781684414e14bfa352881840100c",
+    "b0ee9878d70a72c4ca8933d2fad156fb": "e612c51a94e44b7f964001122b6b7e13",
+    "a8ba0b259b822fa4cb1a6952b6ff4e38": "7a0008f4024d40ce891a546de3c6ded1",
+    "18fa77b8577e68042978e600dc98a6db": "ee6f4fb774634d18880172dbe7fa83ce",
+    "d63481289a6ba3749995448d98a2bc5c": "a3b86ca770e94adaaed40c8403ce5e00",
+    "5f4c97ba20e33dc47a9d4e51ae9d0837": "34bb438ddab6420abd9bb599ced45503",
+    "c30287470fb9d3e438b09bc9617feab9": "25e5f1e233214366a6c86be073581333",
+    "c1582dfcdde55314ea981549b92c3f07": "6088323a35b94a45a804e665295e08d6",
+    "1a556d7141b29714c9a16ac0ed9718e6": "e57ceedba241415aa98cd11fb4482c53",
+    "496efd41c272e2a4b9d253ae73de131f": "f2d2768bd88a46be9236b559f75c007f",
+    "581abb23b69f2ac4aa6c8e385575e382": "fa71a4f234a445f6adee02181fcff0b5",
+    "49b03f85359f4944fbb498ddb7184691": "673c44fad9c04c79aa4c492893585ff3",
+    "2c5e6a64e9887754eb1e74ba0a0ff8bf": "9c1f6c39b339453cabd073845146428b",
+    "63a7021364988e34cbdbe9e69f588ee2": "3650146bd52d45199de4c5cd5a6242ce",
+    "69b8da58d5ce5f34c924a9df95bd897f": "bb7a46fbe0bb48c983a69a908ac2663d",
+    "93272653f7a2b7942b14333a62fe07fc": "d324d7b489b84b64a6c0e69f467294e5",
+    "fdb04df53d1136143b3ca8be89d3664c": "efc8ef51322e420ead2e242fb981d1f4",
+    "7bd7b409ba24125428c394f2c2cc7019": "6c9590ed47bc4fce9564e46f941da4ba",
+    "693d932102737b84a8332f4549e6aa0d": "604757e6b2224c1a8a47439142eb1caa",
+    "01389d1b33ac421418f1164f9e13bbef": "208bfb927a7b4048932453f5c852de56",
+    "663b389a8d7210548a70528af025455e": "04ba782305cd40c4a3c0e75500b7290f",
+    "6718d7d36937d4141be3045ff5970377": "180bdb94b8ba4565807ea519c4856444",
+    "be5de39b72661614bae8ac06dbab5358": "e10989978fec4f2e9929fa930b1b8075",
+    "cd016ef59549dbc4eb4f4d8fe1dc68b9": "5d31f76575d54c49877b918fb80af632",
+    "db9b9a16eaa6fcf4a8ace025c034ca8a": "9461ef5c21e24ceeb736ff367e0b7ae8",
+    "80f042a3ba30f0146985524e8c426f70": "18c5afcf3ef2439e81f68ee233207faf",
+    "3a2b666cb6f69ca42beda68e3c52d6b8": "b73e023afe424b20bb555bf06a0e55a4",
+    "1c10ced14941e9344834219f543703f5": "e716bbc47a97469c8e20caf2385f9960",
+    "b07ac1634b8dcf249a87a5b89976b76f": "a9ec3b456fc4419b840bc8fd46dd6a90",
+    "9e85eddc6a62a0a42aef9a7daf92f3fd": "7b857ef90ac74893bd36075f8922cc26",
+    "4fdb23d2606d52f41aade3ba9095f170": "afadd5707bf14ef5aef5d7ce5f68a882",
+    "7812bd73bea95e244b13e36d4b11f5cf": "c14d7d04edf741e68bc757d133f5211a",
+    "dfc2296ed4af56e4ebe1a2d18dc0f0af": "0a16e1161dbc472e8c3339c272bcfb8b",
+    "12b5e554472fa834792dece5aba5e0a2": "6313582153a5452695bedf108acff07d",
+    "71e0d699fd0602d4583439c78e0cc526": "75eac9e66c5a41d390eb3a4ef0450fdd",
+    "02fd3ab827e57e348aacf7ea03ad71d9": "ca5035083b8a49a3bd5cc691d9835aa0",
+    "6de30946d7a801e4dbd9f27cbd00b7e1": "f782c063337e410aaadadb162a376b49",
+    "f31c139be30e81449aa43b1afece901c": "461f0e90e5244b19a387f1f9ed391d98",
+    "bd4797dae1bcd124db684d0a870885e2": "691834d5544b4c3ab97c6e1a6701bb00",
+    "23afa08528bc24145b097f30a4a8983f": "02f2c7e1d5f142bf9d14215fffacc867",
+    "35be9b6d2234e6c44806b57d97886d1a": "40515c7d7095483ca87553e21c52d377",
+    "ed69aef9f2278844dbca5c16c33401b3": "cbf7988576e74f558f4caf9010e82913",
+    "6de531c918b48d843a69aa1f929ef5ed": "71292bbf813c448d9615f3493a41a197",
+    "6fdc100cfd053944ca080fb89a29aae2": "3919eb9e4b394b9cb8bd55f8c045b0b7",
+    "ce37087da86e7114194daa0027a416af": "f6554fd222164405b577f51dc3c41108",
+    "694b00c506a1b494dbe78f090894415b": "c6fa48c13d9746849b769019be639152",
+    "4290ab33029cda142b450f843d1ad72e": "39b8089eae5047b88ba06110f129cb27",
+    "d4d2a73fbf89ef6439b767b25b0e88cc": "c7dbe1c7307147e9b8412dd16272483a",
+    "86278d70c74b0ae4eb5f713d995ae36d": "9be7a22dd8b943f9a439715d8e54ab65",
+    "3f7c05369ff776c41bba0ecc043fad5c": "8fd198e0518747408550f881d0e64056",
+    "c5a2c4ede3a972e46b11c62b98975f9f": "19e8ecae6c824d7baf9a98dcb669ee59",
+    "0ba3a0f4f9a86f546bb74d9a56851722": "1d056c25c9c742fba7fbd1207a01ed08",
+    "c5561be31fee8bb4eb04276ee43bbe96": "131852602d49409b95e66c262b3818c3",
+    "fdba96244bb07dd4d8913e609287ecf5": "463d431e4d244f9185a979fb8a95104c",
+    "1b7fdad90eccd3244b3aaf8221df98a2": "713b75ebab344ab794f3bc134b183eb6",
+    "53a7993f531158545a9eaf100adbaf89": "184305fb974846fb936cf85fadf884bf",
+    "f0fdc29bd795ea746adf7429c618aabd": "62c5ef2d904d4233b5ae637d0b3586e6",
+    "c71e0ffded3fe154cb6073dcbd0b8a93": "7944f067d616473782cab82689207050",
+    "2622b24d348f5e34caa631b4f3ef0b58": "4c5453b3e5fd45489ac628f5d76e37ae",
+    "972a5ac2e21ee2345a262962a2e27039": "2424d8579c1e4710b50e6ecf0c5e9c7e",
+    "20e9a91ac710d62489c6afcc926023de": "e1aa13902fb34f4abb607355ec89b74a",
+    "6fb84ee6e49b79147b4bf6983b362c13": "ccd5fe877ad14744877e1cb78dcd1dc3",
+    "c0b2a14be41c12046aa88b2091d6190b": "13348db6858a44deb5c14f2eb49d5881",
+    "d8b51c7126a1b674a8230b5dabf1ca49": "dd250013a6d44e8cb03e328a7630abf5",
+    "ea33a16f8d9338b45979c6d27f1dcdab": "b1a9ebea75c24e84ac1ba395105fa8bb",
+    "ca2b00b3d88441144a251a7b27dfe903": "fd50f3d3d6f64931a54c3bb373c9d5a5",
+    "f94b5095526662e498912e5734b62bc1": "2847d7b14ff4476ba507f1d13e42f660",
+    "479647b695b4a574ea26ca5488980fec": "7e898bbf7b5f43daa4b12a9e8d602a66",
+    "f19b16a1832a19f4d82ab5035a89cf82": "27c0f2e9f84f492ca533d02424cf00f6",
+    "3cb4518a417c7df44b9136e3d5cfc202": "b597ac5bbebc4500829548e152b46fca",
+    "5022be05cf42cc24b8b165d953ef0763": "9056e9848ecc47e2b582bd2a326292d8",
+    "c9117c4794bce664cb81d6fdc73eb2a3": "5856511979aa438fb51cb47afe3a0fad",
+    "8c983715bb7edf04cb06f169f2ce2481": "4caee01d758740b09298108c60dd7c04",
+    "f5c23e360b3600f4fa5020ee2fffc3b8": "51d0a9cbe6454076b9852b6712cb9330",
+    "41c28d47723cb3b4989789b470080723": "4675580cbc2a46b380d36766dd268ac9",
+    "e3505c49d9f6116439bc5c7c35e8f80d": "97f7423cbb454797a6cb2266c464adc8",
+    "9d0003f511da9814ba3e09a60c038534": "621b3fd7bec548c7ab1f85e9f009f68f",
+    "b779a82129b00dc4fbafbeda81a6a8cd": "86afc153695542c7934fa5d633c5ab3e",
+    "6a59515a045aee843b81ceab46aeaba9": "8f811fb7783e4cd3ab9253f3ec00b230",
+    "bc53bc01e12265b458ba959d4e5c1dc5": "994f69f4c9eb4bf693d0705f469dd949",
+    "0fba7df5ab1147743b37332cccd4efd0": "c103c03823eb4780a6ef4feb0f192ae5",
+    "71cd5c938b171944789c66413ab0c9af": "b5bfacf894bf4cc29ea9d81580740540",
+    "8d6581149c62e9f43aac3b31a85db674": "3c9b8499f14c428bbdd88d7e077892a2",
+    "a78c16f9ea4ccb1469dc4c748cf662f1": "571c6baf91e14eba9a34ef2e14619a91",
+    "8312796ca6fb3f8429ef79dfd6c6217c": "30eb928299ae472784e40d282232c9bb",
+    "67e38019eb239f448b1b3d7e952034ac": "3d2ca49ff366488191aec642563bfa2c",
+    "8041693d180d558459a8b00b543ace63": "9b9934e660b34ad495b0117071b68d70",
+    "3028e76163d6054429147e2eefaad137": "e80b87ba648e4d3f96bd278a2612588f",
+    "464c6a3b53a7c0c4087f51608c172790": "bf9fcebe0fe64b34aea7fb906a136bbd",
+    "b6639b38d8306614f90560bc329908bb": "a52785cda54841ff90cc96e8af823438",
+    "51bbbd666b0c1f348b021dffedc1f84b": "059909e729c34aae9f7377f2f129cff9",
+    "562a99f12ac78b845975d546f48a8a59": "37febe992cf540fe9a70ab26e4c41c75",
+    "7ee3af1ecb97cc348bba79afccf6dd68": "a1cdad1f53c6435dadac91df8d94fe1b",
+    "7860111f1fe1ac849add4ac41ac28196": "ac7cbc02bf984ff792478bf1bdf573be",
+    "361479e9961a8614f95a7500e8ff3893": "2c8be4b96af14784aa9ebf66478c48a6",
+    "654bee88557f8254295be6ab4c6312d4": "9e0fa8f92b164495b7f06ecdda796a3f",
+    "a1f3be2cd98769b408991a9a127ca396": "402515d0537c4621afc514d77ec39b0c",
+    "36bd4d687722a5240a7af5dc6549a8d7": "3ff2d70add774ef68bf8a98af6f6a1df",
+    "89021184977b5564cbb188d64399ba19": "6d32532b57c54468a503515ef0199eda",
+    "dfc6be2ed5fce5a4c8a9149dd545bcbe": "88043bbfa1a14c37a072394af92c7b8a",
+    "bcc1fe62f6c58bf43ab67282582ee939": "12d0af8ce71a4349a4f30c2824931139",
+    "0d7b8bc1be337d346a600a19e5620f90": "e255b0396ffb4700836dd31ce706b185",
+    "52e650dd77bae9d499c20a385985c295": "0c30fbe435b247dba055d83e673bf334",
+    "2d9c11a93f1381044883fd2c85a1ddd2": "a2b33a15d3ce41d4bdb1999680be5d5b",
+    "447d0e430eb33704cb756e4cf8ccf923": "e4f16b83d30049edb83fdbb3a2703e5e",
+    "dcc6243208d60e947b94ca3029891074": "fdff7f29040744dabb90362074abdb50",
+    "299f31f620a543f4ab162f41cb90f424": "c7801b6074214ad3a557484e5bbdad15",
+    "376ed673ce4c34415a32741116be8ebc": "23af4159a41c46028f52ca45f3099d77",
+    "e8e874c5b5c37f749a94319af66849df": "a348e5208ed6409bbfd41c14b223b4d0",
+    "fcd194c1b460c29438dc3ea664f8c681": "627afcba66a2413a91a4fd57f7570d80",
+    "e9cfecc9624d5d74dbc63174f5b0e151": "bec30a3439124da1a1bb60e16630356c",
+    "932c8e6b9d3c8eb4aafbab9c0899c5a3": "18f59b5425aa4dae9c14c4683f13ebff",
+    "bb62d6dae174e9146b92d058da106844": "030bc2a0036e4779931f911db64db4bb",
+    "9594eb49efcab874da9ebbe168d5c078": "76509f762ddf48089328b7df647c83c0",
+    "26a2cb47b658b8241b1a3cba9fed45f9": "5ca1faa86a164882b60616aaaa49b7d8",
+    "be81f735f133fb04e8bcee4d9e8bd599": "cb3866b8b83b4ec0b7ac2e71a8e27208",
+    "738b8f5b458a2f94aa430fc7ae61fb5d": "7716013bc1094e95b95fae545b66f766",
+    "35516ee540af99943b376472352ff34d": "37a5e98b59c044debf4cb6736a417339",
+    "454e7d9cf85d2de4993fbf917ece6543": "6a2a1da0513d494cbeaccb20ffb0e9a1",
+    "c07dd84926efec34ca7da1f61f47b32f": "4b4ebbf26fe64edf8df1a53cdf75af9f",
+    "ac56ccd53385b92429a0e8e3c4e386fd": "361bb59e224b4514ba6c7fea58c1c315",
+    "79e15909813f2a44e95886266970dbd3": "e15498e1f05d4ff68b946eb0cd91c59b",
+    "31f3e15cfb7319c458be7510b9edb2f4": "b83aac98857543d6ab48f83ee3f4734e",
+    "ee6d2454b9b09fe4da98dd4da43c829d": "ef1e684bd6214fbbb45fde222e9aa1c6",
+    "b55a043bd35b3e34abdc662ecb010c85": "839f13dc0b144bbe935edfbe821e8009"
+  },
+  "assets": [
+    {
+      "source": "Artwork/BallPool3D/Materials/CueMat1.mat",
+      "destination": "Assets/Practice/Artwork/BallPool3D/Materials/CueMat1.mat",
+      "sha256": "0bf7b9c7e061e6924f6dc77a3216a8b3ea41ec50edf1bdcbb859ec09d1066f08"
+    },
+    {
+      "source": "Artwork/BallPool3D/Materials/CueMat2.mat",
+      "destination": "Assets/Practice/Artwork/BallPool3D/Materials/CueMat2.mat",
+      "sha256": "eb5b4195042315b73a3da36506baa97f5fcffa36edf7299461c69c4f0ed51d85"
+    },
+    {
+      "source": "Artwork/BallPool3D/Meshes/Balls.FBX",
+      "destination": "Assets/Practice/Artwork/BallPool3D/Meshes/Balls.FBX",
+      "sha256": "335fb74ec4db18c375c3c27f2c9abf107b64878d9818b38b33e6c905928c097c"
+    },
+    {
+      "source": "Artwork/BallPool3D/Meshes/Cue.FBX",
+      "destination": "Assets/Practice/Artwork/BallPool3D/Meshes/Cue.FBX",
+      "sha256": "5ceaaad747ccd364af861e44352b487689b2f5a3181fc101fb7a68d55c75f335"
+    },
+    {
+      "source": "Artwork/Sprites/Game/Circle.png",
+      "destination": "Assets/Practice/Artwork/Sprites/Game/Circle.png",
+      "sha256": "7ab6bee4d07c03da3d43d6f364df70e513cbdfdcfc6377d0c6dba801b9b9274a"
+    },
+    {
+      "source": "Commons/Fonts/Asset/NanumBarunGothic SDF.asset",
+      "destination": "Assets/Practice/Commons/Fonts/Asset/NanumBarunGothic SDF.asset",
+      "sha256": "083c581a54eb8d542e5788ef5561a747c2a3b935acab1820e14c7f591f73a8ce"
+    },
+    {
+      "source": "Commons/Fonts/Asset/NanumBarunGothicBold SDF.asset",
+      "destination": "Assets/Practice/Commons/Fonts/Asset/NanumBarunGothicBold SDF.asset",
+      "sha256": "bd0c9336c5bee6650d2b043fc5f530f1230c54a0a05eed6493dad39a0f995d0a"
+    },
+    {
+      "source": "Commons/Fonts/NanumBarunGothic.ttf",
+      "destination": "Assets/Practice/Commons/Fonts/NanumBarunGothic.ttf",
+      "sha256": "9b872773134e2e4d8c0b17021266786576db06c843ede0d0b523b214a450756c"
+    },
+    {
+      "source": "Commons/Fonts/NanumBarunGothicBold.ttf",
+      "destination": "Assets/Practice/Commons/Fonts/NanumBarunGothicBold.ttf",
+      "sha256": "39bba4cd9bd2986143825c8654abbb62443914ab33b346c0c929a916f5d98bf2"
+    },
+    {
+      "source": "Commons/Materials/ballChecker01.mat",
+      "destination": "Assets/Practice/Commons/Materials/ballChecker01.mat",
+      "sha256": "2525ce4cced903f84135a8256bb4ccd3f980b5638809c7b45d64179f2f602b10"
+    },
+    {
+      "source": "Commons/Materials/ballChecker02.mat",
+      "destination": "Assets/Practice/Commons/Materials/ballChecker02.mat",
+      "sha256": "dff2907601551c413d6fc79460ac3a2527aa120824073e42b2d601913588c938"
+    },
+    {
+      "source": "Commons/Materials/BallRed.mat",
+      "destination": "Assets/Practice/Commons/Materials/BallRed.mat",
+      "sha256": "72b95e1128228bdccca5bdc61bffd68aa0c80fa33db3ad42d19aad21c00c5fe9"
+    },
+    {
+      "source": "Commons/Materials/BallWhite.mat",
+      "destination": "Assets/Practice/Commons/Materials/BallWhite.mat",
+      "sha256": "3d741b9817715236624d3a1e664dad9bb1ca45b85b5f89e02a7e1b10bf15a9cb"
+    },
+    {
+      "source": "Commons/Materials/BallYellow.mat",
+      "destination": "Assets/Practice/Commons/Materials/BallYellow.mat",
+      "sha256": "7d63bd9f24bbc436c0c9210e322946717e851d2dcc9dab879cc5f07423c444f8"
+    },
+    {
+      "source": "Commons/Materials/black.mat",
+      "destination": "Assets/Practice/Commons/Materials/black.mat",
+      "sha256": "054b0ea2a1a862b76cc85bb437193509094d3c6d74158d23b0cda4bec05cc558"
+    },
+    {
+      "source": "Commons/Materials/blue.mat",
+      "destination": "Assets/Practice/Commons/Materials/blue.mat",
+      "sha256": "186c77e34e1c233f1b25ef1938b18597ccbd46af77c482a842c67d448b2685fe"
+    },
+    {
+      "source": "Commons/Materials/line.mat",
+      "destination": "Assets/Practice/Commons/Materials/line.mat",
+      "sha256": "88b3d0f9132488c3ad7dcf129509849cf0fa5c19385b09ff6b912b5906091307"
+    },
+    {
+      "source": "Commons/Materials/line01.png",
+      "destination": "Assets/Practice/Commons/Materials/line01.png",
+      "sha256": "deb277d993354c666e40aa6861e14bbf8a63b563a9ad1439fcfb4090f740331e"
+    },
+    {
+      "source": "Commons/Materials/white.mat",
+      "destination": "Assets/Practice/Commons/Materials/white.mat",
+      "sha256": "3e6d5ab9d5a0230eaa3569927e990562884799a990092e16d4631bd6d8b1576c"
+    },
+    {
+      "source": "Commons/PhysicsMaterials/BallMaterial.physicMaterial",
+      "destination": "Assets/Practice/Commons/PhysicsMaterials/BallMaterial.physicMaterial",
+      "sha256": "c55b2660357ed564206470eb55a567bb1b0ea38473a5420c39a48e8b91780d42"
+    },
+    {
+      "source": "Commons/PhysicsMaterials/BoardMaterial.physicMaterial",
+      "destination": "Assets/Practice/Commons/PhysicsMaterials/BoardMaterial.physicMaterial",
+      "sha256": "993ea4b6648ebfbf4360ab5be67c24e49f45f6581d1be814c2a2c4076be995a1"
+    },
+    {
+      "source": "Commons/Textures/ani_kiss.png",
+      "destination": "Assets/Practice/Commons/Textures/ani_kiss.png",
+      "sha256": "b8cad0bbe94b2d0de9cf41fe3e0e5a06f90d4a42153224549d84d06f9e976497"
+    },
+    {
+      "source": "Commons/Textures/line_bg_04.png",
+      "destination": "Assets/Practice/Commons/Textures/line_bg_04.png",
+      "sha256": "250732ece91748ee5f89bdeac1dcf2d6a13377f98a0c1f93a348c06692610271"
+    },
+    {
+      "source": "GabrielAguiarProductions/Materials/LootDrop/Glow_Blue.mat",
+      "destination": "Assets/Practice/GabrielAguiarProductions/Materials/LootDrop/Glow_Blue.mat",
+      "sha256": "7aa686f23b5772050b4890b36a7f6b1ef39ac1c5d3388ae5311d30658959e31c"
+    },
+    {
+      "source": "GabrielAguiarProductions/Shaders/Glow_Unlit.shadergraph",
+      "destination": "Assets/Practice/GabrielAguiarProductions/Shaders/Glow_Unlit.shadergraph",
+      "sha256": "36c7a746907d73ec35d4b9ebbfbfe0cf18042680add880a4f95e2ac08535be65"
+    },
+    {
+      "source": "Magic Spells and Explosions/Material/M_2D_Sprites.mat",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Material/M_2D_Sprites.mat",
+      "sha256": "1b2723af581654573f6cb924577b62e935b3d1f7e5d2cb2609c6b525b94a8e7d"
+    },
+    {
+      "source": "Magic Spells and Explosions/Material/M_2D_Sprites_Alfa.mat",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Material/M_2D_Sprites_Alfa.mat",
+      "sha256": "314de89e86df385252c5b23cbe0fc8bea7ad8c93fca7edab39f5cdf2c44d5489"
+    },
+    {
+      "source": "Magic Spells and Explosions/Material/M_Smoke_Additive.mat",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Material/M_Smoke_Additive.mat",
+      "sha256": "5b36e62e4dfb26321c075c9b5798741beecb9c2337565a458bba9b27295189d1"
+    },
+    {
+      "source": "Magic Spells and Explosions/Models/Fireball.fbx",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Models/Fireball.fbx",
+      "sha256": "225ad7210f670e38e4494acbbd5f545e1bff10fa7320357d7753e6579378b6a8"
+    },
+    {
+      "source": "Magic Spells and Explosions/Shaders/Rim.shadergraph",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Shaders/Rim.shadergraph",
+      "sha256": "1a8d10a25612a01265b99d3d6d42eb9460e6dc8f9bac122b293904361b9144c2"
+    },
+    {
+      "source": "Magic Spells and Explosions/Shaders/Rim_Ice.mat",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Shaders/Rim_Ice.mat",
+      "sha256": "7e793e2c8ad5d82daea5b12e2221f51b6e3d0b9c953487937c46082cdfdb917d"
+    },
+    {
+      "source": "Magic Spells and Explosions/Texture/T_2D_Sprites.png",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Texture/T_2D_Sprites.png",
+      "sha256": "baafb02f00ad9da7f425be3f36e06fcbd59d1311e7f913abff32b76b4a5e04bc"
+    },
+    {
+      "source": "Magic Spells and Explosions/Texture/T_Ice.png",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Texture/T_Ice.png",
+      "sha256": "963b7ce5229362e883e51646bdfd1dd52bd3699e55898d8ae6a09aa7e68d9a14"
+    },
+    {
+      "source": "Magic Spells and Explosions/Texture/T_Lava_N.png",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Texture/T_Lava_N.png",
+      "sha256": "eb349695819441b58d5d8ec64d8aa8e59ae1fbe4026410c52b7ea9121b6a8ef2"
+    },
+    {
+      "source": "Magic Spells and Explosions/Texture/T_Smoke.png",
+      "destination": "Assets/Practice/Magic Spells and Explosions/Texture/T_Smoke.png",
+      "sha256": "a8edffd368111ba6c39ae83401c0be1dc82e6a157c1bc654692c3a47d7db4ceb"
+    },
+    {
+      "source": "NekoLegends/ShaderCelFauxLight/CelFauxLightURP.shader",
+      "destination": "Assets/Practice/NekoLegends/ShaderCelFauxLight/CelFauxLightURP.shader",
+      "sha256": "0992f534604d5c57b274ca818bfe50979f4bd446067147665bdb9c52cc1c52b1"
+    },
+    {
+      "source": "NekoLegends/ShaderCelFauxLight/Materials/Coin.mat",
+      "destination": "Assets/Practice/NekoLegends/ShaderCelFauxLight/Materials/Coin.mat",
+      "sha256": "1f52ab65ac8d0f4fed5c1a5dadc6913fb3c76691e16ed8621eea414461a5e4ad"
+    },
+    {
+      "source": "NekoLegends/SharedAssets/Models/GoldCoin/GoldCoinBlank.fbx",
+      "destination": "Assets/Practice/NekoLegends/SharedAssets/Models/GoldCoin/GoldCoinBlank.fbx",
+      "sha256": "b1706cecc6f352530235a6afefb520cda9eb63cfb923075fa3b5328fff377625"
+    },
+    {
+      "source": "NekoLegends/SharedAssets/Models/GoldCoin/Textures/GoldCoinBlankAO.png",
+      "destination": "Assets/Practice/NekoLegends/SharedAssets/Models/GoldCoin/Textures/GoldCoinBlankAO.png",
+      "sha256": "9ef47d365041de28148103a8f1e3f2a42fc3e89e68a1a44a96639f2f358f4c1b"
+    },
+    {
+      "source": "NekoLegends/SharedAssets/Models/GoldCoin/Textures/GoldCoinNormal.png",
+      "destination": "Assets/Practice/NekoLegends/SharedAssets/Models/GoldCoin/Textures/GoldCoinNormal.png",
+      "sha256": "6baeb38597e0ca95c51e77bdb67f65bb3c1a6cdbb56abdc5dccc66a3dab68461"
+    },
+    {
+      "source": "Piloto Studio/Materials/Nature & Fairy/NatureRibbon_ProjectileSimple.mat",
+      "destination": "Assets/Practice/Piloto Studio/Materials/Nature & Fairy/NatureRibbon_ProjectileSimple.mat",
+      "sha256": "e681921b41b4a13d70090a55abc5434ba004bc09d701538cd45e163894a32845"
+    },
+    {
+      "source": "Piloto Studio/Materials/Shared/Flare_Glint.mat",
+      "destination": "Assets/Practice/Piloto Studio/Materials/Shared/Flare_Glint.mat",
+      "sha256": "824d39d8b61f10551a128797a497ae0e271e6b8bf15879eb29f6bc49ab28d1a7"
+    },
+    {
+      "source": "Piloto Studio/Shaders/VFX_Piloto/UberFX.shader",
+      "destination": "Assets/Practice/Piloto Studio/Shaders/VFX_Piloto/UberFX.shader",
+      "sha256": "0b408879ba1b2b17c3457a7685ab1a3d49820764e0b8274cec5d524701e4272b"
+    },
+    {
+      "source": "Piloto Studio/Textures/Flare_Glint.png",
+      "destination": "Assets/Practice/Piloto Studio/Textures/Flare_Glint.png",
+      "sha256": "cccc683fed0efd5b7a480e54a8b6b0439568ec1c6c10218db79040a92ae03d1c"
+    },
+    {
+      "source": "Piloto Studio/Textures/Flare_Glowdot.png",
+      "destination": "Assets/Practice/Piloto Studio/Textures/Flare_Glowdot.png",
+      "sha256": "418a494b5af1b9d0108cee3b84520aff2d0f49238de8fd9000933adfff36d283"
+    },
+    {
+      "source": "Piloto Studio/Textures/Sparks_Atlas.png",
+      "destination": "Assets/Practice/Piloto Studio/Textures/Sparks_Atlas.png",
+      "sha256": "c18a6af831472bece8038ee92014fcf0c87b39185e9424ad1543b897a67c13af"
+    },
+    {
+      "source": "PJFX/ShinyItems/Assets/FX Textures/FX_Beam.png",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Assets/FX Textures/FX_Beam.png",
+      "sha256": "375a3c262abc21befe78ea4b8c2400c1c506659b041895d9339e5a86f4916789"
+    },
+    {
+      "source": "PJFX/ShinyItems/Assets/FX Textures/FX_Noise_Wrap.png",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Assets/FX Textures/FX_Noise_Wrap.png",
+      "sha256": "821d390d58eb0eb8d28894402dd140fa6f5de8c08a12b47da5c01349f1ec96d7"
+    },
+    {
+      "source": "PJFX/ShinyItems/Assets/FX Textures/FX_Rainbow_Wrap.png",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Assets/FX Textures/FX_Rainbow_Wrap.png",
+      "sha256": "9da6c98fc6ddce040d875a2312c87933bfd41788f99f1646914bbc3165dfc1b3"
+    },
+    {
+      "source": "PJFX/ShinyItems/Assets/FX_Materials/FX_Beam_Add_3.mat",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Assets/FX_Materials/FX_Beam_Add_3.mat",
+      "sha256": "c4bbf958443029ad4d418cf889ec10608b36e7b7c772001076a1ded42366a7c8"
+    },
+    {
+      "source": "PJFX/ShinyItems/Assets/FX_Shadergraphs/FX_ItemShader.shadergraph",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Assets/FX_Shadergraphs/FX_ItemShader.shadergraph",
+      "sha256": "094346d8c3233d3065bb15c93810f849de6535bd3203511427f8f30e3f42fb1e"
+    },
+    {
+      "source": "PJFX/ShinyItems/Assets/FX_Shadergraphs/FX_Particle_Additive.shadergraph",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Assets/FX_Shadergraphs/FX_Particle_Additive.shadergraph",
+      "sha256": "ea5088f527509e38a66e38c236435ee074116aacb44a096ca4d45a4630cc4619"
+    },
+    {
+      "source": "PJFX/ShinyItems/Assets/FX_Shadergraphs/StarTiny.mat",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Assets/FX_Shadergraphs/StarTiny.mat",
+      "sha256": "7a2394320180e898481f0a388434b3c4c5fff51894d25c2cd8924970c4358a7e"
+    },
+    {
+      "source": "PJFX/ShinyItems/Assets/FX_Shadergraphs/StarTiny.shadergraph",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Assets/FX_Shadergraphs/StarTiny.shadergraph",
+      "sha256": "2f6d977fd067fd70d74fc89c04fadbc3ff764c338501d1d53d57636eb67deb5e"
+    },
+    {
+      "source": "PJFX/ShinyItems/Prefabs/Item_Materials/FX_Health.mat",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Prefabs/Item_Materials/FX_Health.mat",
+      "sha256": "8f00ce9aec3623e7b8d40eb73673b7a92ba0ef86450f6f51a1d5039c453a1741"
+    },
+    {
+      "source": "PJFX/ShinyItems/Prefabs/Item_Materials/FX_YellowStar.mat",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Prefabs/Item_Materials/FX_YellowStar.mat",
+      "sha256": "9615f0d37e7982ddeafd20072563081a36da0b8d50d99213b6cd6a7d7c2f4257"
+    },
+    {
+      "source": "PJFX/ShinyItems/Prefabs/Item_Polys/FXPoly_Health.obj",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Prefabs/Item_Polys/FXPoly_Health.obj",
+      "sha256": "d03120df845675acc3720a067abe5d6bbf69ac9be8e402c56aec0ab848e39e4f"
+    },
+    {
+      "source": "PJFX/ShinyItems/Prefabs/Item_Polys/FXPoly_Lightning.obj",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Prefabs/Item_Polys/FXPoly_Lightning.obj",
+      "sha256": "5f43eee89509b37e9bf6bc46964860deda0f2124ada1bc937a6a4a525a320264"
+    },
+    {
+      "source": "PJFX/ShinyItems/Prefabs/Item_Polys/FXPoly_Sphere.obj",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Prefabs/Item_Polys/FXPoly_Sphere.obj",
+      "sha256": "8bdc949a92b5198fd2a1ec78855bd9835455c1ac1cdff280d539c1d0cde0014c"
+    },
+    {
+      "source": "PJFX/ShinyItems/Prefabs/Item_Polys/FXPoly_Star.obj",
+      "destination": "Assets/Practice/PJFX/ShinyItems/Prefabs/Item_Polys/FXPoly_Star.obj",
+      "sha256": "8dbf3a6bcf57ca22d1c244c62951e8a8ec289515ac9ec03bd2f26903348a5c79"
+    },
+    {
+      "source": "Scenes/TableSet06/Global Volume Profile.asset",
+      "destination": "Assets/Practice/Scenes/TableSet06/Global Volume Profile.asset",
+      "sha256": "fec51d27be5468905bb1c6216cd2822c6a08ccbaf068962d01e691ad8bb1191a"
+    },
+    {
+      "source": "Scenes/TableSet07.unity",
+      "destination": "Assets/Practice/Scenes/TableSet07.unity",
+      "sha256": "07a08e8e84a2fce5f55e3b8a614418155c1721dd4583531289d6be9fc9cdd469"
+    },
+    {
+      "source": "TutorialInfo/Meterials/red.mat",
+      "destination": "Assets/Practice/TutorialInfo/Meterials/red.mat",
+      "sha256": "9e90fe90f1e468cdbeb02e68981dcbdd9aed41c51819ba30d918b1a671ffb5a7"
+    },
+    {
+      "source": "TutorialInfo/Meterials/yellow.mat",
+      "destination": "Assets/Practice/TutorialInfo/Meterials/yellow.mat",
+      "sha256": "dd38a9e9905e219f106448400c51094e8421a797ca9d2b27b420d9de9aa14908"
+    },
+    {
+      "source": "TutorialInfo/Modelings/fly.fbx",
+      "destination": "Assets/Practice/TutorialInfo/Modelings/fly.fbx",
+      "sha256": "ef3ae6c8e1e109a89d88e4d46b44bb9d702988d2238a355a17b9ba7836622d40"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/BallHit.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/BallHit.prefab",
+      "sha256": "555cd6912dee47fbb6d2f581a0aef86c07fcf96fa66064d85b4a1e3a46e3bd8c"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/Coin_LightUp.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/Coin_LightUp.prefab",
+      "sha256": "c22fceec3f0d1cceb7545a9537c4da4d3333d616c2d1ebb1cd1ac6f02e68edc6"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/CoinAni.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/CoinAni.prefab",
+      "sha256": "b1e830fccc3bdaa4e0b9f9c70ae18363785da0b6a749ff30e12edf19959609ca"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/Cosmos.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/Cosmos.prefab",
+      "sha256": "18bd212b5a7da40d272ceef2e2f36b4359577bbc94d2cd73777b802fcc325699"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/GoldCoin.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/GoldCoin.prefab",
+      "sha256": "8e80a0076cc57e976ec33f544f429d245e685fe321097e62d0309c93b009e7a4"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/S_Effect_01.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/S_Effect_01.prefab",
+      "sha256": "d96e3a7567829b69ffcfda358e78e97ef95cc490153ff3f7a2e1cc72c7308c60"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/S_Effect_02.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/S_Effect_02.prefab",
+      "sha256": "08dc308d973d44cbc7957129208be0b26d47d10793ef37100dbc7893d3f2fef8"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/S_Effect_03.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/S_Effect_03.prefab",
+      "sha256": "da94689fab52b52580075d7c97963ba0df87ed130f2a1fbe5d54d711cfad33d3"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/Stuff_Coin01.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/Stuff_Coin01.prefab",
+      "sha256": "d5d55a7edd43acdd5586e58c4faa027a1e8d771753d8619b458abe3ad397192b"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/Stuff_Item01.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/Stuff_Item01.prefab",
+      "sha256": "b0c56a20b2667a4608174ff4b16192755380d9e9e4ad77d70559a9cae57924be"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/Stuff_Item02.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/Stuff_Item02.prefab",
+      "sha256": "bc1aedc313ecb529331e8cf9978b58d7dc3323e65544ed102bbf2a62fb64154d"
+    },
+    {
+      "source": "TutorialInfo/Prefabs/TableSet06/Stuff_Item03.prefab",
+      "destination": "Assets/Practice/TutorialInfo/Prefabs/TableSet06/Stuff_Item03.prefab",
+      "sha256": "79116951bffac166e5553cc576c37f02a331de515fefd675413bc0cc2a6dfa8a"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Excert/Match/PoolCoach.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Excert/Match/PoolCoach.cs",
+      "sha256": "eeac756771258b90699421173bc6adad816c0e046422d809c78cab60b6ec0b16"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Excert/Match/PoolLogic.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Excert/Match/PoolLogic.cs",
+      "sha256": "5d3742e3b6999b3c4d1639947f21db74bd150fe8ffe46b2482727107903d5478"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Excert/Match/PoolPlayer.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Excert/Match/PoolPlayer.cs",
+      "sha256": "e618fc0d283b4b19f90e04895c7bd9995c9861518f6cdf65a1ec3aab9923a860"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Often/LayerLib.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Often/LayerLib.cs",
+      "sha256": "6f9633eff32a539181fe63aea827628240b4def267e9a177ac6c2d5a439e30e2"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Often/ReferArticle.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Often/ReferArticle.cs",
+      "sha256": "e61d928461e4badda6a577ebaabdb2677f7cc40b1cd1094e6a104eb67dfdbd8e"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Often/Utility.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Often/Utility.cs",
+      "sha256": "78128537463f49b5f819d27c8419d15b2034c7da314ac9a07bdcbc76323086cc"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Surface/AniCtrl.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Surface/AniCtrl.cs",
+      "sha256": "4893c5b9463380a78f4f9967a51490d46ad215076ca6c883beab378cce2b642e"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Surface/BallPointBig.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Surface/BallPointBig.cs",
+      "sha256": "66bbbfca4b04750e9c302ff38617eb0abdfdde174533920f8ad2f67c75f65812"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Surface/BallPointSmall.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Surface/BallPointSmall.cs",
+      "sha256": "65809d37dcef8c0e7223a07be249505d8016a1cfcfcb9fdae5b28c20ded1a441"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Surface/PnlMatch.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Surface/PnlMatch.cs",
+      "sha256": "1669b97371f0f249f8a990e004544a61c9fce76934fa83df620a37f643418981"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Surface/WordBalloonCtrl.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Surface/WordBalloonCtrl.cs",
+      "sha256": "225a28ae3ac3d12bb8ab7d5645ff14d881f28faf7abef32ec05a7ac8310e21c1"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/AniKiss.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/AniKiss.cs",
+      "sha256": "1b218260c7ae5d08bc6c0869e1076ca0a9efcc194dea13035504e9babb771a5e"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/BallC.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/BallC.cs",
+      "sha256": "b26fbe0f3c5a4da957e2c226b9e57829c9c0a45b39ee07b8bc989684c0dbd82e"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/BallImpactTrial.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/BallImpactTrial.cs",
+      "sha256": "3d0b251578b5c111de7b0d6ec7866d16280ba44370a452ea556c4b102b1f5951"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/ClothPhysics.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/ClothPhysics.cs",
+      "sha256": "9a4ae73e62d86f7650131fbd45eda40b946f88d72284191a231d64f0e49c09cd"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/CoinLightUpCtrl.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/CoinLightUpCtrl.cs",
+      "sha256": "73e9ea66eddb9ad48fa922b5db578acc76b0f7ff7f284b3c9e61c19c42101306"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/CosmosCtrl.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/CosmosCtrl.cs",
+      "sha256": "5f1ecdda06249989ac8af7d02564ac788d865d9b56076d6a2aeb7f513102ddb0"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/CushionHit.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/CushionHit.cs",
+      "sha256": "e0a47e28f5cd64d86f05bb930e3b1f4896db1af2d5f91bbdc38f0b31804fd627"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/DrawStuffPos.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/DrawStuffPos.cs",
+      "sha256": "7baa4d80c5cfdda143957f1feb2e33239e78abae8e1869fc8d6f7d7ddcc503e3"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/EffCtrl.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/EffCtrl.cs",
+      "sha256": "6dbc671ac3a1712570009e142aa5e1898467933f16575474eae2f8e95e95428f"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/FollowThroughProfile.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/FollowThroughProfile.cs",
+      "sha256": "c35bd650f437d69c5d37ba8dc9af5c347d5ab2148214810d8b084a499334883d"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/GuidePredictionValidation.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/GuidePredictionValidation.cs",
+      "sha256": "93ccc4d8ae54a6c38432520c2f054c714d74007fbd521bcb4a7f347280199db6"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/InputOutput.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/InputOutput.cs",
+      "sha256": "4d0c33775b06872957aa440245b25a3f1036cacc4f6db00ad7f58ae9038dc575"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/ItemMatchState.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/ItemMatchState.cs",
+      "sha256": "c547653916d27654a4387a759e0815320eb16da231a40da3115a6beaa16a9863"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/ObjectPooler.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/ObjectPooler.cs",
+      "sha256": "aad8b2ad02743abafa090bce51bd8852fc2c813b7efe5655d7e81e6960529ae4"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/OverlapDisc.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/OverlapDisc.cs",
+      "sha256": "8b21020876ef11379c52290e5ecef7c573840a72bc1f7849af5e885e84abf491"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Cloth.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Cloth.cs",
+      "sha256": "097797f21aaa0754e8e2219a2c278012dc3eebfc6e0f9c8b8f88a52f767a6193"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.cs",
+      "sha256": "bacc085cb60b7541c0a3205d5c9dbb6cf09343cccddc458597a5ad029b49b904"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Items.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Items.cs",
+      "sha256": "934235f44316eb0b8b8e9f0cedf35f43218afd0d8e006f60281417f3e8f3b3eb"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Options.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Options.cs",
+      "sha256": "916be464ffba6248d90165d1b593773ceae4d497e34d3985539b776db1f5ddfc"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Placement.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Placement.cs",
+      "sha256": "017855237393d996ae773da481e3b9a01cb77dea775254c417414a334f0f6569"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.PracticeMotion.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.PracticeMotion.cs",
+      "sha256": "ad1bed4acfe93853cdd1832a14c58ee4ab14fd74fdeea46ffa3c9ad998d58594"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Replay.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Replay.cs",
+      "sha256": "2eff4d9f3af28a7764c189a53f985214762bd1a3917f7b614e6c39923eb556fa"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.ReplaySlots.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.ReplaySlots.cs",
+      "sha256": "4cb99579314c78a170eaccb03949a2b9638b6cd73d8687be683c089f7a188cb6"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Undo.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/PhysicsMng.Undo.cs",
+      "sha256": "a9e70d6bbd5028e92122e5e062797af80db2115c1932e6f7f3e995c44dc54c98"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotCtrl.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotCtrl.cs",
+      "sha256": "4a2fa306f977c14f65a8f601d0920a46b6f510a42b3bae36ba4967ce47f7000d"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotCtrl.GaugeValues.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotCtrl.GaugeValues.cs",
+      "sha256": "522dafc40f2e0b5d459a61f7268a23fcea4cce0dd2dfc4acfb4c83a519819667"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotCtrl.Overlap.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotCtrl.Overlap.cs",
+      "sha256": "f3b89f24fd888455aec6bd70c6e1f80e7519b2ee11a9df70e9cce568f92bffaa"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotCtrl.Prediction.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotCtrl.Prediction.cs",
+      "sha256": "ae077287c21fdd671e92f13a1221d21e1e5c3643826e634e1432bb2aad8b839b"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotPrediction.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/ShotPrediction.cs",
+      "sha256": "97ba42ac3a8803dbd2a49197fb8fe5c0cab205f7a9da160956fc454a767df079"
+    },
+    {
+      "source": "TutorialInfo/Scripts/TableSet06/Sight/Vital/StuffBase.cs",
+      "destination": "Assets/Practice/TutorialInfo/Scripts/TableSet06/Sight/Vital/StuffBase.cs",
+      "sha256": "b0be80281689afcf4f5f70fb3afa2322a3b80f363d5e79cbb3cf15762cf3bdfb"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/BallPosion.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/BallPosion.shadergraph",
+      "sha256": "51925bce66e71476fc667d567c8bacc307401bcfa242a8a8a9f962468097d514"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/BallPosion2.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/BallPosion2.mat",
+      "sha256": "22f39dca366744da472b6f3e08c6473c8500cde0f2cd1ea1c78adb24dd6c5d30"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/BallRing.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/BallRing.mat",
+      "sha256": "89ba60ff0323ea56cfd291cf2b199321266e3f530c2ba779bae5129784726fec"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/BallRing.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/BallRing.shadergraph",
+      "sha256": "46e1b8e11370407e04dde93d098b6a3d011cfb97c70e77c24ff6c0cdd145deca"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/BoardHit.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/BoardHit.mat",
+      "sha256": "12a0b9c49d4afa2ef8bf4e071739b3978f3a4b3cf9fb8e5d6e15c9a33def0bca"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/BoardHit.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/BoardHit.shadergraph",
+      "sha256": "721866a4edaa15e99f3781bd754bc340a775606670848aedb467eeea46f0186a"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/comet.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/comet.mat",
+      "sha256": "495d68b2f454d279aefc044cb79ff329a55cd39cb7f38ec458ce9f1ee86a2d5a"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/comet.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/comet.shadergraph",
+      "sha256": "cad054c9661772ad04cabc5c8807b7ca7f9e99d9635e615640febb20181514f6"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/CueBallArrow.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/CueBallArrow.mat",
+      "sha256": "2f61a676a5e8e5c0097653d6201371b2a47a8ec75817309c9d05e4138776ffa1"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/CueBallArrow.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/CueBallArrow.shadergraph",
+      "sha256": "0f9dad927734ee92bcb854f6293af26bd4015d551181b11f230f5e4134f96451"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/CueBallPosion.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/CueBallPosion.mat",
+      "sha256": "623f552b53f34551bb2e64aeff01d3e84b9187c047f436fa3571437f92b06b49"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/CueBallPosion.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/CueBallPosion.shadergraph",
+      "sha256": "a1b55c8b5034af2486e84907862b6069f4ce99f63bb1bad28989720c3de09d17"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/Diagram_DirCue.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/Diagram_DirCue.mat",
+      "sha256": "d80ba2da0ba3cd4d146eeaf6c45ebb78227db690fba09f3687b2ffafcc1ed2d6"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/Diagram_DirCue.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/Diagram_DirCue.shadergraph",
+      "sha256": "3ff209aaf2cbc3ea4ec82b67f3fbfd712619e67a7260e189d956229de45f47f1"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02.shadergraph",
+      "sha256": "08a57d922cd2756ff270cc8ca29feaa7d96ff2553deb59ae441168cb5023afc7"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_red_01.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_red_01.mat",
+      "sha256": "9f3c8bca4dfa40516df1121a5a3d9867a7e2a2f2a7a9b2f14b5dc5f8ad2de366"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_red_02.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_red_02.mat",
+      "sha256": "35ba28e51178e9b0318c4654f38fb29f6b006657e82da5ae6a1801ad3d20c03d"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_red_03.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_red_03.mat",
+      "sha256": "565f17a0a86ae0f16ed071ccc19e5325277e20411d3655c425b95ea803abd8e3"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_red_04.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_red_04.mat",
+      "sha256": "4d01c568d4a8066cdfaa3030be6bdd9327f060227460a697b6841fe277936cd8"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_white_01.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_white_01.mat",
+      "sha256": "a8eb017f445e95e08641af6bb9dd64874e93489bdf1d6b2053d9137136ad47c3"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_white_02.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_white_02.mat",
+      "sha256": "87e5020b96df61d74d644ccade4bfee82b73d52c665a68f4d984a83c57cec819"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_white_03.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_white_03.mat",
+      "sha256": "b86790f7bf1aa410e7e59719636191d31cb16fc83575af04ad9ad745aba0e231"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_white_04.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_white_04.mat",
+      "sha256": "98bbfe1b1cfbd1185dc1ce3462621259be6d61553c46d85b71b129f1d24967dd"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_white_05.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_white_05.mat",
+      "sha256": "fa849500b291cfe39ad06a47899bd07d9d0fce2927cfa2b976c10d4ed7738b38"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_white_06.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_white_06.mat",
+      "sha256": "a9a7c6857d146d41b2e1261fdc42de5902efed3d0795faec3f287d3ee165df9a"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/LineArrow02_white_07.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/LineArrow02_white_07.mat",
+      "sha256": "28bb42ca88df1ab50a39fb2a5ff83a9ecc8d576599b0a47b066d61bc94c72d26"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/OutlineCycle.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/OutlineCycle.mat",
+      "sha256": "23a4b0bc2920c1c4dfdf4e4455f2fa857274d7d57546c2a26d435701da8091a5"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/OutlineCycle.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/OutlineCycle.shadergraph",
+      "sha256": "0053a6f3ba19b96d2850e336663dac0ed8fbba454c9c485594a0359def7952b2"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/OutlineCycleSmall.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/OutlineCycleSmall.mat",
+      "sha256": "3ef7f3398f4d2ab9ed90f176aa2c61dda8a59693949875f6981ebd5236a56fef"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/smoke.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/smoke.mat",
+      "sha256": "d205d1e64f5f708e50ec08d0a8da689b2c572bb4a78988550474dd2e83fb15b5"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/smoke.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/smoke.shadergraph",
+      "sha256": "fd24ceff013a88f7b915db27e5dac5a5314c34893a392273000e7d67a035df2d"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/StarBelt.mat",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/StarBelt.mat",
+      "sha256": "4e035b2256430c08f729749ca5e95a3ddbe05eff0ab9c89c877570c2c8fac9cb"
+    },
+    {
+      "source": "TutorialInfo/ShaderGraphs/StarBelt.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/ShaderGraphs/StarBelt.shadergraph",
+      "sha256": "8b896cfcc40a37fce9657912f0d19ea90bf4075c6964fbd24c6f00f78d608537"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/avatar_001.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/avatar_001.png",
+      "sha256": "bf1a701b49ba4332b87c3820ebfcb691cd63a068e4ce06f41d095a4d01ed0605"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/avatar_002.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/avatar_002.png",
+      "sha256": "563085bbca6ae75efe4a87a3dcac30a5005bc9d7c29d765e8dcbf289894de761"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/ball_shadow.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/ball_shadow.png",
+      "sha256": "f3fc5f32a43e7dce77ea83988602ac1c5093041722fcec48af83dea7fdc79888"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/BallShadow.mat",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/BallShadow.mat",
+      "sha256": "4452484f300872235b597aab5ac523ef1257d404f277ed7ac418661f92632e9f"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/bar_abacus.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/bar_abacus.png",
+      "sha256": "1293f6a089113896db2e7c0b71ce82f89c7f4612f9fbc052f4de0440e0a51b46"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/btn_matchEnd.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/btn_matchEnd.png",
+      "sha256": "8f48ddc7b83019ffeb4d930383202c1e89da674a89c574b78b1854b853c05dce"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/Concave.mat",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/Concave.mat",
+      "sha256": "d4bb903397966f5008147cb4dee2976cd8224b77e341631efac6910f2fa3fd41"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/Concave.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/Concave.shadergraph",
+      "sha256": "8d3a092e66fec4b6727630a76f81d5c42ecc16f37cffb036eeea4de301e0e7b4"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/ConcaveFix 1.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/ConcaveFix 1.png",
+      "sha256": "882acd591543e23aa67ac02a5ea586a2817af52fc59ed7ab6ea05d6a0de0456e"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/ConcaveTop.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/ConcaveTop.png",
+      "sha256": "105f430d925afebb96e01d8881b91e411091fdc8cd8cfb4d70a0bdf7ebb4ae3a"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/cycle_blur.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/cycle_blur.png",
+      "sha256": "0ba4c3d37e35c3e758a29b020a3394aa88c58adc7c09de79a1422fdf3d7c3f7b"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/detailTurn_pan.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/detailTurn_pan.png",
+      "sha256": "bccbcda18f0914968839b4fd0eead154a7dc3b87ed8949c5769ab3e52d40ef48"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/egg_abacus.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/egg_abacus.png",
+      "sha256": "dc583715a35a5a37ac612036cb684c914a4eba16ed1f502b1c8e53f850c03d46"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/Flash.mat",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/Flash.mat",
+      "sha256": "505b39a111164383b0bde150bc95b9492d102430c60b7ee32f1884e589f56c7d"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/Flash.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/Flash.png",
+      "sha256": "a9ae42a7b13a188f324d2d5fe34f003747047c21a04664925479092fd4eb6a61"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/powerSlide_bar.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/powerSlide_bar.png",
+      "sha256": "389cbd9496d5d2a0a5dc21fb9fdbb8c22fdd21f5603be1d38bee29df1025523d"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/powerSlide_btn.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/powerSlide_btn.png",
+      "sha256": "b81038635df1782c54bb91e56a550e72e9b25c9d764ecc5cddb1c792f3ffe8e2"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/powerSlide_gage.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/powerSlide_gage.png",
+      "sha256": "8c8820e0d292725feb319392b7be626b1f25d3236c6f5df9de1089d16c1e0d91"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/powerSlide_pull.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/powerSlide_pull.png",
+      "sha256": "ea5d166436a8896c2af16996e35f755f4c04c8c5c186abde5fd7b28ff0039201"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/stu01.mat",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/stu01.mat",
+      "sha256": "ddbc436ab129fef64e3bfa320f7c6fd34d946b2a787c5d3469d41c9097621b2e"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/stu01.shadergraph",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/stu01.shadergraph",
+      "sha256": "2134deea75f47fbbe8200d692cfbcdbed5522c3ee7af037abc6b969e2038b34e"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/stuffItem_texture01.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/stuffItem_texture01.png",
+      "sha256": "6dd1d0f34c796815096b528b55c34249358c25993b7e2d1705063c06a0322f26"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/TimeInningBar.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/TimeInningBar.png",
+      "sha256": "a2c8996c36fb2af02a47ee8e83a499fb888c715f7b56a0fa1054614c6616e4b2"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/TimeInningBg.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/TimeInningBg.png",
+      "sha256": "ed9f8a7aedb373188168bd0c10bde7946d62483ab89e8c329289b5d51f51e924"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/TxtAcieve.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/TxtAcieve.png",
+      "sha256": "f3b0c72fa306830a8d1b912aeaf72f01e4594421eee01ee85c06f9b4e5f6f33d"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/TxtRunPath.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/TxtRunPath.png",
+      "sha256": "312cd0cdea5bacdcebad59b772ba58bdce39d38fa24e0cc14e9ba71f222bf884"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/vs.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/vs.png",
+      "sha256": "708f89ffd43ad34c93aced4cb2fda350b6b66c5eae7c3a0f9dd5bd024c13cb66"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/WordBalloon.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/WordBalloon.png",
+      "sha256": "03c5a855f5dd9d83ac87d9077a9361196be83dec79473d2aaf8024dd4423c9df"
+    },
+    {
+      "source": "TutorialInfo/Textures/Pool/WordBalloonCoin.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Pool/WordBalloonCoin.png",
+      "sha256": "4888fe9001f53238c2688fc273652438e3039bccab63b9f5e4293cfa78c73f3d"
+    },
+    {
+      "source": "TutorialInfo/Textures/smoke01.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/smoke01.png",
+      "sha256": "163bc5f8fbb531a2b708c3ea7708f40b6477534c397e918119ea48e4bfa5d081"
+    },
+    {
+      "source": "TutorialInfo/Textures/Square.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/Square.png",
+      "sha256": "44f9592db7d11d11ed58c7cad12e35925d9974d6576fb0951b4fa0cd7c6eaf10"
+    },
+    {
+      "source": "TutorialInfo/Textures/table_bg.png",
+      "destination": "Assets/Practice/TutorialInfo/Textures/table_bg.png",
+      "sha256": "02b9bd7dfee98190d673c23d35ec0d58cadcc4caefbfe26045adc2ace242e817"
+    }
+  ]
+}

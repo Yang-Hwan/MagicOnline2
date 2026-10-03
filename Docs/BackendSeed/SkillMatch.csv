@@ -1,0 +1,3 @@
+HallIdx,MatchBall,TargetHit,PrizeCoin,MaxCoin,HallName,MatchTotMin,MatchCushion,FinishMission
+1,3,10,1,1000000,3구 테스트,20,3,0
+2,4,10,1,1000000,4구 테스트,20,0,0
