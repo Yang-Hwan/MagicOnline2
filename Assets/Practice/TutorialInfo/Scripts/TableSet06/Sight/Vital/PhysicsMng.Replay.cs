@@ -108,7 +108,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         Button replaySlower, replayFaster;
         Slider replaySeek;
         TMP_Text replayInfo, replayPlayText, replaySpeedText, matchReplayHeading, matchReplayTitleLabel;
-        TMP_Text matchReplayProgressLabel, matchReplaySpeedLabel;
+        TMP_Text matchReplayProgressLabel;
         readonly float[] replaySpeeds = { .5f, 1f, 2f, 4f, 8f, 16f, 32f };
         int replaySpeedIndex = 1;
         RectTransform replayDragHeader;
@@ -374,21 +374,23 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 replayPanel = new GameObject("Practice Replay Controls", typeof(RectTransform)).GetComponent<RectTransform>();
                 replayPanel.SetParent(undoButton.transform.parent, false);
                 replayPanel.anchorMin = replayPanel.anchorMax = new Vector2(.5f, 0);
-                replayPanel.anchoredPosition = new Vector2(0, IsMatchReplayBrowser ? 170 : 150);
-                replayPanel.sizeDelta = IsMatchReplayBrowser ? new Vector2(1040, 320) : new Vector2(730, 224);
+                replayPanel.anchoredPosition = new Vector2(0, 150);
+                replayPanel.sizeDelta = new Vector2(730, 224);
                 var background = replayPanel.gameObject.AddComponent<Image>();
                 background.color = new Color(.025f, .07f, .085f, .94f);
                 replayPlay = ReplayButton("Replay Play", "재생", IsMatchReplayBrowser ? -205 : IsReplayBrowser ? -144 : -264, TogglePracticeReplay);
-                replayNext = ReplayButton("Replay Next", "다음 프레임", IsMatchReplayBrowser ? -65 : IsReplayBrowser ? 0 : -132, NextPracticeReplayFrame);
-                replayReset = ReplayButton("Replay Reset", IsMatchReplayBrowser ? "처음으로" : "재생 처음으로", IsMatchReplayBrowser ? 75 : IsReplayBrowser ? 144 : 0, ResetPracticeReplay);
+                replayNext = ReplayButton("Replay Next", IsMatchReplayBrowser ? "다음" : "다음 프레임", IsMatchReplayBrowser ? -65 : IsReplayBrowser ? 0 : -132, NextPracticeReplayFrame);
+                replayReset = ReplayButton("Replay Reset", IsMatchReplayBrowser ? "처음" : "재생 처음으로", IsMatchReplayBrowser ? 75 : IsReplayBrowser ? 144 : 0, ResetPracticeReplay);
                 replayExit = ReplayButton("Replay Exit", "저장 닫기", 132, CloseReplayPanel);
                 replayPlayText = replayPlay.GetComponentInChildren<TMP_Text>();
                 replayInfo = new GameObject("Replay Time", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TMP_Text>();
-                replayInfo.transform.SetParent(replayPanel, false); replayInfo.rectTransform.sizeDelta = new Vector2(IsMatchReplayBrowser ? 760 : 310, 28);
-                replayInfo.rectTransform.anchoredPosition = new Vector2(IsMatchReplayBrowser ? 0 : -170, IsMatchReplayBrowser ? 68 : 48);
+                replayInfo.transform.SetParent(replayPanel, false); replayInfo.rectTransform.sizeDelta = new Vector2(IsMatchReplayBrowser ? 390 : 310, 28);
+                replayInfo.rectTransform.anchoredPosition = new Vector2(IsMatchReplayBrowser ? 140 : -170, 48);
                 replayInfo.font = replayPlayText.font; replayInfo.fontSize = 19; replayInfo.alignment = TextAlignmentOptions.MidlineLeft; replayInfo.overflowMode = TextOverflowModes.Ellipsis; replayInfo.raycastTarget = false;
                 if (IsMatchReplayBrowser)
                 {
+                    replayInfo.fontSize = 16;
+                    replayInfo.textWrappingMode = TextWrappingModes.NoWrap;
                     replaySlower = ReplayButton("Replay Slower", "<", -118, () => ChangeReplaySpeed(-1));
                     replayFaster = ReplayButton("Replay Faster", ">", -2, () => ChangeReplaySpeed(1));
                     foreach (var speedButton in new[] { replaySlower, replayFaster })
@@ -397,14 +399,13 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                         speedButton.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = speedRect.sizeDelta;
                     }
                     replaySpeedText = new GameObject("Replay Speed", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TMP_Text>();
-                    replaySpeedText.transform.SetParent(replayPanel, false); replaySpeedText.rectTransform.sizeDelta = new Vector2(70, 38);
-                    replaySpeedText.rectTransform.anchoredPosition = new Vector2(-60, -105); replaySpeedText.font = replayPlayText.font;
+                    replaySpeedText.transform.SetParent(replayPanel, false); replaySpeedText.rectTransform.sizeDelta = new Vector2(54, 38);
+                    replaySpeedText.rectTransform.anchoredPosition = new Vector2(-90, -80); replaySpeedText.font = replayPlayText.font;
                     replaySpeedText.fontSize = 20; replaySpeedText.alignment = TextAlignmentOptions.Center; replaySpeedText.text = "1×";
-                    matchReplayProgressLabel = CreateReplayControlLabel("진행:", new Vector2(-466, -105), new Vector2(70, 38));
-                    matchReplaySpeedLabel = CreateReplayControlLabel("속도:", new Vector2(-173, -105), new Vector2(66, 38));
+                    matchReplayProgressLabel = CreateReplayControlLabel("진행:", new Vector2(-308, -80), new Vector2(50, 38));
                     var seekObject = new GameObject("Replay Progress", typeof(RectTransform), typeof(Image), typeof(Slider));
                     var seekRect = (RectTransform)seekObject.transform; seekRect.SetParent(replayPanel, false);
-                    seekRect.sizeDelta = new Vector2(220, 18); seekRect.anchoredPosition = new Vector2(-320, -105);
+                    seekRect.sizeDelta = new Vector2(108, 14); seekRect.anchoredPosition = new Vector2(-226, -80);
                     var seekImage = seekObject.GetComponent<Image>(); seekImage.color = new Color(.28f, .34f, .36f);
                     replaySeek = seekObject.GetComponent<Slider>(); replaySeek.minValue = 0; replaySeek.maxValue = 1;
                     replaySeek.targetGraphic = seekImage; replaySeek.direction = Slider.Direction.LeftToRight;
@@ -425,17 +426,23 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                     replaySeek.onValueChanged.AddListener(SeekMatchReplay);
                     matchReplayHeading = new GameObject("Match Replay Heading", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TMP_Text>();
                     matchReplayHeading.transform.SetParent(replayPanel, false); matchReplayHeading.rectTransform.sizeDelta = new Vector2(360, 28);
-                    matchReplayHeading.rectTransform.anchoredPosition = new Vector2(0, 178); matchReplayHeading.font = replayPlayText.font;
+                    matchReplayHeading.rectTransform.anchoredPosition = new Vector2(0, 132); matchReplayHeading.font = replayPlayText.font;
                     matchReplayHeading.fontSize = 22; matchReplayHeading.alignment = TextAlignmentOptions.Center; matchReplayHeading.text = "리플레이 - 시합";
                     matchReplayTitleLabel = new GameObject("Match Replay Title Label", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TMP_Text>();
-                    matchReplayTitleLabel.transform.SetParent(replayPanel, false); matchReplayTitleLabel.rectTransform.sizeDelta = new Vector2(70, 28);
-                    matchReplayTitleLabel.rectTransform.anchoredPosition = new Vector2(-245, 105); matchReplayTitleLabel.font = replayPlayText.font;
+                    matchReplayTitleLabel.transform.SetParent(replayPanel, false); matchReplayTitleLabel.rectTransform.sizeDelta = new Vector2(50, 28);
+                    matchReplayTitleLabel.rectTransform.anchoredPosition = new Vector2(-307, 48); matchReplayTitleLabel.font = replayPlayText.font;
                     matchReplayTitleLabel.fontSize = 18; matchReplayTitleLabel.alignment = TextAlignmentOptions.Center; matchReplayTitleLabel.text = "제목:";
-                    replaySlower.GetComponent<RectTransform>().anchoredPosition = new Vector2(-118, -105);
-                    replayPlay.GetComponent<RectTransform>().anchoredPosition = new Vector2(120, -105);
-                    replayNext.GetComponent<RectTransform>().anchoredPosition = new Vector2(260, -105);
-                    replayReset.GetComponent<RectTransform>().anchoredPosition = new Vector2(400, -105);
-                    replayFaster.GetComponent<RectTransform>().anchoredPosition = new Vector2(-2, -105);
+                    replaySlower.GetComponent<RectTransform>().anchoredPosition = new Vector2(-142, -80);
+                    replayPlay.GetComponent<RectTransform>().anchoredPosition = new Vector2(52, -80);
+                    replayNext.GetComponent<RectTransform>().anchoredPosition = new Vector2(164, -80);
+                    replayReset.GetComponent<RectTransform>().anchoredPosition = new Vector2(276, -80);
+                    replayFaster.GetComponent<RectTransform>().anchoredPosition = new Vector2(-38, -80);
+                    foreach (var control in new[] { replayPlay, replayNext, replayReset })
+                    {
+                        var controlRect = (RectTransform)control.transform;
+                        controlRect.sizeDelta = new Vector2(100, 38);
+                        control.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = controlRect.sizeDelta;
+                    }
                 }
             }
             UpdateReplaySlots();

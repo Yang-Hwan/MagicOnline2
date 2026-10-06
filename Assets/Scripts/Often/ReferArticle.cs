@@ -5,9 +5,9 @@ namespace Assets.Scripts.Often
     public static class Constants
     {
      //   public static readonly string SceneNamePrefix = "";
-        public static readonly string CommonCode_Id = "42867";      // 차트.공통코드
-        public static readonly string SkillMatch_Id = "42868";    //90477";      // 차트.시합장
-        public static readonly string Attendance_Id = "42869";      // 차트.출석부
+        public static readonly string CommonCode_Id = "265284";     // 공통코드 차트의 선택된 파일 ID
+        public static readonly string SkillMatch_Id = "265095";   // 시합장 차트의 선택된 파일 ID
+        public static readonly string Attendance_Id = "265286";     // 출석 차트의 선택된 파일 ID
     }
 
  

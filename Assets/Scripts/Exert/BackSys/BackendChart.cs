@@ -189,7 +189,7 @@ namespace Assets.Scripts.Exert.BackSys
                 {
                     AttendanceData newAttendance = new AttendanceData();
                     newAttendance.DayNum = int.Parse(jsonData[i]["DayNum"].ToString());
-                    newAttendance.RewardType = int.Parse(jsonData[i]["RewardType"].ToString());
+                    newAttendance.RewardType = int.Parse(jsonData[i]["RewardTypeCd"].ToString());
                     newAttendance.RewardVal = int.Parse(jsonData[i]["RewardVal"].ToString());
                     newAttendance.GiveVal = 0;
 

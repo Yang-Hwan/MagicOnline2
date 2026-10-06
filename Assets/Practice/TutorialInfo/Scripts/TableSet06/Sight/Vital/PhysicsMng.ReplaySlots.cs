@@ -72,8 +72,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 var obj = new GameObject("Replay Title", typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
                 obj.transform.SetParent(replayPanel, false);
                 var rect = (RectTransform)obj.transform;
-                rect.anchoredPosition = IsMatchReplayLayout ? new Vector2(0, 105) : new Vector2(170, 48);
-                rect.sizeDelta = IsMatchReplayLayout ? new Vector2(420, 32) : new Vector2(330, 32);
+                rect.anchoredPosition = IsMatchReplayBrowser ? new Vector2(-173, 48) : matchArchiveSaveMode ? new Vector2(0, 105) : new Vector2(170, 48);
+                rect.sizeDelta = IsMatchReplayBrowser ? new Vector2(210, 32) : matchArchiveSaveMode ? new Vector2(420, 32) : new Vector2(330, 32);
                 var background = obj.GetComponent<Image>(); background.color = new Color(.08f, .17f, .2f, .95f);
                 replayTitle = obj.GetComponent<TMP_InputField>();
                 replayTitle.targetGraphic = background;
@@ -396,7 +396,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 {
                     int slot = i;
                     var button = ReplayButton($"Replay Slot {i + 1:00}", $"{i + 1:00}", 0, () => SelectReplaySlot(slot));
-                    float rowY = IsMatchReplayLayout ? 32 : 6;
+                    float rowY = matchArchiveSaveMode ? 32 : 6;
                     float rowGap = IsMatchReplayBrowser ? 42 : 42;
                     var rect = (RectTransform)button.transform; rect.anchoredPosition = new Vector2(-300 + (i % ReplaySlotsPerRow) * 68, rowY - (i / ReplaySlotsPerRow) * rowGap); rect.sizeDelta = new Vector2(60, 34);
                     button.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = rect.sizeDelta;

@@ -14,11 +14,17 @@ UserMain은 상대 프로필과 전적 조회 코드 때문에 Public으로 구�
 
 | 차트명 | 새 차트 ID | 파일 적용 |
 |---|---|---|
-| CommonCode | 42867 | CommonCode.csv / 261567 |
-| SkillMatch | 42868 | SkillMatch.csv / 261569 |
-| Attendance | 42869 | Attendance.csv / 261570 |
+| CommonCode | 42867 | 파일 ID 265284 (2026-10-05 사용자 교체 정보) |
+| SkillMatch | 42868 | 파일 ID 265095 (2026-10-04 사용자 교체 정보) |
+| Attendance | 42869 | 파일 ID 265286 (2026-10-05 사용자 교체 정보) |
 
-Assets/Scripts/Often/ReferArticle.cs의 차트 ID를 위 ID로 변경했다. 2026-09-18 테스트 파일 3개를 업로드하고 적용된 차트 열에서 적용 완료를 확인했다. 원본 파일은 Docs/BackendSeed에 보관한다.
+Assets/Scripts/Often/ReferArticle.cs의 차트 ID를 위 ID로 변경했다. 2026-09-18 테스트 파일 3개를 업로드하고 적용된 차트 열에서 적용 완료를 확인했다. 당시 원본 파일은 Docs/BackendSeed에 보관한다.
+
+2026-10-04: 사용자 요청으로 SkillMatch_Id를 새 파일 ID 265095로 변경했다(이전 파일 ID 261569). LoadChartRows는 selectedChartFileId로도 조회하므로 뒤끝 콘솔에서 해당 파일이 선택·적용된 상태여야 한다. 새 파일 내용과 실제 서버 조회는 이번 변경에서 검증하지 않았으며, BackendSeed/SkillMatch.csv는 이전 테스트 데이터다.
+
+2026-10-05: 사용자 요청으로 CommonCode_Id를 새 파일 ID 265284로 변경했다(이전 파일 ID 261567). LoadChartRows는 selectedChartFileId로도 조회하므로 뒤끝 콘솔에서 해당 파일이 선택·적용된 상태여야 한다. 새 파일 내용과 실제 서버 조회는 이번 변경에서 검증하지 않았으며, BackendSeed/CommonCode.csv는 이전 테스트 데이터다.
+
+2026-10-05: 사용자 요청으로 Attendance_Id를 새 파일 ID 265286으로 변경했다(이전 파일 ID 261570). 출석 차트의 보상 종류 칼럼은 RewardType에서 RewardTypeCd로 변경되어 LoadAttendance에서 새 칼럼을 읽고 내부 RewardType 필드에 매핑한다. UserAttendance 게임 정보 테이블의 RewardType 저장·조회 형식은 유지한다. 뒤끝 콘솔에서 해당 파일이 선택·적용된 상태여야 하며, 새 파일 내용과 실제 서버 조회는 이번 변경에서 검증하지 않았다. BackendSeed/Attendance.csv는 이전 칼럼명을 사용하는 과거 테스트 데이터다.
 
 ## 남은 작업
 

@@ -128,7 +128,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 var viewport = new GameObject("Replay Folders", typeof(RectTransform), typeof(Image),
                     typeof(RectMask2D), typeof(ScrollRect)).GetComponent<RectTransform>();
                 viewport.SetParent(replayPanel, false);
-                viewport.anchoredPosition = new Vector2(-75, IsMatchReplayLayout ? 140 : 90); viewport.sizeDelta = new Vector2(510, 32);
+                viewport.anchoredPosition = new Vector2(-75, matchArchiveSaveMode ? 140 : 90); viewport.sizeDelta = new Vector2(510, 32);
                 viewport.GetComponent<Image>().color = new Color(.06f, .13f, .16f);
                 replayFolderContent = new GameObject("Content", typeof(RectTransform)).GetComponent<RectTransform>();
                 replayFolderContent.SetParent(viewport, false);
@@ -141,7 +141,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 replayFolderScroll.scrollSensitivity = 30;
                 replayFolderAdd = ReplayButton("Replay Folder Add", "+ 추가", 0, () => ShowReplayFolderDialog(false));
                 replayFolderDelete = ReplayButton("Replay Folder Delete", "삭제", 0, () => ShowReplayFolderDialog(true));
-                float folderY = IsMatchReplayLayout ? 140 : 90;
+                float folderY = matchArchiveSaveMode ? 140 : 90;
                 SizeReplayControl(replayFolderAdd, replayPanel, new Vector2(226, folderY), new Vector2(76, 32));
                 SizeReplayControl(replayFolderDelete, replayPanel, new Vector2(305, folderY), new Vector2(70, 32));
                 RefreshReplayFolderButtons();
