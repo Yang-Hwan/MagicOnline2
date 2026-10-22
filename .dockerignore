@@ -1,0 +1,13 @@
+**/bin
+**/obj
+**/.env
+**/appsettings.Local.json
+.git
+Library
+Temp
+Logs
+Build
+Builds
+Exports
+UserSettings
+Assets/TheBackend

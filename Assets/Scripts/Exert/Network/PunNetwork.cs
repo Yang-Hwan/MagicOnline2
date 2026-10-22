@@ -1,16 +1,15 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System;
 using System.Linq;
 using UnityEngine;
 using Photon.Realtime;
 using Photon.Pun;
-using BackEnd;
 using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Exert.Match;
 
 namespace Assets.Scripts.Exert.Network
 {
-    public class PunNetwork : NetworkEngine
+    public partial class PunNetwork : NetworkEngine
     {
 
         private PhotonView view;
@@ -73,7 +72,9 @@ namespace Assets.Scripts.Exert.Network
             view.ObservedComponents.Add(this);
             view.Synchronization = ViewSynchronization.Off;
             view.ViewID = 1;
-            PhotonNetwork.AutomaticallySyncScene = !Assets.Scripts.Often.PracticeMatchTestRoute.Enabled;
+            // Both public HistoryCommit and practice setup explicitly load each peer.
+            // PUN scene sync would load the guest a second time after the same commit.
+            PhotonNetwork.AutomaticallySyncScene = false;
             PhotonNetwork.KeepAliveInBackground = BackgroundTimeout;
 
         }
@@ -88,7 +89,7 @@ namespace Assets.Scripts.Exert.Network
                 if (!PhotonNetwork.IsConnected)
                 {
                     // New matches load only after both peers accept the setup protocol.
-                    PhotonNetwork.AutomaticallySyncScene = !Assets.Scripts.Often.PracticeMatchTestRoute.Enabled;
+                    PhotonNetwork.AutomaticallySyncScene = false;
                     AuthenticationValues authValues = new AuthenticationValues(NetworkManager.uuid);
                     PhotonNetwork.AuthValues = authValues;
                     Debug.Log($"111.PunNetwork Connect view : {view} .. reachable : {reachable}  .. PhotonNetwork.IsConnected : {PhotonNetwork.IsConnected}");
@@ -123,6 +124,7 @@ namespace Assets.Scripts.Exert.Network
         protected override void Update()
         {
             base.Update();
+            TickLegacyHistory();
             if (matchRequestPending && Time.realtimeSinceStartup >= matchRequestDeadline)
             {
                 matchRequestPending = false;
@@ -158,7 +160,7 @@ namespace Assets.Scripts.Exert.Network
             LogMatchContext("JoinedLobby");
             Debug.Log("### PunNetwork OnJoinedLobby userName : " + NetworkManager.mainPlayer.uuid);
 
-            PhotonNetwork.LocalPlayer.NickName = Backend.UserInDate;
+            PhotonNetwork.LocalPlayer.NickName = GameApiClient.UserId;
         }
 
 
@@ -189,7 +191,7 @@ namespace Assets.Scripts.Exert.Network
                 string nm_self = NetworkManager.mainPlayer.nickName;
                 player_str += i + " : " + nm + "_" + master + ",";
                 PlayerState state = PhotonNetwork.PlayerList[i].IsMasterClient ? PlayerState.Master : PlayerState.Away;
-                PlayerProfile pp = new PlayerProfile("", -1, false, nm, 0, 0, state);
+                PlayerProfile pp = new PlayerProfile(nm, -1, false, nm, 0, 0, state);
                 pps.Add(pp);
             }
             //RoomPlayerUpdate >> nm_m:  .. _M,_C,
@@ -519,7 +521,7 @@ namespace Assets.Scripts.Exert.Network
                 //{
                 //}
 
-                PlayerProfile pp = new PlayerProfile("", -1, false, nickNm, 0, 0, state, remark);
+                PlayerProfile pp = new PlayerProfile(nickNm, -1, false, nickNm, 0, 0, state, remark);
                 pps[i] = pp;
                 //Debug.Log($"photon player {i}  UserId : {userId}, nickNm : {nickNm}, master : {master} ");
             }
@@ -533,6 +535,7 @@ namespace Assets.Scripts.Exert.Network
 
         public override void BattleResult2(int isWin = 1)
         {
+            if (!Assets.Scripts.Often.PracticeMatchTestRoute.Enabled) { PublishHistoryResult(isWin, true); return; }
             int prize = 20;
             int cnt = PhotonNetwork.PlayerList.Length;
             string msg = "";
@@ -550,6 +553,7 @@ namespace Assets.Scripts.Exert.Network
         [PunRPC]
         void BattleResultRPC2(string msg)
         {
+            if (!Assets.Scripts.Often.PracticeMatchTestRoute.Enabled) return;
             CallBattleResultRPC2(msg);
         }
 
@@ -557,6 +561,7 @@ namespace Assets.Scripts.Exert.Network
 
         public override void BattleResult(int isWin = 1)
         {
+            if (!Assets.Scripts.Often.PracticeMatchTestRoute.Enabled) { PublishHistoryResult(isWin, false); return; }
             int prize = 1000;
             int cnt = PhotonNetwork.PlayerList.Length;
             string msg = "";
@@ -582,6 +587,7 @@ namespace Assets.Scripts.Exert.Network
         [PunRPC]
         void BattleResultRPC(string msg)
         {
+            if (!Assets.Scripts.Often.PracticeMatchTestRoute.Enabled) return;
             CallBattleResultRPC(msg);
         }
 
@@ -607,6 +613,7 @@ namespace Assets.Scripts.Exert.Network
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             matchRequestPending = false;
             if (matchRequestCancelled) { PhotonNetwork.LeaveRoom(); return; }
+            if (!Assets.Scripts.Often.PracticeMatchTestRoute.Enabled) ResetLegacyHistory();
             LogMatchContext("JoinedRoom");
             OtherDisconnect = 0;
             CallNetworkState(NetworkState.JoinedToRoom);
@@ -660,15 +667,7 @@ namespace Assets.Scripts.Exert.Network
                     !transport.BeginPracticeSetup(NetworkManager.hallIdx)) CallNetworkState(NetworkState.JoinRoomFailed);
                 return;
             }
-            // 방장이 아니라면
-            if (PhotonNetwork.LocalPlayer != PhotonNetwork.MasterClient)
-            {
-                //int turnId = Random.Range(0, 2);
-                int turnId = 1; // 손님이 1,  방장은 0 .. 테스트로 방장이 무조건 먼저
-                int turnIdForSend = turnId == 1 ? 0 : 1;
-                OnOpponentStartToPlay(turnId);
-                view.RPC(nameof(OnOpponentStartToPlay), opponentPlayer, turnIdForSend);    // 방장에게 0값 전송
-            }
+            RequestHistoryStart();
 
         }
 
@@ -755,9 +754,7 @@ namespace Assets.Scripts.Exert.Network
             if (Assets.Scripts.Often.PracticeMatchTestRoute.Enabled) return;
             if (IgnoreCancelledTestMatchCallback) return;
 
-            PoolPlayer.SetIdx(turnId);
-            //Debug.Log(">>>>> OnOpponentStartToPlay turnId : " + turnId + ", master : " + PhotonNetwork.IsMasterClient);
-            CallNetworkState(NetworkState.StartToPlay);
+            // Public matches start only through HistoryCommitRPC with a registered match ID.
 
         }
 
@@ -955,6 +952,7 @@ namespace Assets.Scripts.Exert.Network
                 PhotonNetwork.Disconnect();
             }
             Debug.Log($"### PunNetwork LeaveMatch  PhotonNetwork.NetworkClientState : {PhotonNetwork.NetworkClientState}");
+            AbortLegacyHistory("Surrender");
             if (PhotonNetwork.NetworkClientState == ClientState.Joined)
             {
                 Debug.Log("LeaveRoom");
@@ -973,6 +971,7 @@ namespace Assets.Scripts.Exert.Network
         }
         public override void LeaveMatch2()
         {
+            AbortLegacyHistory("Surrender");
             Debug.Log("### PunNetwork LeaveMatch2 ");
             CallNetworkState(NetworkState.LeftRoom);
             //       string homeScene = "c__10";
@@ -991,6 +990,7 @@ namespace Assets.Scripts.Exert.Network
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             //adapter.homeMenuManager.RoomResult(1);
             Debug.Log("### PunNetwork OnOpponentLeftMatch ");
+            AbortLegacyHistory("OpponentLeft");
             PhotonNetwork.LeaveRoom();        // 상대가 나간후 자신도 나감.
             //opponentPlayer = null;
             PhotonNetwork.RemoveRPCs(PhotonNetwork.LocalPlayer);
@@ -1006,6 +1006,7 @@ namespace Assets.Scripts.Exert.Network
         {
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             Debug.LogWarning("PunNetwork OnLeftRoom  state : " + state);
+            AbortLegacyHistory("LeftRoom");
 
             opponentPlayer = null;
             CallNetworkState(NetworkState.LeftRoom);
@@ -1030,6 +1031,7 @@ namespace Assets.Scripts.Exert.Network
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             matchRequestPending = false;
             LogMatchContext("Disconnected:" + cause);
+            AbortLegacyHistory("Disconnected:" + cause);
             //Debug.LogWarning("PunNetwork OnDisconnected    ");
             CallNetworkState(NetworkState.LostConnection);
             tryToConnect = false;
@@ -1064,6 +1066,7 @@ namespace Assets.Scripts.Exert.Network
         {
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             OtherDisconnect++;
+            AbortLegacyHistory(otherPlayer.IsInactive ? "OpponentDisconnected" : "OpponentLeft");
             bool isOut = OtherDisconnectMax <= OtherDisconnect;
             //Debug.Log("OnPlayerLeftRoom otherPlayer : " + otherPlayer.NickName + ", OtherDisconnect : " + OtherDisconnect + ", isOut : " + isOut);
 

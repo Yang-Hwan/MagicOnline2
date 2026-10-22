@@ -1,0 +1,415 @@
+{
+  "Date": "2026-10-18",
+  "Build": {
+    "result": "Succeeded",
+    "executable": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Builds\\PracticeMatchTest-20261018-130224\\MagicOnline2-Test.exe",
+    "error": "",
+    "startedUtc": "2026-10-18T04:02:24.6450478Z",
+    "seconds": 58.2823481,
+    "routeValidated": true,
+    "pointerValidated": true,
+    "recoveryValidated": true,
+    "resultValidated": true
+  },
+  "JournalChecks": {
+    "Ok": true,
+    "Checks": 12
+  },
+  "Runs": [
+    {
+      "Run": "corrupt-1d631f55a98e4a12a6b8263ffe9ac828",
+      "Result": {
+        "Mode": "corrupt",
+        "Ok": true,
+        "Directory": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Logs\\LocalApiE2E\\corrupt-1d631f55a98e4a12a6b8263ffe9ac828",
+        "A": {
+          "Mode": "corrupt",
+          "Role": "A",
+          "UserId": "03fec0d5-04c3-40e0-889f-96636caf037f",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": true,
+          "Resumed": true,
+          "UsedLoginForm": false,
+          "UsedPublicLobby": false,
+          "SawOutcome": false,
+          "RematchEnabled": false,
+          "PendingBeforeRestart": 1,
+          "PendingAfterRestart": 0,
+          "JournalRecovered": true,
+          "SawOffline": false,
+          "CorruptCopies": 1,
+          "PendingDuringOutage": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "66dd170be2024e5abb6d93a5f73b4260",
+              "Scene": "TableSet07",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": true,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        },
+        "B": {
+          "Mode": "corrupt",
+          "Role": "B",
+          "UserId": "28aaa526-f57d-42cf-871c-ab47a4431e6e",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": false,
+          "Resumed": false,
+          "UsedLoginForm": false,
+          "UsedPublicLobby": false,
+          "SawOutcome": false,
+          "RematchEnabled": false,
+          "PendingBeforeRestart": 0,
+          "PendingAfterRestart": 0,
+          "JournalRecovered": false,
+          "SawOffline": false,
+          "CorruptCopies": 0,
+          "PendingDuringOutage": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "66dd170be2024e5abb6d93a5f73b4260",
+              "Scene": "TableSet07",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": true,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Run": "outage-3641f8f31d4b468383eb7c069adb5ca3",
+      "Result": {
+        "Mode": "outage",
+        "Ok": true,
+        "Directory": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Logs\\LocalApiE2E\\outage-3641f8f31d4b468383eb7c069adb5ca3",
+        "A": {
+          "Mode": "outage",
+          "Role": "A",
+          "UserId": "55f8289b-5b52-4df2-a7ee-19c34b86efbb",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": false,
+          "Resumed": false,
+          "UsedLoginForm": false,
+          "UsedPublicLobby": false,
+          "SawOutcome": false,
+          "RematchEnabled": false,
+          "PendingBeforeRestart": 0,
+          "PendingAfterRestart": 0,
+          "JournalRecovered": false,
+          "SawOffline": true,
+          "CorruptCopies": 0,
+          "PendingDuringOutage": 1,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "45b9e992c57848c7b8323d926d460b77",
+              "Scene": "TableSet07",
+              "Phase": "Applied",
+              "Reason": "BothDisconnected",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": true,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        },
+        "B": {
+          "Mode": "outage",
+          "Role": "B",
+          "UserId": "27499402-140e-477f-858f-51bc51a3403e",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": false,
+          "Resumed": false,
+          "UsedLoginForm": false,
+          "UsedPublicLobby": false,
+          "SawOutcome": false,
+          "RematchEnabled": false,
+          "PendingBeforeRestart": 0,
+          "PendingAfterRestart": 0,
+          "JournalRecovered": false,
+          "SawOffline": true,
+          "CorruptCopies": 0,
+          "PendingDuringOutage": 1,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "45b9e992c57848c7b8323d926d460b77",
+              "Scene": "TableSet07",
+              "Phase": "Applied",
+              "Reason": "BothDisconnected",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": true,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Run": "isolation-bffcfd9f14c14df6951261e5e287c216",
+      "Result": {
+        "Mode": "isolation",
+        "Ok": true,
+        "Directory": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Logs\\LocalApiE2E\\isolation-bffcfd9f14c14df6951261e5e287c216",
+        "A": {
+          "Mode": "isolation",
+          "Role": "A",
+          "UserId": "d859842f-e18a-4dba-9d65-fce4890264d2",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": true,
+          "Resumed": true,
+          "UsedLoginForm": false,
+          "UsedPublicLobby": false,
+          "SawOutcome": false,
+          "RematchEnabled": false,
+          "PendingBeforeRestart": 1,
+          "PendingAfterRestart": 0,
+          "JournalRecovered": false,
+          "SawOffline": false,
+          "CorruptCopies": 0,
+          "PendingDuringOutage": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "4dbea9a1c455482a8acf041a33a3a455",
+              "Scene": "TableSet07",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": true,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        },
+        "B": {
+          "Mode": "isolation",
+          "Role": "B",
+          "UserId": "40ab9e06-364a-494e-ba27-9d893b3ff698",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": false,
+          "Resumed": false,
+          "UsedLoginForm": false,
+          "UsedPublicLobby": false,
+          "SawOutcome": false,
+          "RematchEnabled": false,
+          "PendingBeforeRestart": 0,
+          "PendingAfterRestart": 0,
+          "JournalRecovered": false,
+          "SawOffline": false,
+          "CorruptCopies": 0,
+          "PendingDuringOutage": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "4dbea9a1c455482a8acf041a33a3a455",
+              "Scene": "TableSet07",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": true,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        }
+      },
+      "Isolation": {
+        "Ok": true,
+        "OtherUserId": "4d98d94c-3a8c-4b5a-81c9-9b88e0b0bf24",
+        "OtherPending": 0,
+        "OriginalPending": 1,
+        "ReadStatus": 404,
+        "WriteStatus": 403,
+        "OtherCoin": 30
+      }
+    }
+  ],
+  "Database": {
+    "Matches": [
+      {
+        "Ball": 4,
+        "Phase": 2,
+        "Reason": "MutualConfirmation",
+        "MatchId": "66dd170be2024e5abb6d93a5f73b4260",
+        "Disputed": false,
+        "LedgerCount": 4,
+        "HistoryCount": 1,
+        "ReceiptCount": 1,
+        "PersonalHistoryCount": 2
+      },
+      {
+        "Ball": 4,
+        "Phase": 2,
+        "Reason": "BothDisconnected",
+        "MatchId": "45b9e992c57848c7b8323d926d460b77",
+        "Disputed": false,
+        "LedgerCount": 4,
+        "HistoryCount": 1,
+        "ReceiptCount": 1,
+        "PersonalHistoryCount": 2
+      },
+      {
+        "Ball": 4,
+        "Phase": 2,
+        "Reason": "MutualConfirmation",
+        "MatchId": "4dbea9a1c455482a8acf041a33a3a455",
+        "Disputed": false,
+        "LedgerCount": 4,
+        "HistoryCount": 1,
+        "ReceiptCount": 1,
+        "PersonalHistoryCount": 2
+      }
+    ],
+    "Wallets": [
+      {
+        "Coin": 30,
+        "UserId": "55f8289b-5b52-4df2-a7ee-19c34b86efbb",
+        "Ball3Draw": 0,
+        "Ball4Draw": 0,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "27499402-140e-477f-858f-51bc51a3403e",
+        "Ball3Draw": 0,
+        "Ball4Draw": 0,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "d859842f-e18a-4dba-9d65-fce4890264d2",
+        "Ball3Draw": 0,
+        "Ball4Draw": 1,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "40ab9e06-364a-494e-ba27-9d893b3ff698",
+        "Ball3Draw": 0,
+        "Ball4Draw": 1,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "4d98d94c-3a8c-4b5a-81c9-9b88e0b0bf24",
+        "Ball3Draw": 0,
+        "Ball4Draw": 0,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "03fec0d5-04c3-40e0-889f-96636caf037f",
+        "Ball3Draw": 0,
+        "Ball4Draw": 1,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "28aaa526-f57d-42cf-871c-ab47a4431e6e",
+        "Ball3Draw": 0,
+        "Ball4Draw": 1,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      }
+    ]
+  },
+  "Journals": [
+    {
+      "UserId": "03fec0d5-04c3-40e0-889f-96636caf037f",
+      "Version": 1,
+      "Generation": 3,
+      "Pending": 0,
+      "MatchingBackup": true,
+      "ChecksumVerified": true
+    },
+    {
+      "UserId": "28aaa526-f57d-42cf-871c-ab47a4431e6e",
+      "Version": 1,
+      "Generation": 2,
+      "Pending": 0,
+      "MatchingBackup": true,
+      "ChecksumVerified": true
+    },
+    {
+      "UserId": "55f8289b-5b52-4df2-a7ee-19c34b86efbb",
+      "Version": 1,
+      "Generation": 2,
+      "Pending": 0,
+      "MatchingBackup": true,
+      "ChecksumVerified": true
+    },
+    {
+      "UserId": "27499402-140e-477f-858f-51bc51a3403e",
+      "Version": 1,
+      "Generation": 2,
+      "Pending": 0,
+      "MatchingBackup": true,
+      "ChecksumVerified": true
+    },
+    {
+      "UserId": "d859842f-e18a-4dba-9d65-fce4890264d2",
+      "Version": 1,
+      "Generation": 2,
+      "Pending": 0,
+      "MatchingBackup": true,
+      "ChecksumVerified": true
+    },
+    {
+      "UserId": "40ab9e06-364a-494e-ba27-9d893b3ff698",
+      "Version": 1,
+      "Generation": 2,
+      "Pending": 0,
+      "MatchingBackup": true,
+      "ChecksumVerified": true
+    }
+  ],
+  "UnhandledClientExceptionCount": 0
+}

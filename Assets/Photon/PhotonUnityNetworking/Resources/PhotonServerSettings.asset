@@ -69,6 +69,11 @@ MonoBehaviour:
   - StartSimulate
   - WaitAndStopMoveFromNetwork
   - WaitChangeTurnReadyFromNetwork
+  - HistoryCommitRPC
+  - HistoryOfferRPC
+  - HistoryReadyRPC
+  - HistoryResultRPC
+  - HistoryStartRequestRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

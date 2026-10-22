@@ -45,6 +45,7 @@ namespace Assets.Scripts.Sight.Surface.Hall
 
         private void OnEnable()
         {
+            BackendMatchHistory.Instance.ClearStartError();
             txtCountDown.text = "입장 중";
             txtNickNmSelf.text = UserInfo.DisplayName;
             txtNickNmOther.text = string.Empty;
@@ -78,7 +79,7 @@ namespace Assets.Scripts.Sight.Surface.Hall
         }
 
         // 방지정 후 플레이정보 변경시 PunNetwork.RoomPlayerUpdate
-        void NetworkManager_OnNetworkPlayerList(PlayerProfile[] players)
+        async void NetworkManager_OnNetworkPlayerList(PlayerProfile[] players)
         {
             txtCountDown.text = "0";
             txtNickNmSelf.text = UserInfo.DisplayName;
@@ -94,7 +95,7 @@ namespace Assets.Scripts.Sight.Surface.Hall
                 }
                 else
                 {
-                    PoolPlayer.OnGotoPlayWithPlayer(players[i]);
+                    if (!await PoolPlayer.OnGotoPlayWithPlayer(players[i]) || !this) return;
                     txtNickNmOther.text = PoolPlayer.otherPlayer.name;  // players[i].nickname;
                 }
             }
@@ -119,7 +120,8 @@ namespace Assets.Scripts.Sight.Surface.Hall
                 case NetworkState.RoomCreateFailed:
                 case NetworkState.JoinRoomFailed:
                     CountDownAbort();
-                    txtCountDown.text = "입장 실패\n뒤로 가서 다시 시도해 주세요";
+                    txtCountDown.text = string.IsNullOrEmpty(BackendMatchHistory.Instance.LastStartError) ?
+                        "입장 실패\n뒤로 가서 다시 시도해 주세요" : BackendMatchHistory.Instance.LastStartError;
                     break;
                 case NetworkState.LostConnection:
                 case NetworkState.Disconnected:

@@ -1,0 +1,26 @@
+@page "/admin/charts/edit"
+@model MagicOnline.GameApi.Pages.Admin.ChartEditModel
+<div class="breadcrumb"><a href="/admin/charts?name=@Model.Name">차트 관리</a> / @(Model.Row.HasValue ? "항목 수정" : "항목 추가")</div>
+<div class="page-head"><div><h1>@(Model.Row.HasValue ? "차트 항목 수정" : "차트 항목 추가")</h1><p class="muted">@Model.Name</p></div></div>
+<section class="panel">
+@if(Model.Error!=null){<p class="error" role="alert">@Model.Error</p>}
+<form method="post" class="chart-form">
+<input type="hidden" asp-for="Name"><input type="hidden" asp-for="Row"><input type="hidden" asp-for="Revision">
+<div class="chart-fields">
+@foreach(var field in Model.Fields){
+<label for="field-@field.Key">@field.Label <small class="muted">@field.Key</small>
+@if(field.Key=="IsUse" || field.Key=="MatchBall" || field.Key=="RewardType" || field.Key=="FinishMission"){
+<select id="field-@field.Key" name="Values[@field.Key]" required>
+<option value="">선택해 주세요</option>
+@foreach(var option in field.Key=="IsUse" ? new[]{("Y","사용"),("N","미사용")} : field.Key=="MatchBall" ? new[]{("3","3구"),("4","4구")} : field.Key=="RewardType" ? new[]{("1","Coin"),("2","Jem")} : new[]{("0","없음"),("1","3쿠션 1개"),("2","1뱅크 1개"),("3","2뱅크 1개")}){
+<option value="@option.Item1" selected="@(Model.Values.GetValueOrDefault(field.Key)==option.Item1)">@option.Item2</option>}
+</select>
+}else{
+<input id="field-@field.Key" name="Values[@field.Key]" value="@Model.Values.GetValueOrDefault(field.Key)" type="@(field.Numeric ? "number" : "text")" step="1" maxlength="@(field.Key=="Info" ? 500 : 100)" required="@(field.Key!="Info")">
+}
+</label>}
+</div>
+<label for="Reason">변경 사유 (선택)<input asp-for="Reason" maxlength="200"></label>
+<p class="hint">저장 즉시 서버에 반영되고 변경 전후 값이 관리자 기록에 남습니다. 게임에서는 재로그인 후 새 차트를 읽습니다. 진행 중인 경기에는 등록 당시 규칙이 유지됩니다.</p>
+<div class="chart-actions"><button type="submit" class="primary">@(Model.Row.HasValue ? "수정 저장" : "항목 추가")</button><a class="button" href="/admin/charts?name=@Model.Name">목록으로</a></div>
+</form></section>

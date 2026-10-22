@@ -1,0 +1,21 @@
+@page "/admin/members/{id:guid}"
+@model MagicOnline.GameApi.Pages.Admin.MemberModel
+<div class="breadcrumb"><a href="/admin/members">회원 관리</a> / 회원 상세</div><div class="page-head"><div><h1>@Model.Data.Profile.Rows[0][2]</h1><p class="muted">@Model.Data.Profile.Rows[0][1] · @Model.Id</p></div><span class="badge">@Model.Data.Profile.Rows[0][3]</span></div>
+<nav class="tabs" aria-label="회원 상세">@foreach(var t in new[]{("profile","기본 정보"),("games","대전"),("wallet","재화"),("payments","결제"),("access","접속·제재"),("notes","운영 메모")}){<a class="@(Model.Tab==t.Item1 ? "selected" : "")" href="/admin/members/@Model.Id?tab=@t.Item1">@t.Item2</a>}</nav>
+@if(Model.SuccessMessage!=null){<p class="notice" role="status">@Model.SuccessMessage</p>}
+@if(Model.Tab=="profile") {
+<section class="panel"><h2>회원 정보</h2><dl class="details">@for(int i=0;i<Model.Data.Profile.Columns.Length;i++){<dt>@Model.Data.Profile.Columns[i]</dt><dd>@Model.Data.Profile.Rows[0][i]</dd>}</dl></section>
+@if(Model.CanEdit){
+<section class="panel"><h2>닉네임 수정</h2>
+@if(Model.EditError!=null){<p class="error" role="alert">@Model.EditError</p>}
+<form method="post" asp-page-handler="Nickname" asp-route-id="@Model.Id" class="filters">
+<input type="hidden" asp-for="OriginalNickname">
+<label class="search" for="EditNickname">새 닉네임<input asp-for="EditNickname" minlength="1" maxlength="24" autocomplete="off" required></label>
+<label class="search" for="EditReason">수정 사유 (선택)<input asp-for="EditReason" maxlength="200" placeholder="예: 회원 요청"></label>
+<button class="primary" type="submit">닉네임 저장</button>
+</form><p class="hint">1~24자 · 앞뒤 공백은 제거됩니다. 변경 전후 값과 사유가 관리자 기록에 남습니다.</p>
+</section>}
+<section class="panel"><h2>종목별 전적</h2><partial name="_AdminTable" model="Model.Data.Stats" /></section>}
+else if(Model.Tab=="games"){<section class="panel"><h2>최근 대전</h2><partial name="_AdminTable" model="Model.Data.Matches" /><a class="button" href="/admin/matches?q=@Model.Id">전체 대전 조회</a></section>}
+else if(Model.Tab=="wallet"){<section class="panel"><h2>잔액 · 원장 대조</h2><partial name="_AdminTable" model="Model.Balance" />@if(Model.Balance.Rows.FirstOrDefault() is {} b){<p class="notice">@(b[0]==b[1] && b[2]==b[3] ? "Coin·Jem 잔액과 원장 누계가 일치합니다." : "잔액과 원장 누계가 다릅니다. 운영 확인이 필요합니다.")</p>}</section><section class="panel"><h2>최근 재화 변동</h2><partial name="_AdminTable" model="Model.Data.Ledger" /><a class="button" href="/admin/wallet?q=@Model.Id">전체 원장 조회</a></section>}
+else {<section class="panel planned"><h2>@(Model.Tab=="payments" ? "결제 연동 예정" : Model.Tab=="access" ? "접속·제재 이력 확장 예정" : "운영 메모 추가 예정")</h2><p class="muted">현재 수집되지 않는 정보를 예시 데이터로 표시하지 않습니다. 후속 개발에서 연결합니다.</p></section>}

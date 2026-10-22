@@ -1,0 +1,11 @@
+@{
+    var path = Context.Request.Path.Value ?? "";
+    var authPage = path is "/admin/login" or "/admin/setup";
+    var menus = new[] { ("dashboard","대시보드"), ("members","회원 관리"), ("charts","차트 관리"), ("matches","대전 관리"), ("wallet","재화 관리"), ("payments","결제 관리"), ("operations","운영 관리"), ("support","고객 지원"), ("stats","통계"), ("system","시스템 관리") };
+}
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>@ViewData["Title"] · Magic Online 관리자</title><link rel="stylesheet" href="~/admin-assets/admin.css" asp-append-version="true"></head>
+<body><header class="top"><a class="brand" href="/admin">MAGIC ONLINE <span>ADMIN</span></a><span class="environment">@(Context.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment() ? "개발 환경" : "운영 환경")</span><div class="account">@if (!authPage && User.Identity?.IsAuthenticated == true) { <span>@User.Identity.Name · @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span><form method="post" asp-page="/Admin/Logout"><button class="subtle" type="submit">로그아웃</button></form> }</div></header>
+@if (authPage) { <main class="auth-wrap">@RenderBody()</main> }
+else { <div class="shell"><nav class="sidebar" aria-label="관리자 메뉴"><div class="nav-label">운영 콘솔</div>@foreach (var (key,label) in menus) { var active = path == "/admin/"+key || path.StartsWith("/admin/"+key+"/") || (key=="dashboard" && path=="/admin"); <a href="/admin/@key" class="@(active ? "active" : "")" aria-current="@(active ? "page" : null)">@label</a> }<div class="nav-foot">Android · iOS<br>운영 조회 1차</div></nav><main class="main">@RenderBody()</main></div> }
+<footer>Magic Online 운영 관리 · 시간은 한국 시간(KST)으로 표시 · 회원·원장 자료는 권한 범위에서만 이용</footer></body></html>

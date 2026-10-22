@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>MagicCushion-Local-GameApi</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.8" />
+    <ProjectReference Include="../MatchSettlement/MatchSettlement.csproj" />
+    <Content Include="Migrations/*.sql" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../Docs/BackendSeed/*.csv" Link="Seed/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using BackEnd;
+using UnityEngine;
+using Assets.Scripts.Exert.BackSys;
 
 namespace Assets.Scripts.Sight.Surface.Arise
 {
@@ -28,11 +28,8 @@ namespace Assets.Scripts.Sight.Surface.Arise
 
         void BackendSetup()
         {
-            var bro = Backend.Initialize();
-            if (!bro.IsSuccess())
-            {
-                Debug.LogError($"초기화 실패 : {bro}");
-            }
+            _ = BackendMatchHistory.Instance;
+            Debug.Log("Game API endpoint: " + GameApiClient.BaseUrl);
         }
 
 

@@ -82,8 +82,14 @@ public static class MatchResultProtocolValidation
             Shot(MatchShotOutcome.Miss, 124);
         }
         Shot(MatchShotOutcome.Point, 125); Shot(MatchShotOutcome.Point, 126);
+        if (ballCount == 4)
+        {
+            Require(!results[0].Finished && results[0].Score1 == 2 && starts[0].Configuration.TargetScore == 3,
+                "four-ball finished before the agreed three-point target");
+            Shot(MatchShotOutcome.Point, 127);
+        }
         Require(results[0].Finished && results[1].Finished && results[0].Winner == 1 &&
-            !results[0].CanShoot(127), "target win failed");
+            !results[0].CanShoot(128), "target win failed");
         Require(!rematch.Vote(99, state.matchId, 127) && !rematch.Vote(11, "old", 127), "invalid rematch vote accepted");
         Require(rematch.Vote(11, state.matchId, 127) && !rematch.Both &&
             !rematch.Vote(11, state.matchId, 128), "single/duplicate vote started rematch");

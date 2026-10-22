@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Exert.BackSys;
+using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Often;
@@ -122,7 +122,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             //    StopCoroutine(coroutine);
         }
 
-        void NetworkManager_OnNetworkPlayerList(PlayerProfile[] players)
+        async void NetworkManager_OnNetworkPlayerList(PlayerProfile[] players)
         {
             txtCounter.text = players.Length < 2 ? "상대 대기" : "상대 확인 중";
             txtNickNmSelf.text = UserInfo.DisplayName;
@@ -138,7 +138,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 }
                 else
                 {
-                    PoolPlayer.OnGotoPlayWithPlayer(players[i]);
+                    if (!await PoolPlayer.OnGotoPlayWithPlayer(players[i]) || !this) return;
                     txtNickNmOther.text = PoolPlayer.otherPlayer.name;  // players[i].nickname;
                 }
             }

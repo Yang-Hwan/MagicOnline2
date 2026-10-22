@@ -1,0 +1,8 @@
+@page "/admin/matches/{id}"
+@model MagicOnline.GameApi.Pages.Admin.MatchModel
+<div class="breadcrumb"><a href="/admin/matches">대전 관리</a> / 경기 상세</div><div class="page-head"><div><h1>경기 상세</h1><p class="muted">@Model.Id</p></div><a class="button" href="/admin/wallet?q=@Model.Id">관련 원장 보기</a></div>
+<section class="panel"><h2>참가자와 준비 상태</h2><dl class="details">@for(int i=1;i<=2;i++){<dt>@Model.Data.Summary.Columns[i]</dt><dd><a href="/admin/members/@Model.Data.Summary.Rows[0][i]">@Model.Data.Summary.Rows[0][i]</a></dd>}@for(int i=7;i<=10;i++){<dt>@Model.Data.Summary.Columns[i]</dt><dd>@Model.Data.Summary.Rows[0][i]</dd>}</dl></section>
+<div class="two-col">@foreach(var i in new[]{5,6}){<section class="panel"><h2>@Model.Data.Summary.Columns[i]</h2><pre>@Model.Pretty(Model.Data.Summary.Rows[0][i])</pre></section>}</div>
+<section class="panel"><h2>최종 정산 영수증</h2><pre>@Model.Pretty(Model.Data.Summary.Rows[0][11])</pre><p class="hint">미발급 상태 또는 상세 보관 기간이 지난 기록은 일부 값이 없을 수 있습니다.</p></section>
+<details class="panel"><summary>서버 규칙 계약 · 차트 스냅샷</summary><h3>규칙 계약</h3><pre>@Model.Pretty(Model.Data.Summary.Rows[0][3])</pre><h3>등록 당시 서버 차트</h3><pre>@Model.Pretty(Model.Data.Summary.Rows[0][4])</pre></details>
+<section class="panel"><h2>관련 재화 원장</h2><partial name="_AdminTable" model="Model.Data.Ledger" /></section><p class="notice">결과 변경과 분쟁 보정은 아직 제공하지 않습니다. 전체 경기 사건 타임라인도 추가 수집이 필요합니다.</p>

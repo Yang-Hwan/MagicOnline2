@@ -9,3 +9,18 @@
 *.sln
 *.slnx
 .DS_Store
+
+# Standalone server projects are source files, unlike Unity-generated projects.
+!Server/**/*.csproj
+Server/**/bin/
+Server/**/obj/
+Server/**/appsettings.Local.json
+Server/**/.env
+Server/**/TestResults/
+
+# Local builds, checkpoint archives, recovered scenes and database backups.
+/Build/
+/Exports/
+/Assets/_Recovery/
+*.dump
+*.backup

@@ -1,9 +1,8 @@
 using UnityEngine;
-using BackEnd;
+using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Exert.Network;
 using Cysharp.Threading.Tasks;
 using Assets.Scripts.Prack.BackSys;
-using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Often;
 
@@ -56,16 +55,17 @@ namespace Assets.Scripts.Sight.Surface.Come
             string str = $"  ... Nick : {UserInfo.userInfo.nickname}, {BackendGame.Instance.UserMainData.ToString()}";
             Debug.Log($"NetworkDuty NetworkManager_OnMainPlayerLoaded OK OK OK OK OK OK NEXT SCENE {str} .. SceneNames.Consist : {SceneNames.Consist}");
 
-            PoolPlayer.OnMainPlayerLoaded(0, UserInfo.DisplayName, BackendGame.Instance.UserMainData.Coin, Backend.UserInDate, player.image, player.imageURL, player.prize);
+            PoolPlayer.OnMainPlayerLoaded(0, UserInfo.DisplayName, BackendGame.Instance.UserMainData.Coin, GameApiClient.UserId, player.image, player.imageURL, player.prize);
             SceneMove.LoadScene(SceneNames.Consist);
         }
 
         public void NetworkSetup()
         {
             UserInfo.LoadUserInfo();
-            BackendGame.Instance.UserMainDataLoad();
+            // Profile was awaited before entering the network flow.
 
-            NetworkManager.uuid = Backend.UserInDate;
+            NetworkManager.ResetAccountProfile();
+            NetworkManager.uuid = GameApiClient.UserId;
             NetworkManager.nickName = UserInfo.DisplayName;
             NetworkManager.user_coin = BackendGame.Instance.UserMainData.Coin;
             NetworkManager.network.Connect();

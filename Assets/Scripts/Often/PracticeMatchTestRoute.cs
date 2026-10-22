@@ -6,7 +6,10 @@ namespace Assets.Scripts.Often
     public static class PracticeMatchTestRoute
     {
         public const string Argument = "-practice-match-test";
-        public const string Protocol = "practice-match-test-10";
+        public const string Protocol = "practice-match-test-12-rules1";
+        // Exercise the public scene/handshake without mixing development players with public rooms.
+        public static bool LocalPublicIntegrationTest => Debug.isDebugBuild &&
+            Array.Exists(Environment.GetCommandLineArgs(), a => a == "-local-api-public-test");
         public static bool TargetWin
         {
             get
@@ -55,8 +58,8 @@ namespace Assets.Scripts.Often
             }
         }
         public static string RoomProtocol => Enabled ? Protocol + (QuickMatch ? "-quick" : "") +
-            (TargetWin ? "-target1" : "") : MatchmakingCompatibility.Protocol;
-        public static string Version(string appVersion) => Enabled ? appVersion + "." + RoomProtocol : MatchmakingCompatibility.GameVersion(appVersion);
+            (TargetWin ? "-target1" : "") : LocalPublicIntegrationTest ? "public-local-api-test-2-rules1" : MatchmakingCompatibility.Protocol;
+        public static string Version(string appVersion) => Enabled || LocalPublicIntegrationTest ? appVersion + "." + RoomProtocol : MatchmakingCompatibility.GameVersion(appVersion);
         public static Photon.Realtime.AppSettings ConnectionSettings(Photon.Realtime.AppSettings source, string appVersion)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));

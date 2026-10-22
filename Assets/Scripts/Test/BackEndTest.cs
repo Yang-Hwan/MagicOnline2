@@ -1,3 +1,4 @@
+#if BACKND_LEGACY_DIAGNOSTICS
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -28,3 +29,5 @@ Debug.Log("aaaaaaaa backEndTest ................................. ");
         
     }
 }
+
+#endif

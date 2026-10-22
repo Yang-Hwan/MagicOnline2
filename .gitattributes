@@ -1,0 +1,2 @@
+# Migration checksums must be identical after checkout on another computer.
+Server/GameApi/Migrations/*.sql text eol=lf

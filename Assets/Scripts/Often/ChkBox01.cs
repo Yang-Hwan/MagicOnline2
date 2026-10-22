@@ -19,6 +19,7 @@ namespace Assets.Scripts.Often
 
 
         bool isAct = false;
+        int motionVersion;
 
         void Awake()
         {
@@ -41,7 +42,8 @@ namespace Assets.Scripts.Often
 
         private void OnDisable()
         {
-            isAct = gameObject.activeSelf;
+            isAct = false;
+            motionVersion++;
             //Debug.Log($"ChkBox01 OnDisable isAct : {isAct}");
         }
 
@@ -86,16 +88,20 @@ namespace Assets.Scripts.Often
 
         private async void PointMotionAsync()
         {
+            if (!point) return;
+            int version = ++motionVersion;
             Vector2 pos = point.anchoredPosition;
             Vector2 pos_new = new Vector2(isVal ? 25f : -25f, 0);
             float duration = 0.1f;
             float time = 0;
             while (time < duration)
             {
+                if (!this || !point || version != motionVersion) return;
                 time += Time.deltaTime;
                 point.anchoredPosition = Vector2.Lerp(pos, pos_new, time / duration);
                 await Task.Yield();// UniTask.WaitForFixedUpdate();
             }
+            if (!this || !point || version != motionVersion) return;
             Color c = isVal ? color : Color.gray;
             point.GetComponent<Image>().color = c;
         }

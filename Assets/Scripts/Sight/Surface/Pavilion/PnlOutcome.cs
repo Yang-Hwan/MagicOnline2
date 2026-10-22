@@ -12,6 +12,7 @@ using UnityEngine.UI;
 using System.IO;
 using System.Collections.Generic;
 using System;
+using Assets.Scripts.Prack.BackSys;
 
 namespace Assets.Scripts.Sight.Surface.Pavilion
 {
@@ -24,6 +25,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         [SerializeField] BoxPlayerCard playerSelf;
         [SerializeField] BoxPlayerCard playerOther;
         [SerializeField] TextMeshProUGUI txtCountDown;
+        TextMeshProUGUI settlementText;
         [SerializeField] Button btnPlay;
         [SerializeField] Button btnMain;
         Button btnSaveMatchReplay;
@@ -82,8 +84,11 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
             NetworkManager.network.OnNetwork += NetworkManager_network_OnNetwork;
             PoolCoach.Instance.OnSetPlayer += PoolCoach_OnSetPlayer;
+            BackendGame.Instance.onGameDataLoadEvent.AddListener(RefreshServerCards);
 
             PoolPlayer.ResetOneMore();
+            if (NetworkManager.TryGetExistingNetwork(out var resultNetwork) && resultNetwork is PunNetwork pun)
+                pun.RecordDisplayedLegacyOutcome();
             //NetworkManager.network.OnNetwork += NetworkManager_network_OnNetwork;
             PoolCoach.Instance.Result(PoolPlayer.mainPlayer);
             PoolCoach.Instance.Result(PoolPlayer.otherPlayer);
@@ -101,10 +106,30 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             txtCountDown.text = "";
 
             Debug.Log($"PnlOutcome OnEnable... ...   ");
+            RefreshServerCards();
+        }
+
+        async void RefreshServerCards()
+        {
+            if (!isActiveAndEnabled || PoolPlayer.mainPlayer == null || PoolPlayer.otherPlayer == null) return;
+            PoolCoach.Instance.Result(PoolPlayer.mainPlayer);
+            string opponent = PoolPlayer.otherPlayer.uuid;
+            try
+            {
+                await BackendGame.Instance.LoadOtherAsync(opponent);
+                if (this && isActiveAndEnabled && PoolPlayer.otherPlayer?.uuid == opponent)
+                    PoolCoach.Instance.Result(PoolPlayer.otherPlayer);
+            }
+            catch(Exception e) { if(this) Debug.LogWarning("상대 정산 표시 갱신 대기: " + e.Message); }
         }
 
         private void Update()
         {
+            if (!settlementText)
+                settlementText = UiText(transform, "SettlementStatus", 20, new Vector2(0, -255), new Vector2(760, 45));
+            settlementText.text = Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance.LastStatus;
+            var history = Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance;
+            if (!string.IsNullOrEmpty(history.LastMatchId)) btnPlay.interactable = history.IsSettled(history.LastMatchId);
             if (!matchReplayPanel)
                 matchReplayPanel = PnlMatch.Instance;
             if (btnSaveMatchReplay)
@@ -234,6 +259,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         private void OnDisable()
         {
+            BackendGame.Instance.onGameDataLoadEvent.RemoveListener(RefreshServerCards);
             ges.Open(GesPnl.Pnl.Zero);
 
             if (NetworkManager.TryGetExistingNetwork(out var existingOnNetwork))

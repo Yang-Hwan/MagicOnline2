@@ -7,7 +7,7 @@ namespace Assets.Scripts.Often
     public static class MatchmakingCompatibility
     {
         // Isolate upgraded clients from older clients that join rooms by name only.
-        public const string Protocol = "pavilion-practice-physics-4";
+        public const string Protocol = "pavilion-practice-physics-6-rules1";
         public static string GameVersion(string appVersion) => appVersion + "." + Protocol;
 
         public static string RulesKey(SkillMatchData hall)

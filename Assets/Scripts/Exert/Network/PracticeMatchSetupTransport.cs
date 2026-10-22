@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Often;
@@ -21,7 +21,7 @@ namespace Assets.Scripts.Exert.Network
         const byte RecoveryChallengeCode = 160, RecoveryRequestCode = 161, RecoveryStateCode = 162;
         [Serializable] sealed class Offer
         {
-            public string id, key, name0, name1, room, previousId;
+            public string id, key, name0, name1, user0, user1, room, previousId;
             public int actor0, actor1, firstSeat, turnSeconds;
             public SkillMatchData hall;
         }
@@ -30,6 +30,7 @@ namespace Assets.Scripts.Exert.Network
         public MatchResultSession Results { get; private set; }
         public MatchRecoverySession Recovery { get; private set; }
         Offer currentOffer;
+        MatchHistoryReporter history;
         public MatchRematchSession Rematch { get; private set; }
         bool reconnecting, leaving;
         bool ParticipantsPresent => PhotonNetwork.InRoom && Session != null &&
@@ -37,6 +38,7 @@ namespace Assets.Scripts.Exert.Network
             PhotonNetwork.PlayerList.All(p => !p.IsInactive &&
                 (p.ActorNumber == Session.ActorForSeat(0) || p.ActorNumber == Session.ActorForSeat(1)));
         public bool CanRequestRematch => ParticipantsPresent && Results != null && Results.Finished &&
+            BackendMatchHistory.Instance.IsSettled(Session.MatchId) &&
             Session.Phase == MatchStartPhase.Started && Rematch != null && !Rematch.Closed && !Rematch.LocalRequested;
         public string RematchStatus => Rematch == null ? "" : Rematch.Closed ? "재대전 대기 종료 · 나가서 다시 입장하세요" :
             Rematch.LocalRequested ? "상대방 재대전 동의 대기 중 (최대 30초)" : "양쪽이 재대전을 선택하면 새 경기가 시작됩니다";
@@ -150,7 +152,7 @@ namespace Assets.Scripts.Exert.Network
             var peer = PhotonNetwork.PlayerList.Single(p => p.ActorNumber != PhotonNetwork.LocalPlayer.ActorNumber);
             var offer = new Offer { id = Guid.NewGuid().ToString("N"), hall = PracticeMatchTestRoute.MatchHall(hall), room = PhotonNetwork.CurrentRoom.Name,
                 actor0 = PhotonNetwork.LocalPlayer.ActorNumber, actor1 = peer.ActorNumber,
-                name0 = self.name, name1 = other.name, firstSeat = 0, turnSeconds = 20 };
+                name0 = self.name, name1 = other.name, user0 = self.uuid, user1 = other.uuid, firstSeat = 0, turnSeconds = 20 };
             offer.key = Key(offer);
             if (!Install(offer)) return false;
             PhotonNetwork.CurrentRoom.IsOpen = false;
@@ -161,7 +163,7 @@ namespace Assets.Scripts.Exert.Network
         }
 
         static string Key(Offer offer) => MatchmakingCompatibility.RulesKey(offer.hall) +
-            "/bootstrap-2/" + offer.room + "/" + offer.actor0 + "/" + offer.actor1 + "/" + offer.firstSeat + "/" + offer.turnSeconds;
+            "/bootstrap-3/" + offer.room + "/" + offer.actor0 + "/" + offer.actor1 + "/" + offer.firstSeat + "/" + offer.turnSeconds + "/" + offer.user0 + "/" + offer.user1;
 
         bool Install(Offer offer)
         {
@@ -178,10 +180,13 @@ namespace Assets.Scripts.Exert.Network
                 if (MatchmakingCompatibility.RulesKey(PracticeMatchTestRoute.MatchHall(localHall)) != MatchmakingCompatibility.RulesKey(offer.hall)) return false;
                 int local = PhotonNetwork.LocalPlayer.ActorNumber;
                 if (local != offer.actor0 && local != offer.actor1) return false;
+                if (string.IsNullOrEmpty(offer.user0) || string.IsNullOrEmpty(offer.user1) || offer.user0 == offer.user1 ||
+                    (local == offer.actor0 ? offer.user0 : offer.user1) != Assets.Scripts.Exert.BackSys.GameApiClient.UserId) return false;
                 var config = MatchConfiguration.Online(offer.hall, offer.name0, offer.name1,
                     offer.firstSeat, local == offer.actor0 ? 0 : 1, offer.turnSeconds);
                 var next = new MatchStartSession(offer.id, offer.key, config, offer.actor0, offer.actor1, Time.realtimeSinceStartupAsDouble);
                 if (Session != null) Session.LocalSceneReady -= OnLocalSceneReady;
+                history?.Dispose();
                 Session = next; currentOffer = offer; sceneEntered = abortSent = false;
                 Shots = new MatchShotSession(Session);
                 Results = new MatchResultSession(Session, Shots);
@@ -189,6 +194,9 @@ namespace Assets.Scripts.Exert.Network
                 Rematch = new MatchRematchSession(Session, Results);
                 leaving = false;
                 Session.LocalSceneReady += OnLocalSceneReady;
+                history = new MatchHistoryReporter(Session, Results, offer.hall, offer.user0, offer.user1, TryStart);
+                try { history.Prepare(); }
+                catch (Exception e) { Debug.LogException(e); Session.Abort("경기 시작 기록을 저장할 수 없습니다."); return false; }
                 return true;
             }
             catch (Exception e) when (e is ArgumentException || e is NotSupportedException || e is OverflowException)
@@ -265,7 +273,7 @@ namespace Assets.Scripts.Exert.Network
 
         void TryStart()
         {
-            if (Session == null || !PhotonNetwork.IsMasterClient || Session.Phase != MatchStartPhase.Ready) return;
+            if (Session == null || !PhotonNetwork.IsMasterClient || Session.Phase != MatchStartPhase.Ready || history == null || !history.Registered) return;
             if (!Send(StartCode, Session.MatchId)) { Session.Abort("시작 승인을 전송하지 못했습니다."); return; }
             Session.CommitStart(PhotonNetwork.LocalPlayer.ActorNumber, Session.MatchId);
         }
@@ -300,6 +308,7 @@ namespace Assets.Scripts.Exert.Network
                     Rematch?.Tick(Time.realtimeSinceStartupAsDouble);
                     if (!ParticipantsPresent || Rematch == null || !Rematch.Both || offer.previousId != Session.MatchId ||
                         offer.id == Session.MatchId || offer.actor0 != currentOffer.actor0 || offer.actor1 != currentOffer.actor1 ||
+                        offer.user0 != currentOffer.user0 || offer.user1 != currentOffer.user1 ||
                         offer.firstSeat != 1 - currentOffer.firstSeat || offer.turnSeconds != currentOffer.turnSeconds ||
                         MatchmakingCompatibility.RulesKey(offer.hall) != MatchmakingCompatibility.RulesKey(currentOffer.hall)) return;
                 }
@@ -438,6 +447,8 @@ namespace Assets.Scripts.Exert.Network
             StopRecoveryTest();
             if (leaving) return;
             leaving = true; reconnecting = false;
+            if (Session != null && Results != null && !Results.Finished)
+                BackendMatchHistory.Instance.QueueSurrender(Session.MatchId);
             if (Session != null && PhotonNetwork.InRoom) Send(AbortCode, Session.MatchId);
             Clear("경기장을 나갔습니다.");
             if (PhotonNetwork.InRoom) PhotonNetwork.LeaveRoom(false);
@@ -454,7 +465,8 @@ namespace Assets.Scripts.Exert.Network
         {
             if (Session == null) return;
             Session.LocalSceneReady -= OnLocalSceneReady;
-            Session.Abort(reason); Session = null; Shots = null; Results = null; Recovery = null;
+            Session.Abort(reason); history?.Dispose(); history = null;
+            Session = null; Shots = null; Results = null; Recovery = null;
             reconnecting = false; abortSent = false; sceneEntered = false; Rematch = null; currentOffer = null;
         }
     }

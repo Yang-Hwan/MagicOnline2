@@ -3,6 +3,7 @@ using Assets.Scripts.Often;
 using Cysharp.Threading.Tasks;
 using System.Collections;
 using UnityEngine;
+using System.Threading;
 
 
 namespace Assets.Scripts.Sight.Vital.Pavilion
@@ -13,6 +14,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public bool isAutoDeactive = true;
         public float liveSec = 3f;
+        CancellationTokenSource deactivate;
         private void Awake()
         {
 
@@ -34,14 +36,17 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         private void OnEnable()
         {
             if (isAutoDeactive)
-                WaitDeactive().Forget();
+            {
+                deactivate = new CancellationTokenSource();
+                WaitDeactive(deactivate.Token).Forget();
+            }
         }
 
-        async UniTaskVoid WaitDeactive()
+        async UniTaskVoid WaitDeactive(CancellationToken token)
         {
             int sec = (int)(liveSec * 1000f);
-            await UniTask.Delay(sec);
-            DeactiveDelay();
+            if (await UniTask.Delay(sec, cancellationToken: token).SuppressCancellationThrow()) return;
+            if (this && !token.IsCancellationRequested) DeactiveDelay();
         }
 
         public void DeactiveDelay()
@@ -52,7 +57,9 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         private void OnDisable()
         {
-            ObjectPooler.instance.ReturnToPool(gameObject);
+            deactivate?.Cancel(); deactivate?.Dispose(); deactivate = null;
+            if (ObjectPooler.instance && ObjectPooler.instance.poolDictionary != null)
+                ObjectPooler.instance.ReturnToPool(gameObject);
         }
 
         public void OnTriggerEnter(Collider other)

@@ -1,270 +1,103 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+using System;
+using Assets.Scripts.Exert.BackSys;
+using Assets.Scripts.Prack.BackSys;
+using Assets.Scripts.Sight.Surface.Arise;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using BackEnd;
-using Assets.Scripts.Prack.BackSys;
-using Assets.Scripts.Exert.BackSys;
-using Assets.Scripts.Sight.Surface.Arise;
-
 namespace Assets.Scripts.Sight.Surface.Come
 {
-    public class PnlLogin : LoginBase 
+    public class PnlLogin : LoginBase
     {
-
         [SerializeField] NetworkDuty net;
         [SerializeField] GesMember gesMember;
-        [SerializeField] Image imgId;
-        [SerializeField] Image imgPw;
-        [SerializeField] TMP_InputField inpId;
-        [SerializeField] TMP_InputField inpPw;
-        [SerializeField] Button btnLogin;
-        [SerializeField] Button btnLoginTemp;
-        [SerializeField] Button btnLoginTemp2;
-        [SerializeField] Button btnGuest;
-        [SerializeField] Button btnEntry;
-        [SerializeField] Button btnHashKey;
-
+        [SerializeField] Image imgId, imgPw;
+        [SerializeField] TMP_InputField inpId, inpPw;
+        [SerializeField] Button btnLogin, btnLoginTemp, btnLoginTemp2, btnGuest, btnEntry, btnHashKey;
+        bool busy;
         protected override void Awake()
         {
-            base.Awake();
-            net = NetworkDuty.FindObjectOfType<NetworkDuty>();
-            gesMember = transform.parent.GetComponent<GesMember>();
-            imgId = transform.Find("InpId").GetComponent<Image>();
-            inpId = transform.Find("InpId").GetComponent<TMP_InputField>();
-            imgPw = transform.Find("InpPw").GetComponent<Image>();
-            inpPw = transform.Find("InpPw").GetComponent<TMP_InputField>();
+            base.Awake(); net = FindObjectOfType<NetworkDuty>(); gesMember = transform.parent.GetComponent<GesMember>();
+            imgId = transform.Find("InpId").GetComponent<Image>(); inpId = imgId.GetComponent<TMP_InputField>();
+            imgPw = transform.Find("InpPw").GetComponent<Image>(); inpPw = imgPw.GetComponent<TMP_InputField>();
+            inpPw.contentType = TMP_InputField.ContentType.Password;
             btnLogin = transform.Find("BtnLogin").GetComponent<Button>();
-            btnLoginTemp = transform.Find("BtnLoginTemp").GetComponent<Button>();
-            btnLoginTemp2 = transform.Find("BtnLoginTemp2").GetComponent<Button>();
-            btnGuest = transform.Find("BtnGuest").GetComponent<Button>();
-            btnEntry = transform.Find("BtnEntry").GetComponent<Button>();
-            btnHashKey = transform.Find("BtnHashKey").GetComponent<Button>();
-
-            btnLogin.onClick.AddListener(btnLogin_Click);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            btnLoginTemp.gameObject.SetActive(true);
-            btnLoginTemp2.gameObject.SetActive(true);
-            btnLoginTemp.onClick.AddListener(btnLoginTemp_Click);
-            btnLoginTemp2.onClick.AddListener(btnLoginTemp2_Click);
-#else
-            btnLoginTemp.gameObject.SetActive(false);
-            btnLoginTemp2.gameObject.SetActive(false);
-#endif
-            btnGuest.onClick.AddListener(BtnGuest_Click);
-            btnEntry.onClick.AddListener(btnEntry_Click);
-            btnHashKey.onClick.AddListener(btnHashKey_Click);
+            btnLoginTemp = transform.Find("BtnLoginTemp").GetComponent<Button>(); btnLoginTemp2 = transform.Find("BtnLoginTemp2").GetComponent<Button>();
+            btnGuest = transform.Find("BtnGuest").GetComponent<Button>(); btnEntry = transform.Find("BtnEntry").GetComponent<Button>(); btnHashKey = transform.Find("BtnHashKey").GetComponent<Button>();
+            btnLogin.onClick.AddListener(() => Authenticate(false));
+            // Existing entry button now registers the credentials entered above.
+            btnEntry.onClick.AddListener(() => Authenticate(true));
+            ConfigureTestLogin(btnLoginTemp, "로그인1", "user01");
+            ConfigureTestLogin(btnLoginTemp2, "로그인2", "user02");
+            btnGuest.gameObject.SetActive(false); btnHashKey.gameObject.SetActive(false);
         }
-
-
-
-        void btnLogin_Click()
+        void ConfigureTestLogin(Button button, string label, string loginId)
         {
-            ResetUI(imgId, imgPw);
-            if (IsFieldDataEmpty(imgId, inpId.text, "아이디")) return;
-            if (IsFieldDataEmpty(imgPw, inpPw.text, "비밀번호")) return;
-
-            btnLogin.interactable = false;
-
-            StartCoroutine(nameof(LoginProcess));
-
-            ResponseToLogin(inpId.text, inpPw.text);
-        }
-
-        void btnLoginTemp_Click()
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            LoginTestAccount("user04");
-#endif
-        }
-        void btnLoginTemp2_Click()
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            LoginTestAccount("user02");
-#endif
-        }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        void LoginTestAccount(string id)
-        {
-            if (!btnLogin.interactable) return;
-            inpId.text = id;
-            inpPw.text = "1111";
-            btnLogin_Click();
-        }
-#endif
-
-        public void BtnGuest_Click()
-        {
-            Backend.BMember.GuestLogin(callback =>
+            button.GetComponentInChildren<TMP_Text>(true).text = label;
+            button.gameObject.SetActive(true);
+            button.onClick.AddListener(() =>
             {
-                if (callback.IsSuccess())
-                {
-                    BackendGame.Instance.UserMainDataIsExists();
-                    //
-                    GetLoadAllChart();
-
-                    // 출석부 데이터 불러오기
-                    BackendAttendance.Instance.GetAttendanceGive();
-
-                    LoginAfter();
-                }
-                else
-                {
-                    Debug.LogWarning(callback.GetMessage());
-                }
+                if (busy) return;
+                inpId.text = loginId;
+                inpPw.text = "11111111";
+                Authenticate(false);
             });
         }
 
-        void btnEntry_Click()
+        void SetLoginButtonsInteractable(bool interactable)
         {
-            gesMember.Open(GesMember.Pnl.Entry);
+            btnLogin.interactable = btnEntry.interactable = interactable;
+            btnLoginTemp.interactable = btnLoginTemp2.interactable = interactable;
         }
 
-
-        void btnHashKey_Click()
+        public void BtnGuest_Click() => SetMessage("아이디와 비밀번호로 가입 또는 로그인해 주세요.");
+        async void Authenticate(bool register)
         {
-            string googlehash = Backend.Utils.GetGoogleHash();
-            txtMsg.text = $"__{googlehash}__";
-
-            TextEditor textEditor = new TextEditor();
-            textEditor.text = googlehash;
-            textEditor.OnFocus();
-            textEditor.Copy();
-
-            Debug.Log("구글 해시 키 : " + googlehash);
-        }
-
-        IEnumerator LoginProcess()
-        {
-            float time = 0;
-            while (true)
+            if (busy) return;
+            ResetUI(imgId,imgPw);
+            if (IsFieldDataEmpty(imgId,inpId.text,"아이디") || IsFieldDataEmpty(imgPw,inpPw.text,"비밀번호")) return;
+            busy = true; SetLoginButtonsInteractable(false);
+            SetMessage(register ? "가입 중입니다. 비밀번호는 8자 이상이어야 합니다." : "로그인 중입니다.");
+            string step = register ? "회원 가입" : "로그인";
+            try
             {
-                time += Time.deltaTime;
-                SetMessage($"로그인 중입니다. {time:F1}");
-                yield return null;
+                await GameApiClient.Login(inpId.text,inpPw.text,register);
+                step = "차트 불러오기";
+                await BackendChart.LoadAllAsync();
+                step = "출석 정보 불러오기";
+                await BackendAttendance.Instance.LoadAsync();
+                step = "프로필 불러오기";
+                await BackendGame.Instance.LoadAsync();
+                if (!this) return;
+                inpPw.text = "";
+                _ = BackendMatchHistory.Instance;
+                BackendDuty.Instance.ConsistPage(0); net.NetworkSetup();
             }
-        }
-
-        void GetLoadAllChart()
-        {
-            // 모든 차트 데이터 불러오기 ---------------- EDIT_TYPE : 1
-            BackendChart.LoadAllChart();
-        }
-
-
-
-        void ResponseToLogin(string id, string pw)
-        {
-            Debug.Log("[Login] Login requested.");
-
-            var bro = Backend.BMember.CustomLogin(id, pw);
-            StopAllCoroutines();
-            if (bro.IsSuccess())
+            catch (Exception e)
             {
-
-                SetMessage($"{inpId.text}님 환영합니다.");
-
-                BackendGame.Instance.UserMainDataIsExists();
-
-                GetLoadAllChart();
-
-                // 출석부 데이터 불러오기
-                BackendAttendance.Instance.GetAttendanceGive();
-
-                LoginAfter();
+                if (this) SetMessage(FailureMessage(e, step));
+                GameApiClient.Clear();
             }
-            else
-            {
-                btnLogin.interactable = true;
-                string msg = string.Empty;
-                switch (int.Parse(bro.GetStatusCode()))
-                {
-                    case 401:
-                        msg = bro.GetMessage().Contains("customId") ? "존재하지 않는 아이디입니다." : "잘못된 비밀번호 입니다.";
-                        break;
-                    case 403:
-                        msg = bro.GetMessage().Contains("user") ? "차단당한 유저입니다." : "차단당한 디바이스입니다.";
-                        break;
-                    case 410:
-                        msg = "탈퇴가 진행중인 유저입니다.";
-                        break;
-                }
-                Debug.LogError(msg);
-                if (msg.Contains("비밀번호"))
-                {
-                    GuideForIncorrectlyEnteredData(imgPw, msg);
-                }
-                else
-                {
-                    GuideForIncorrectlyEnteredData(imgId, msg);
-                }
-            }
-
-
-
-            //Backend.BMember.CustomLogin(id, pw, callback =>
-            //{
-            //    StopCoroutine(nameof(LoginProcess));
-
-            //    if (callback.IsSuccess())
-            //    {
-            //        SetMessage($"{inpId.text}님 환영합니다.");
-
-            //        BackendGame.Instance.UserMainDataIsExists();
-
-            //        GetLoadAllChart();
-
-            //        // 출석부 데이터 불러오기
-            //        BackendAttendance.Instance.GetAttendanceGive();
-
-            //        LoginAfter();
-
-            //    }
-            //    else
-            //    {
-            //        btnLogin.interactable = true;
-            //        string msg = string.Empty;
-            //        switch (int.Parse(callback.GetStatusCode()))
-            //        {
-            //            case 401:
-            //                msg = callback.GetMessage().Contains("customId") ? "존재하지 않는 아이디입니다." : "잘못된 비밀번호 입니다.";
-            //                break;
-            //            case 403:
-            //                msg = callback.GetMessage().Contains("user") ? "차단당한 유저입니다." : "차단당한 디바이스입니다.";
-            //                break;
-            //            case 410:
-            //                msg = "탈퇴가 진행중인 유저입니다.";
-            //                break;
-            //        }
-
-            //        if (msg.Contains("비밀번호"))
-            //        {
-            //            GuideForIncorrectlyEnteredData(imgPw, msg);
-            //        }
-            //        else
-            //        {
-            //            GuideForIncorrectlyEnteredData(imgId, msg);
-            //        }
-            //    }
-            //});
+            finally { busy = false; if(this) SetLoginButtonsInteractable(true); }
         }
 
-
-        void LoginAfter()
+        static string FailureMessage(Exception error, string step)
         {
-            BackendDuty.Instance.ConsistPage(0);
-
-            ////Utils.LoadScene(SceneNames.Consist);
-            //Debug.Log("PnlLogin LoginAfter.....................");
-            net.NetworkSetup();
-            //Debug.Log($"UserInDate : { Backend.UserInDate }");
-            //Debug.Log($"nickname : { UserInfo.userInfo.nickname }");
-            //Debug.Log($"Coin : {BackendGame.Instance.UserMainData.Coin }");
-            //Debug.Log($" ========================== ");
-            //Debug.Log("PnlLogin GetUserInfoFromBackendSyn....................." + UserInfo.userInfo.nickname);
-
+            if (error is GameApiException api)
+            {
+                if (api.Message == "MatchProtocolMismatch") return api.UserMessage;
+                if (api.Status == 0)
+                    return "게임 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인한 후 다시 시도해 주세요.";
+                if (api.Message == "InvalidLogin")
+                    return "아이디 또는 비밀번호가 맞지 않거나 계정이 잠겨 있습니다. 반복 실패했다면 5분 후 다시 시도해 주세요.";
+                if (api.Message == "LoginIdTaken")
+                    return "이미 가입된 아이디입니다. 로그인 버튼을 눌러 주세요.";
+                if (api.Message == "InvalidCredentialsFormat")
+                    return "아이디는 영문·숫자·밑줄 3~32자, 비밀번호는 8~128자로 입력해 주세요.";
+                if (api.Status == 429)
+                    return "요청이 많습니다. 잠시 후 다시 시도해 주세요.";
+            }
+            return step + " 실패: " + error.Message;
         }
     }
 }

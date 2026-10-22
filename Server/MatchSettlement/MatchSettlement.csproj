@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Prack/BackSys/GameData/MatchRulesContract.cs" Link="Contracts/MatchRulesContract.cs" />
+    <Compile Include="../../Assets/Scripts/Prack/BackSys/ChartData/SkillMatchData.cs" Link="Contracts/SkillMatchData.cs" />
+    <Compile Include="../../Assets/Scripts/Prack/BackSys/GameData/UserMainData.cs" Link="Contracts/UserMainData.cs" />
+    <Compile Include="../../Assets/Scripts/Prack/BackSys/GameData/MatchHistoryData.cs" Link="Contracts/MatchHistoryData.cs" />
+    <Compile Include="../../Assets/Scripts/Prack/BackSys/GameData/UserMatchHistoryData.cs" Link="Contracts/UserMatchHistoryData.cs" />
+  </ItemGroup>
+</Project>

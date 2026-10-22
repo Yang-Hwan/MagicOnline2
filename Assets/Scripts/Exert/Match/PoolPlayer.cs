@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Exert.Network;
+using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Often;
 using Assets.Scripts.Prack.BackSys;
 using Assets.Scripts.Sight.Vital.Pavilion;
@@ -662,15 +662,18 @@ namespace Assets.Scripts.Exert.Match
             }
         }
 
-        public static void OnGotoPlayWithPlayer(PlayerProfile player)
+        public static async System.Threading.Tasks.Task<bool> OnGotoPlayWithPlayer(PlayerProfile player)
         {
             // 디비에서 호출 필요.  player.nickname : 백앤드 기본키
-            UserMainData user = BackendGame.Instance.UserMainOther(player.nickName);
+            UserMainData user;
+            try { user = await BackendGame.Instance.LoadOtherAsync(player.uuid); }
+            catch (System.Exception e) { UnityEngine.Debug.LogWarning(e.Message); return false; }
 
             //UnityEngine.Debug.Log($"OnGotoPlayWithPlayer  other coin : {user.Coin} ====================");
             //long cc = PoolPlayer.players.Length;
 
-            PoolPlayer.players[1] = new PoolPlayer(1, user.NickName, user.Coin, player.nickName, "", "");
+            PoolPlayer.players[1] = new PoolPlayer(1, user.NickName, user.Coin, player.uuid, "", "");
+            return true;
 
         }
 

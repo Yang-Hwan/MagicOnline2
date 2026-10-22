@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>BackendFunction</AssemblyName>
+    <AWSProjectType>Lambda</AWSProjectType>
+    <RootNamespace>BackendFunction</RootNamespace>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <FunctionSdkDir Condition="'$(FunctionSdkDir)' == ''">$(LOCALAPPDATA)/MagicOnline2/BackendFunctionTools/1.0.2/template/ProjectTemplates/BackendFunction/dll</FunctionSdkDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
+    <ProjectReference Include="../MatchSettlement/MatchSettlement.csproj" />
+    <Reference Include="Backend"><HintPath>$(FunctionSdkDir)/Backend.dll</HintPath></Reference>
+    <Reference Include="Amazon.Lambda.Core"><HintPath>$(FunctionSdkDir)/Amazon.Lambda.Core.dll</HintPath></Reference>
+    <Reference Include="Amazon.Lambda.APIGatewayEvents"><HintPath>$(FunctionSdkDir)/Amazon.Lambda.APIGatewayEvents.dll</HintPath></Reference>
+    <Reference Include="Amazon.Lambda.Serialization.Json"><HintPath>$(FunctionSdkDir)/Amazon.Lambda.Serialization.Json.dll</HintPath></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(FunctionSdkDir)/Newtonsoft.Json.dll</HintPath></Reference>
+    <Reference Include="LitJson"><HintPath>$(FunctionSdkDir)/LitJson.dll</HintPath></Reference>
+  </ItemGroup>
+  <Target Name="CheckOfficialSdk" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(FunctionSdkDir)/Backend.dll')" Text="Set FunctionSdkDir to the official BACKND Function template dll directory." />
+  </Target>
+  <!-- Official template packaging; invoke publish through BACKND CLI for deployment. -->
+  <Target Name="PackageFunction" AfterTargets="Publish">
+    <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="$(OutputPath)publish.zip" Overwrite="true" />
+  </Target>
+</Project>

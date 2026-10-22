@@ -1,0 +1,3 @@
+@model AdminTable
+@if (Model.Rows.Count == 0) { <div class="empty">조건에 맞는 기록이 없습니다.</div> }
+else { <div class="table-scroll"><table><thead><tr>@foreach (var col in Model.Columns) { <th scope="col">@col</th> }</tr></thead><tbody>@foreach (var row in Model.Rows) { <tr>@for (int i=0;i<row.Length;i++) { var col=Model.Columns[i]; <td>@if (col=="회원 UUID" && Guid.TryParse(row[i],out _)) { <a href="/admin/members/@row[i]">@row[i]</a> } else if (col=="경기 ID") { <a href="/admin/matches/@row[i]">@row[i]</a> } else { @row[i] }</td> }</tr> }</tbody></table></div> }

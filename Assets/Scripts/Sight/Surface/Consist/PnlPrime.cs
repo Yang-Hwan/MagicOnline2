@@ -87,6 +87,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             if (bd == null) return;
             BackendGame.Instance.onGameDataLoadEvent.AddListener(OutputUserMainData);
             OutputNickNm();
+            OutputUserMainData();
         }
 
         private void OnDisable()
@@ -104,6 +105,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             float proc = lvPlayCnt == 0 ? 0 : lvProc / (float)lvPlayCnt;
             txtLvVal.text = $"Lv.{lvVal}";
             sliLvProc.value = proc;
+            OutputTopUserMain();
             Debug.Log($"coin : {coin} ");
         }
 
@@ -126,7 +128,12 @@ namespace Assets.Scripts.Sight.Surface.Consist
             //Debug.Log($"winRate : {winRate}");
             txtCoinVal.text = coin.ToString();
             txtJemVal.text = jem.ToString();
-            txtOutcome.text = $" {win} / {score} ({winRate:F0}%)";
+            var stats = BackendGame.Instance.UserMainData;
+            string Rate(int w, int l, int d) => (w + l + d == 0 ? 0 : 100f * w / (w + l + d)).ToString("F0");
+            txtOutcome.enableAutoSizing = true;
+            txtOutcome.fontSizeMin = 10;
+            txtOutcome.text = $"4구 {stats.Ball_4_Win}승 {stats.Ball_4_Lose}패 {stats.Ball_4_Draw}무 ({Rate(stats.Ball_4_Win,stats.Ball_4_Lose,stats.Ball_4_Draw)}%)\n" +
+                $"3구 {stats.Ball_3_Win}승 {stats.Ball_3_Lose}패 {stats.Ball_3_Draw}무 ({Rate(stats.Ball_3_Win,stats.Ball_3_Lose,stats.Ball_3_Draw)}%)";
 
         }
 

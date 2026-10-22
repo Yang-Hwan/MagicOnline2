@@ -12,7 +12,7 @@ public static class PracticeMatchTestBuild
 {
     const string Menu = "Tools/Magic Online/New Match Test/Enable In Editor";
     const string Request = "Logs/practice-test-build.request";
-    [Serializable] class Report { public string result, executable, error; public double seconds; public bool routeValidated, pointerValidated, recoveryValidated, resultValidated; }
+    [Serializable] class Report { public string result, executable, error, startedUtc; public double seconds; public bool routeValidated, pointerValidated, recoveryValidated, resultValidated; }
     static PracticeMatchTestBuild() { EditorApplication.update += Tick; }
     [MenuItem(Menu)]
     static void Toggle() => EditorPrefs.SetBool("MagicOnline2.PracticeMatchTest", !PracticeMatchTestRoute.Enabled);
@@ -31,13 +31,14 @@ public static class PracticeMatchTestBuild
     [MenuItem("Tools/Magic Online/New Match Test/Build Windows Test Player")]
     public static void Build()
     {
-        var record = new Report();
+        var record = new Report { startedUtc = DateTime.UtcNow.ToString("O") };
         Directory.CreateDirectory("Logs");
         try
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode || PhotonNetwork.IsConnected)
                 throw new InvalidOperationException("Stop play mode and disconnect before building.");
             SpinPersistenceValidation.Run();
+            MatchResultJournalValidation.Run();
             PracticeMatchRouteValidation.Run(); record.routeValidated = true;
             PracticePointerValidation.Run(); record.pointerValidated = true;
             MatchRecoveryValidation.Run(3); MatchRecoveryValidation.Run(4); record.recoveryValidated = true;

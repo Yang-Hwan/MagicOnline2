@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,6 +18,13 @@ namespace Assets.Scripts.Prack.BackSys
         public int Jem;
         public int Win;
         public int Lose;
+        // Win/Lose retain legacy, unclassified results.
+        public int Ball_4_Win;
+        public int Ball_4_Lose;
+        public int Ball_4_Draw;
+        public int Ball_3_Win;
+        public int Ball_3_Lose;
+        public int Ball_3_Draw;
         public int AvatarIdx;
 
         public override string ToString()
@@ -28,6 +35,8 @@ namespace Assets.Scripts.Prack.BackSys
             result += $"Jem : {Jem}, ";
             result += $"Win : {Win}, ";
             result += $"Lose : {Lose}, ";
+            result += $"FourBall : {Ball_4_Win}/{Ball_4_Lose}/{Ball_4_Draw}, ";
+            result += $"ThreeCushion : {Ball_3_Win}/{Ball_3_Lose}/{Ball_3_Draw}, ";
             result += $"InDate : {InDate}  ";
             return result;
         }
@@ -41,6 +50,8 @@ namespace Assets.Scripts.Prack.BackSys
             Jem = 0;
             Win = 0;
             Lose = 0;
+            Ball_4_Win = Ball_4_Lose = Ball_4_Draw = 0;
+            Ball_3_Win = Ball_3_Lose = Ball_3_Draw = 0;
             AvatarIdx = 1;
         }
     }

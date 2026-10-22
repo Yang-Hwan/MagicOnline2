@@ -1,0 +1,372 @@
+{
+  "Date": "2026-10-17",
+  "HttpDatabaseChecks": 47,
+  "Build": {
+    "result": "Succeeded",
+    "executable": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Builds\\PracticeMatchTest-20261017-123426\\MagicOnline2-Test.exe",
+    "error": "",
+    "startedUtc": "2026-10-17T03:34:26.3431489Z",
+    "seconds": 82.3685069,
+    "routeValidated": true,
+    "pointerValidated": true,
+    "recoveryValidated": true,
+    "resultValidated": true
+  },
+  "UnhandledClientExceptionCount": 0,
+  "Runs": [
+    {
+      "Run": "public-guard-7370dc98469b41eaa975fe90c18f4ddf",
+      "Result": {
+        "Mode": "public-guard",
+        "Ok": true,
+        "Directory": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Logs\\LocalApiE2E\\public-guard-7370dc98469b41eaa975fe90c18f4ddf",
+        "A": {
+          "Mode": "public-guard",
+          "Role": "A",
+          "UserId": "9b6dfb27-acdc-4495-b4af-8bcee377b7a0",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": false,
+          "Resumed": false,
+          "UsedLoginForm": true,
+          "UsedPublicLobby": true,
+          "SawOutcome": true,
+          "RematchEnabled": true,
+          "PendingBeforeRestart": 0,
+          "PendingAfterRestart": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "8fe71dfe57624156bfc1a06b88e3e7e0",
+              "Scene": "Pavilion",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": false,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        },
+        "B": {
+          "Mode": "public-guard",
+          "Role": "B",
+          "UserId": "e7fe2524-db86-4a0c-bfa5-9b03dd3a7ea4",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": false,
+          "Resumed": false,
+          "UsedLoginForm": true,
+          "UsedPublicLobby": true,
+          "SawOutcome": true,
+          "RematchEnabled": true,
+          "PendingBeforeRestart": 0,
+          "PendingAfterRestart": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "8fe71dfe57624156bfc1a06b88e3e7e0",
+              "Scene": "Pavilion",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": false,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        }
+      },
+      "A.json.guard.json": {
+        "Ok": true,
+        "MatchId": "8fe71dfe57624156bfc1a06b88e3e7e0",
+        "Phase": "Playing",
+        "Attempts": 4,
+        "Pending": 0
+      },
+      "B.json.guard.json": {
+        "Ok": true,
+        "MatchId": "8fe71dfe57624156bfc1a06b88e3e7e0",
+        "Phase": "Playing",
+        "Attempts": 4,
+        "Pending": 0
+      }
+    },
+    {
+      "Run": "public-guard-d5d19106931e43738e8bd6cf6f9cca83",
+      "Result": {
+        "Mode": "public-guard",
+        "Ok": true,
+        "Directory": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Logs\\LocalApiE2E\\public-guard-d5d19106931e43738e8bd6cf6f9cca83",
+        "A": {
+          "Mode": "public-guard",
+          "Role": "A",
+          "UserId": "0ee1f497-30b0-4954-b6b3-e0a3116df0d2",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": false,
+          "Resumed": false,
+          "UsedLoginForm": true,
+          "UsedPublicLobby": true,
+          "SawOutcome": true,
+          "RematchEnabled": true,
+          "PendingBeforeRestart": 0,
+          "PendingAfterRestart": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "144cd4d6e37643be8ab9861f616e57e1",
+              "Scene": "Pavilion",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": false,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        },
+        "B": {
+          "Mode": "public-guard",
+          "Role": "B",
+          "UserId": "a9753d0b-53fe-4d68-960b-857a02f34833",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": false,
+          "Resumed": false,
+          "UsedLoginForm": true,
+          "UsedPublicLobby": true,
+          "SawOutcome": true,
+          "RematchEnabled": true,
+          "PendingBeforeRestart": 0,
+          "PendingAfterRestart": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "144cd4d6e37643be8ab9861f616e57e1",
+              "Scene": "Pavilion",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": false,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        }
+      },
+      "A.json.guard.json": {
+        "Ok": true,
+        "MatchId": "144cd4d6e37643be8ab9861f616e57e1",
+        "Phase": "Playing",
+        "Attempts": 4,
+        "Pending": 0
+      },
+      "B.json.guard.json": {
+        "Ok": true,
+        "MatchId": "144cd4d6e37643be8ab9861f616e57e1",
+        "Phase": "Playing",
+        "Attempts": 4,
+        "Pending": 0
+      }
+    },
+    {
+      "Run": "isolation-b259427966e14876a439e4fd0c5b01d1",
+      "Result": {
+        "Mode": "isolation",
+        "Ok": true,
+        "Directory": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Logs\\LocalApiE2E\\isolation-b259427966e14876a439e4fd0c5b01d1",
+        "A": {
+          "Mode": "isolation",
+          "Role": "A",
+          "UserId": "8ac80230-2af1-4435-a88f-0b26fb20c154",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": true,
+          "Resumed": true,
+          "UsedLoginForm": false,
+          "UsedPublicLobby": false,
+          "SawOutcome": false,
+          "RematchEnabled": false,
+          "PendingBeforeRestart": 1,
+          "PendingAfterRestart": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "ed2132c266b64503a4a31820b7b2a86b",
+              "Scene": "TableSet07",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": true,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        },
+        "B": {
+          "Mode": "isolation",
+          "Role": "B",
+          "UserId": "f290e2cf-350b-4eb0-914c-161924836f11",
+          "Error": "",
+          "Ok": true,
+          "ExitedForDisconnect": false,
+          "StagedForRestart": false,
+          "Resumed": false,
+          "UsedLoginForm": false,
+          "UsedPublicLobby": false,
+          "SawOutcome": false,
+          "RematchEnabled": false,
+          "PendingBeforeRestart": 0,
+          "PendingAfterRestart": 0,
+          "InitialCoin": 30,
+          "Rounds": [
+            {
+              "MatchId": "ed2132c266b64503a4a31820b7b2a86b",
+              "Scene": "TableSet07",
+              "Phase": "Applied",
+              "Reason": "MutualConfirmation",
+              "WinnerUserId": "",
+              "Score0": 0,
+              "Score1": 0,
+              "Coin": 30,
+              "ShotSettled": true,
+              "SawSuspended": false,
+              "SawRestored": false
+            }
+          ]
+        }
+      },
+      "A.json.isolation.json": {
+        "Ok": true,
+        "OtherUserId": "229247a3-07b8-4276-8782-03fab46795cb",
+        "OtherPending": 0,
+        "OriginalPending": 1,
+        "ReadStatus": 404,
+        "WriteStatus": 403,
+        "OtherCoin": 30
+      }
+    }
+  ],
+  "Database": {
+    "Matches": [
+      {
+        "Ball": 4,
+        "Phase": 2,
+        "UserA": "9b6dfb27-acdc-4495-b4af-8bcee377b7a0",
+        "UserB": "e7fe2524-db86-4a0c-bfa5-9b03dd3a7ea4",
+        "Reason": "MutualConfirmation",
+        "MatchId": "8fe71dfe57624156bfc1a06b88e3e7e0",
+        "Disputed": false,
+        "LedgerCount": 4,
+        "HistoryCount": 1,
+        "ReceiptCount": 1,
+        "PersonalHistoryCount": 2
+      },
+      {
+        "Ball": 3,
+        "Phase": 2,
+        "UserA": "0ee1f497-30b0-4954-b6b3-e0a3116df0d2",
+        "UserB": "a9753d0b-53fe-4d68-960b-857a02f34833",
+        "Reason": "MutualConfirmation",
+        "MatchId": "144cd4d6e37643be8ab9861f616e57e1",
+        "Disputed": false,
+        "LedgerCount": 4,
+        "HistoryCount": 1,
+        "ReceiptCount": 1,
+        "PersonalHistoryCount": 2
+      },
+      {
+        "Ball": 4,
+        "Phase": 2,
+        "UserA": "8ac80230-2af1-4435-a88f-0b26fb20c154",
+        "UserB": "f290e2cf-350b-4eb0-914c-161924836f11",
+        "Reason": "MutualConfirmation",
+        "MatchId": "ed2132c266b64503a4a31820b7b2a86b",
+        "Disputed": false,
+        "LedgerCount": 4,
+        "HistoryCount": 1,
+        "ReceiptCount": 1,
+        "PersonalHistoryCount": 2
+      }
+    ],
+    "Wallets": [
+      {
+        "Coin": 30,
+        "UserId": "8ac80230-2af1-4435-a88f-0b26fb20c154",
+        "Ball3Draw": 0,
+        "Ball4Draw": 1,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "f290e2cf-350b-4eb0-914c-161924836f11",
+        "Ball3Draw": 0,
+        "Ball4Draw": 1,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "0ee1f497-30b0-4954-b6b3-e0a3116df0d2",
+        "Ball3Draw": 1,
+        "Ball4Draw": 0,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "a9753d0b-53fe-4d68-960b-857a02f34833",
+        "Ball3Draw": 1,
+        "Ball4Draw": 0,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "9b6dfb27-acdc-4495-b4af-8bcee377b7a0",
+        "Ball3Draw": 0,
+        "Ball4Draw": 1,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "e7fe2524-db86-4a0c-bfa5-9b03dd3a7ea4",
+        "Ball3Draw": 0,
+        "Ball4Draw": 1,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      },
+      {
+        "Coin": 30,
+        "UserId": "229247a3-07b8-4276-8782-03fab46795cb",
+        "Ball3Draw": 0,
+        "Ball4Draw": 0,
+        "LedgerCoin": 30,
+        "StatsCorrect": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "VerifiedDate": "2026-10-15",
+  "Scope": "Two local Unity development processes, isolated practice match route",
+  "Runs": [
+    {
+      "Mode": "rematch",
+      "Ok": true,
+      "Directory": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Logs\\LocalApiE2E\\rematch-d7de0715525843bbba0250ca7bcf18e1",
+      "A": {
+        "Mode": "rematch",
+        "Role": "A",
+        "UserId": "fcc00bc2-a389-47a7-8540-254ace6bc7e8",
+        "Error": "",
+        "Ok": true,
+        "ExitedForDisconnect": false,
+        "InitialCoin": 30,
+        "Rounds": [
+          {
+            "MatchId": "8ce96ed7483d4782be7588d3c9c5851a",
+            "Scene": "TableSet07",
+            "Phase": "Applied",
+            "Reason": "MutualConfirmation",
+            "WinnerUserId": "",
+            "Score0": 0,
+            "Score1": 0,
+            "Coin": 30,
+            "ShotSettled": true,
+            "SawSuspended": false,
+            "SawRestored": false
+          },
+          {
+            "MatchId": "b34561627ed44f02856cd35ebd8dedce",
+            "Scene": "TableSet07",
+            "Phase": "Applied",
+            "Reason": "Surrender",
+            "WinnerUserId": "fcc00bc2-a389-47a7-8540-254ace6bc7e8",
+            "Score0": 0,
+            "Score1": 0,
+            "Coin": 31,
+            "ShotSettled": false,
+            "SawSuspended": false,
+            "SawRestored": false
+          }
+        ]
+      },
+      "B": {
+        "Mode": "rematch",
+        "Role": "B",
+        "UserId": "6a14a193-9481-4b91-bee9-507a936f5e4d",
+        "Error": "",
+        "Ok": true,
+        "ExitedForDisconnect": false,
+        "InitialCoin": 30,
+        "Rounds": [
+          {
+            "MatchId": "8ce96ed7483d4782be7588d3c9c5851a",
+            "Scene": "TableSet07",
+            "Phase": "Applied",
+            "Reason": "MutualConfirmation",
+            "WinnerUserId": "",
+            "Score0": 0,
+            "Score1": 0,
+            "Coin": 30,
+            "ShotSettled": true,
+            "SawSuspended": false,
+            "SawRestored": false
+          },
+          {
+            "MatchId": "b34561627ed44f02856cd35ebd8dedce",
+            "Scene": "TableSet07",
+            "Phase": "Applied",
+            "Reason": "Surrender",
+            "WinnerUserId": "fcc00bc2-a389-47a7-8540-254ace6bc7e8",
+            "Score0": 0,
+            "Score1": 0,
+            "Coin": 29,
+            "ShotSettled": false,
+            "SawSuspended": false,
+            "SawRestored": false
+          }
+        ]
+      }
+    },
+    {
+      "Mode": "disconnect",
+      "Ok": true,
+      "Directory": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Logs\\LocalApiE2E\\disconnect-cf3556a7a9f4436ab95f6facf6de31fe",
+      "A": {
+        "Mode": "disconnect",
+        "Role": "A",
+        "UserId": "096b37db-32d9-481d-8e86-2624477b43d5",
+        "Error": "",
+        "Ok": true,
+        "ExitedForDisconnect": false,
+        "InitialCoin": 30,
+        "Rounds": [
+          {
+            "MatchId": "8b17874cb3294aea8f3f28d66c492d10",
+            "Scene": "TableSet07",
+            "Phase": "Applied",
+            "Reason": "DisconnectForfeit",
+            "WinnerUserId": "096b37db-32d9-481d-8e86-2624477b43d5",
+            "Score0": 0,
+            "Score1": 0,
+            "Coin": 31,
+            "ShotSettled": false,
+            "SawSuspended": false,
+            "SawRestored": false
+          }
+        ]
+      },
+      "B": {
+        "Mode": "disconnect",
+        "Role": "B",
+        "UserId": "b03278c1-0bce-48ba-862f-786dc852f280",
+        "Error": "",
+        "Ok": false,
+        "ExitedForDisconnect": true,
+        "InitialCoin": 30,
+        "Rounds": [
+          {
+            "MatchId": "8b17874cb3294aea8f3f28d66c492d10",
+            "Scene": "TableSet07",
+            "Phase": "",
+            "Reason": "",
+            "WinnerUserId": "",
+            "Score0": 0,
+            "Score1": 0,
+            "Coin": 0,
+            "ShotSettled": false,
+            "SawSuspended": false,
+            "SawRestored": false
+          }
+        ]
+      }
+    },
+    {
+      "Mode": "reconnect",
+      "Ok": true,
+      "Directory": "D:\\Make\\Work\\Unity\\dangguu\\MagicCushionOnline\\MagicOnline2\\Logs\\LocalApiE2E\\reconnect-9caf40b2a35540faaeb799a4fc208917",
+      "A": {
+        "Mode": "reconnect",
+        "Role": "A",
+        "UserId": "4e80daed-5023-4db0-affd-55799ed5bb06",
+        "Error": "",
+        "Ok": true,
+        "ExitedForDisconnect": false,
+        "InitialCoin": 30,
+        "Rounds": [
+          {
+            "MatchId": "a26e5b738b774a9885e69903071a0c60",
+            "Scene": "TableSet07",
+            "Phase": "Applied",
+            "Reason": "MutualConfirmation",
+            "WinnerUserId": "",
+            "Score0": 0,
+            "Score1": 0,
+            "Coin": 30,
+            "ShotSettled": true,
+            "SawSuspended": true,
+            "SawRestored": true
+          }
+        ]
+      },
+      "B": {
+        "Mode": "reconnect",
+        "Role": "B",
+        "UserId": "d20a1e80-2700-4e1c-ad68-6e18e4b7fdec",
+        "Error": "",
+        "Ok": true,
+        "ExitedForDisconnect": false,
+        "InitialCoin": 30,
+        "Rounds": [
+          {
+            "MatchId": "a26e5b738b774a9885e69903071a0c60",
+            "Scene": "TableSet07",
+            "Phase": "Applied",
+            "Reason": "MutualConfirmation",
+            "WinnerUserId": "",
+            "Score0": 0,
+            "Score1": 0,
+            "Coin": 30,
+            "ShotSettled": true,
+            "SawSuspended": true,
+            "SawRestored": true
+          }
+        ]
+      }
+    }
+  ],
+  "DatabaseChecks": {
+    "SeparateBallStatsVerified": true,
+    "SettlementCount": 4,
+    "WalletLedgerMatchedAccounts": 6
+  }
+}

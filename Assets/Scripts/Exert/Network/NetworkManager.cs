@@ -1,4 +1,4 @@
-﻿using BackEnd;
+using Assets.Scripts.Exert.BackSys;
 using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
@@ -63,6 +63,7 @@ namespace Assets.Scripts.Exert.Network
             get;
             private set;
         }
+        public void SetServerCoin(long value) => coin = value;
 
         public long prize
         {
@@ -195,6 +196,12 @@ namespace Assets.Scripts.Exert.Network
         public static long user_coin { get; set; }
         public static int hallIdx { get; set; }
 
+        public static void ResetAccountProfile()
+        {
+            mainPlayer = null;
+            opponentPlayer = null;
+        }
+
 
         public static PlayerProfile mainPlayer
         {
@@ -261,8 +268,8 @@ namespace Assets.Scripts.Exert.Network
             if (NetworkManager.mainPlayer == null)
             {
                 Debug.Log($"NetworkManager.mainPlayer == null    .....  uuid : {uuid}, nick : {nickName}, user_coin : {user_coin}, prize_min : {prize_min} ");
-                string nick = Backend.UserInDate;
-                long coin = 0;// BackendGame.Instance.UserMainData.Coin;
+                string nick = GameApiClient.UserId;
+                long coin = Assets.Scripts.Prack.BackSys.BackendGame.Instance.UserMainData.Coin;
                 mainPlayer = new PlayerProfile(uuid, -1, false, nick, coin, prize_min, PlayerState.Master);
 
                 //// Debug.Log(msg);
@@ -287,8 +294,8 @@ namespace Assets.Scripts.Exert.Network
             if (NetworkManager.mainPlayer == null)
             {
                 //Debug.Log($"uuid : {uuid}, nick : {nickName}, user_coin : {user_coin}, prize_min : {prize_min} ");
-                string nick = Backend.UserInDate;
-                long coin = 0;// BackendGame.Instance.UserMainData.Coin;
+                string nick = GameApiClient.UserId;
+                long coin = Assets.Scripts.Prack.BackSys.BackendGame.Instance.UserMainData.Coin;
                 mainPlayer = new PlayerProfile(uuid, -1, false, nick, coin, prize_min, PlayerState.Master);
             }
 
