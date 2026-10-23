@@ -4,6 +4,16 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 {
     public static class FollowThroughProfile
     {
+        // Change to false and rebuild both clients to restore the previous stroke model.
+        public static readonly bool UseIndependentSpin = true;
+        public static string ProtocolSuffix => UseIndependentSpin ? "-tipspin1" : "";
+
+        // Match the old 40%-power stroke. The impulse still scales with power;
+        // compensate its lever arm so torque depends on the tip offset only.
+        // Zero power must produce neither translation nor rotation.
+        public static float SpinLeverScale(float power) => power <= 0 ? 0 :
+            UseIndependentSpin ? .46f * .4f / power : .46f;
+
         public static float Thickness(Vector3 incoming,Vector3 towardTarget)
         {
             Vector3 direction=Vector3.ProjectOnPlane(incoming,Vector3.up);
@@ -14,6 +24,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public static float ThicknessWeight(float thickness) => 1f-Mathf.SmoothStep(0f,1f,Mathf.InverseLerp(.5f,1f,thickness));
 
         public static float Persistence(float power,float tipOffset,float follow)
+        {
+            if (UseIndependentSpin) return Mathf.Lerp(.2f, .9f, Mathf.Clamp01(power));
+            return LegacyPersistence(power, tipOffset, follow);
+        }
+
+        public static float LegacyPersistence(float power,float tipOffset,float follow)
         {
             power=Mathf.Clamp01(power);tipOffset=Mathf.Clamp01(tipOffset);follow=Mathf.Clamp01(follow);
             float baseline=Mathf.Lerp(.4f,1f,power*tipOffset);

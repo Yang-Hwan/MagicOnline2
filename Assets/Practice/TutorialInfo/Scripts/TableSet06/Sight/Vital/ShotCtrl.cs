@@ -457,7 +457,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             float contactAmount = Mathf.Clamp01(Vector3.ProjectOnPlane(offset, forward).magnitude / Mathf.Max(radius, .001f));
             float blend = pull <= DefaultFollowThrough ? pull / DefaultFollowThrough :
                 (pull - DefaultFollowThrough) / (1f - DefaultFollowThrough);
-            const float spinScale = .46f; // Preserve the previous default stroke's spin, independent of follow.
+            float spinScale = FollowThroughProfile.SpinLeverScale(power);
             float speedScale = pull <= DefaultFollowThrough ? Mathf.Lerp(1.04f, 1f, blend) : Mathf.Lerp(1f, .92f, blend);
             // Effective lever arm is an arcade impact model, not a moved aiming point.
             // Its torque scales independently of the linear impulse; centre hits gain no spin.

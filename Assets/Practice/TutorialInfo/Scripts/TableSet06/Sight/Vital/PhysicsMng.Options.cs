@@ -7,7 +7,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 {
     public partial class PhysicsMng
     {
-        public bool ItemsEnabled { get; private set; } = true;
+        public bool ItemsEnabled { get; private set; } = false;
         public bool CueGuideEnabled { get; private set; } = true;
         RectTransform optionsRect;
         Toggle itemsToggle, cueGuideToggle;
@@ -21,6 +21,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             var match=FindAnyObjectByType<PnlMatch>();
             var font=match ? match.transform.Find("PlayerBoxs/PlayerSelf/TxtName").GetComponent<TMP_Text>().font : TMP_Settings.defaultFontAsset;
             itemsToggle=CreateOptionToggle("아이템",-80,font);
+            itemsToggle.SetIsOnWithoutNotify(ItemsEnabled);
             cueGuideToggle=CreateOptionToggle("수구라인",80,font);
             itemsToggle.onValueChanged.AddListener(SetItemsEnabled);
             cueGuideToggle.onValueChanged.AddListener(SetCueGuideEnabled);

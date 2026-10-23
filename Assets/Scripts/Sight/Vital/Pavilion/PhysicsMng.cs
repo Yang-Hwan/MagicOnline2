@@ -92,6 +92,12 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             ringBalls = new GameObject[2];
             ringBalls[0] = GameObject.Find("Table/Addition/Effects/RingBall1");
             ringBalls[1] = GameObject.Find("Table/Addition/Effects/RingBall2");
+            // Keep aiming calculations and materials available while hiding ball markers.
+            foreach (var renderer in ringCue.GetComponentsInChildren<Renderer>(true))
+                renderer.forceRenderingOff = true;
+            foreach (var ring in ringBalls)
+                foreach (var renderer in ring.GetComponentsInChildren<Renderer>(true))
+                    renderer.forceRenderingOff = true;
             ballShadows = new Transform[4];
             ballShadows[0] = GameObject.Find("Table/Addition/Effects/BallShadow01").transform;
             ballShadows[1] = GameObject.Find("Table/Addition/Effects/BallShadow02").transform;
@@ -505,6 +511,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         public void CusionHit(CushionDir dir)
         {
             
+            if (!drawStuffPos.CushionItemSpawningEnabled) return;
             cushionHit.HitDir(dir);
             //Debug.Log($"CusionHit : 1");
             ObjectPooler.instance.SpawnFromPool(ObjectPool.Cosmos.ToString(), Vector3.zero);

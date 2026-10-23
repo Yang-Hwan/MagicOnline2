@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -1008,9 +1008,65 @@ public sealed class ReplayValidationInput : UnityEngine.EventSystems.BaseInput
     public override string compositionString => Composition;
 }
 
+[InitializeOnLoad]
 public static class SpinPersistenceValidation
 {
+    const string SpinRequest = "Logs/spin-model-validation.request";
+    static SpinPersistenceValidation()
+    {
+        EditorApplication.update += () => {
+            if (!File.Exists(SpinRequest) || EditorApplication.isCompiling || EditorApplication.isUpdating) return;
+            File.Delete(SpinRequest);
+            try { Run(); File.WriteAllText("Logs/spin-model-validation.json", "{\"passed\":true}"); }
+            catch (Exception e) {
+                File.WriteAllText("Logs/spin-model-validation.json", JsonUtility.ToJson(new SpinFailure { error = e.ToString() }));
+                Debug.LogException(e);
+            }
+        };
+    }
+    [Serializable] class SpinFailure { public bool passed = false; public string error; }
+
+    [MenuItem("Tools/Magic Online/Validate Spin Model")]
     public static void Run()
+    {
+        RunLegacy();
+        if (!FollowThroughProfile.UseIndependentSpin) return;
+        void Require(bool condition, string message) { if (!condition) throw new Exception(message); }
+        float previous = -1;
+        for (int p = 0; p <= 100; p++) {
+            float power = p / 100f;
+            float persistence = FollowThroughProfile.Persistence(power, 0, 0);
+            Require(persistence >= previous && persistence >= 0 && persistence < 1,
+                "Power must monotonically extend spin persistence without adding rotation");
+            previous = persistence;
+            for (int t = 0; t <= 10; t++)
+            for (int f = 0; f <= 10; f++) {
+                float follow = f / 10f, tip = t / 10f;
+                Require(Mathf.Abs(FollowThroughProfile.Persistence(power, tip, follow) - persistence) < .000001f,
+                    "Tip or follow changed spin persistence");
+                float blend = follow <= .2f ? follow / .2f : (follow - .2f) / .8f;
+                float speed = follow <= .2f ? Mathf.Lerp(1.04f, 1, blend) : Mathf.Lerp(1, .92f, blend);
+                var offset = new Vector3(.02f * tip, -.02f * tip, 0);
+                var torque = Vector3.Cross(offset * (FollowThroughProfile.SpinLeverScale(power) / speed),
+                    Vector3.forward * (power * speed));
+                var expected = power > 0 ? Vector3.Cross(offset * (.46f * .4f), Vector3.forward) : Vector3.zero;
+                Require((torque - expected).magnitude < .000001f,
+                    "Initial spin changed with power/follow, or a zero-power/centre shot created spin");
+            }
+        }
+        var weak = new Vector3(0, 30, 0); var strong = weak;
+        for (int i = 0; i < 100; i++) {
+            FollowThroughProfile.ApplyPersistence(Vector3.forward, ref weak, .03f, .01f,
+                FollowThroughProfile.Persistence(.1f, 1, .2f), .01f);
+            FollowThroughProfile.ApplyPersistence(Vector3.forward, ref strong, .03f, .01f,
+                FollowThroughProfile.Persistence(.9f, 1, .2f), .01f);
+        }
+        Require(strong.magnitude > weak.magnitude && strong.magnitude < 30,
+            "Strong power must retain more spin without increasing initial spin");
+        Debug.Log("Spin model validation passed: independent tip spin, zero power, centre hits, follow invariance, monotonic damping and legacy fallback.");
+    }
+
+    static void RunLegacy()
     {
         void Require(bool condition, string message) { if (!condition) throw new Exception(message); }
         for (int p = 0; p <= 100; p++)
@@ -1020,30 +1076,30 @@ public static class SpinPersistenceValidation
             float previous = float.PositiveInfinity;
             for (int f = 0; f <= 10; f++)
             {
-                float value = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(power, tip, f / 10f);
+                float value = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(power, tip, f / 10f);
                 Require(value >= baseline - .000001f && value <= Mathf.Min(1, baseline * 1.2f) + .000001f,
                     "Persistence bonus reduced baseline or exceeded its cap");
                 Require(value <= previous + .000001f, "Increasing follow strengthened the bonus");
                 previous = value;
             }
-            Require(Mathf.Abs(Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(power, tip, 1) - baseline) < .000001f,
+            Require(Mathf.Abs(Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(power, tip, 1) - baseline) < .000001f,
                 "Full follow must retain the original persistence");
             if (p == 0 || p == 100 || t == 0)
-                Require(Mathf.Abs(Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(power, tip, 0) - baseline) < .000001f,
+                Require(Mathf.Abs(Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(power, tip, 0) - baseline) < .000001f,
                     "Power endpoints and centre tip must retain original persistence");
-            float bonus = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(power, tip, 0) / baseline - 1;
-            float peakBonus = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(.4f, tip, 0) / (.4f + .24f * tip) - 1;
+            float bonus = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(power, tip, 0) / baseline - 1;
+            float peakBonus = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(.4f, tip, 0) / (.4f + .24f * tip) - 1;
             Require(bonus <= peakBonus + .000001f, "Bonus peak moved away from 40% power");
         }
-        Require(Mathf.Abs(Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(.4f, 1, 0) - .768f) < .000001f, "Peak must add 20 percent");
-        Require(Mathf.Abs(Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(.39999f, .8f, 0) - Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(.40001f, .8f, 0)) < .0001f,
+        Require(Mathf.Abs(Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(.4f, 1, 0) - .768f) < .000001f, "Peak must add 20 percent");
+        Require(Mathf.Abs(Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(.39999f, .8f, 0) - Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(.40001f, .8f, 0)) < .0001f,
             "Persistence is discontinuous around the peak");
         var original = new Vector3(20, 30, -10); var boosted = original; var unchanged = Vector3.zero;
         for (int i = 0; i < 100; i++)
         {
             Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ApplyPersistence(Vector3.forward, ref original, .03f, .01f, .592f, .01f);
-            Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ApplyPersistence(Vector3.forward, ref boosted, .03f, .01f, Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(.4f, .8f, 0), .01f);
-            Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ApplyPersistence(Vector3.forward, ref unchanged, .03f, .01f, Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.Persistence(.4f, 0, 0), .01f);
+            Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ApplyPersistence(Vector3.forward, ref boosted, .03f, .01f, Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(.4f, .8f, 0), .01f);
+            Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ApplyPersistence(Vector3.forward, ref unchanged, .03f, .01f, Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.LegacyPersistence(.4f, 0, 0), .01f);
         }
         Require(boosted.magnitude > original.magnitude && boosted.magnitude < new Vector3(20, 30, -10).magnitude,
             "Bonus must reduce damping without creating spin");

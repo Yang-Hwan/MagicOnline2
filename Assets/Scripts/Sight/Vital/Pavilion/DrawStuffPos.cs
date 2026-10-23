@@ -16,7 +16,9 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
     public class DrawStuffPos : MonoBehaviour
     {
-
+        [SerializeField, Tooltip("수구의 쿠션 충돌 시 아이템과 먼지 입자 생성 기능. 추후 사용을 위해 기본 비활성화합니다.")]
+        bool enableCushionItemSpawning = false;
+        public bool CushionItemSpawningEnabled => enableCushionItemSpawning;
         public Transform st;
         public Transform en;
         [Range(1, 10)]
@@ -262,6 +264,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public void StuffCreate(int len, int itemCnt = 0)
         {
+            if (!enableCushionItemSpawning) return;
 
             int[] priodeSec = new int[3] { 15, 17, 19 };
             int[] posIds = StuffPosIdAdd(len);
@@ -333,6 +336,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public async UniTaskVoid SetStuffCreateFromNetwork(float netMoveTime, string stuffData)
         {
+            if (!enableCushionItemSpawning) return;
             if (stuffData.IndexOf(')') < 0) return;
             while (!physicsMng.endFromNetwork && physicsMng.moveTime < netMoveTime)
             {

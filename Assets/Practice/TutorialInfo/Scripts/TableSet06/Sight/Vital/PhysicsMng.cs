@@ -202,6 +202,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             inMove = Assets.Scripts.Often.PracticeSceneFlow.Configuration.Execution != Assets.Scripts.Often.MatchExecutionMode.OnlineMatch;
             if (!inMove) OnlineAdapter = gameObject.AddComponent<PracticeMatchAdapter>();
 
+            // Keep aiming calculations and materials available while hiding ball markers.
+            foreach (var renderer in ringCue.GetComponentsInChildren<Renderer>(true))
+                renderer.forceRenderingOff = true;
+            foreach (var ring in ringBalls)
+                foreach (var renderer in ring.GetComponentsInChildren<Renderer>(true))
+                    renderer.forceRenderingOff = true;
             ringCue.SetActive(false);
             for (int i = 0; i < ringBalls.Length; i++)
             {

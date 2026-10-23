@@ -58,7 +58,8 @@ namespace Assets.Scripts.Often
             }
         }
         public static string RoomProtocol => Enabled ? Protocol + (QuickMatch ? "-quick" : "") +
-            (TargetWin ? "-target1" : "") : LocalPublicIntegrationTest ? "public-local-api-test-2-rules1" : MatchmakingCompatibility.Protocol;
+            (TargetWin ? "-target1" : "") + Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ProtocolSuffix :
+            LocalPublicIntegrationTest ? "public-local-api-test-2-rules1" + Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ProtocolSuffix : MatchmakingCompatibility.Protocol;
         public static string Version(string appVersion) => Enabled || LocalPublicIntegrationTest ? appVersion + "." + RoomProtocol : MatchmakingCompatibility.GameVersion(appVersion);
         public static Photon.Realtime.AppSettings ConnectionSettings(Photon.Realtime.AppSettings source, string appVersion)
         {

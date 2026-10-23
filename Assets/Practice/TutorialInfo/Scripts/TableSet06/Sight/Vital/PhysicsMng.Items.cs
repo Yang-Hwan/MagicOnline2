@@ -26,7 +26,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         // a server-issued match id and deliver only authenticated authority events.
         public void ConfigureItemSession(string matchId, bool authority)
         {
-            ItemsEnabled=true;
+            // Local shot/reset sessions preserve the player's item toggle choice.
+            if (!IsLocalPractice) ItemsEnabled = true;
             EndBallPlacement();
             ClearShotReplay();
             undoSnapshot = null; simulationVersion++;

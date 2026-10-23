@@ -27,7 +27,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             float blend = shot.followThrough <= DefaultFollowThrough ? shot.followThrough / DefaultFollowThrough :
                 (shot.followThrough - DefaultFollowThrough) / (1f - DefaultFollowThrough);
             float speedScale = shot.followThrough <= DefaultFollowThrough ? Mathf.Lerp(1.04f, 1f, blend) : Mathf.Lerp(1f, .92f, blend);
-            return new Impulse(ball.body.worldCenterOfMass + offset * (.46f / speedScale),
+            return new Impulse(ball.body.worldCenterOfMass + offset * (FollowThroughProfile.SpinLeverScale(shot.power) / speedScale),
                 shot.power * cueBallMaxVelocity * ball.body.mass * speedScale * forward, Vector3.zero,
                 shot.followThrough, FollowThroughProfile.Persistence(shot.power, shot.contact.magnitude, shot.followThrough));
         }

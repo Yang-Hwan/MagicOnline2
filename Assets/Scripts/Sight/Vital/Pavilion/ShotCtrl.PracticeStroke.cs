@@ -37,7 +37,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             float contact = Mathf.Clamp01(Vector3.ProjectOnPlane(offset, forward).magnitude / Mathf.Max(radius, .001f));
             float blend = pull <= DefaultFollowThrough ? pull / DefaultFollowThrough : (pull - DefaultFollowThrough) / (1 - DefaultFollowThrough);
             float speed = pull <= DefaultFollowThrough ? Mathf.Lerp(1.04f, 1f, blend) : Mathf.Lerp(1f, .92f, blend);
-            return new PreviewImpulse(centre + offset * (.46f / speed), impulse * speed, Vector3.zero,
+            return new PreviewImpulse(centre + offset * (FollowThroughProfile.SpinLeverScale(power) / speed), impulse * speed, Vector3.zero,
                 pull, FollowThroughProfile.Persistence(power, contact, pull));
         }
 
