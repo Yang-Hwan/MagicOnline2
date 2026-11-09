@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital;
@@ -235,6 +235,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
             if (configuration.BallCount != _physicsMng.ballcs.Length)
                 throw new System.InvalidOperationException("Match configuration does not match the loaded ball set.");
             Configuration = configuration;
+            int ballStyle = Assets.Scripts.Often.MatchBallSkins.Choose(Assets.Scripts.Often.PracticeSceneFlow.OnlineSession?.MatchId);
+            foreach (var ball in _physicsMng.ballcs)
+                if (ball) Assets.Scripts.Often.MatchBallSkins.Apply(ball.transform, ballStyle);
             // OnEnable can run again after a script reload without Awake.
             // Rebuild missing local players before publishing UI events or assigning turns.
             PoolPlayer.players = new[] { new PoolPlayer(0, configuration.Seat0Name, 0), new PoolPlayer(1, configuration.Seat1Name, 0) };
@@ -343,6 +346,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
 
         void PhysicsManager_OnStartShot(float angle)
         {
+            Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             for (int i = 0; i < balls.Length; i++)
             {
                 balls[i].OnState(BallState.SetState);
@@ -438,6 +442,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
             if (ball.isCueball)
             {
                 PoolLogic.Instance.OnCueBallHitBall(ball, hitBall);
+                if (PoolLogic.gameState.ballHitBall_2 != -1 || PoolLogic.gameState.shotFailed ||
+                    PoolLogic.gameState.hitKinds.Contains(HitKind.Ball_Foul))
+                    Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             }
 
         }
@@ -457,7 +464,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
             if (ball.isCueball)
             {
 
+                int before=PoolLogic.gameState.ballsHitBoardCount;
                 PoolLogic.Instance.OnBallHitBoard(ball, cushion);
+                if (PoolLogic.gameState.ballHitBall_2 == -1 && !PoolLogic.gameState.shotFailed &&
+                    !PoolLogic.gameState.gameIsComplete && !PoolLogic.gameState.hitKinds.Contains(HitKind.Ball_Foul) &&
+                    PoolLogic.gameState.ballsHitBoardCount > before)
+                    Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Show(PoolLogic.gameState.ballsHitBoardCount);
             }
         }
 
@@ -466,6 +478,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
         // 공의 움직임 모두 멈추었을때(볼뿌리기 포함)
         void PhysicsManager_OnBallAllStop(string data)
         {
+            Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             // Online results/turns belong to the result protocol, never local practice completion.
             if (Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.OnlineMatch) return;
             //_shotCtrl.CueReadyShot();

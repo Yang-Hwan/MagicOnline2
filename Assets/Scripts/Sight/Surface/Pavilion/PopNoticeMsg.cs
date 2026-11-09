@@ -34,7 +34,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             switch (notice)
             {
                 case NoticeHitBall.Foul:
-                    msg = "파울 -1";
+                    msg = Assets.Scripts.Exert.Match.PoolPlayer.currentPlayer.ProtectsFinishScore ? "파울" : "파울 -1";
                     break;
                 case NoticeHitBall.Finish:
                     msg = "3쿠션으로 끝내기 매치입니다.";

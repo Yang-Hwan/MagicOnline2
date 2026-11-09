@@ -33,6 +33,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public event BallMoveHandler<int, Vector3> OnBallMove;
         public event BallHitBallHandler<Ball, bool> OnBallHitBall;
+        public event Action<Ball, Ball> OnSentimentContact;
+        public void ObserveSentimentContact(Ball cue, Ball other) => OnSentimentContact?.Invoke(cue, other);
         public event BallHitBoardHandler<Ball, bool> OnBallHitBoard;
         public event BallSleepHandler<int, Vector3> OnBallSleep;
         public event Action<float> OnEndShot;
@@ -44,6 +46,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public float moveTime { get; set; }
         public bool inMove { get; private set; }
+        // Bodies can be stopped while delayed effects and four-ball scoring are still pending.
+        public bool IsResolvingShot { get; private set; }
         public bool endFromNetwork { get; set; }    // 상대로부터 종료 알림설정됨.
 
 
@@ -243,6 +247,10 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         async UniTaskVoid StopMove()
         {
             lifetimeToken.ThrowIfCancellationRequested();
+            if (!inMove || IsResolvingShot) return;
+            IsResolvingShot = true;
+            try
+            {
             inMove = false;
             for (int i = 0; i < ballLen; i++)
             {
@@ -290,8 +298,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
             moveTime = 0.0f;
             FadeLinePath().Forget();
-
-
+            }
+            finally { IsResolvingShot = false; }
         }
 
 
@@ -486,6 +494,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             line.positionCount = 2; line.SetPosition(0, pos_pre); line.SetPosition(1, pos_pre);
             foreach (var ball in balls)
             {
+                ball.strokeRailHits = 0;
                 ball.strokeFollowThrough = ball == cueBall ? impulse.followThrough : -1;
                 ball.strokeSpinPersistence = ball == cueBall ? impulse.spinPersistence : -1;
             }

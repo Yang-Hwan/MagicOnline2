@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +16,8 @@ namespace Assets.Scripts.Prack.BackSys
         public int LvProc;
         public long Coin;
         public int Jem;
+        public long Cash;
+        public long Gold;
         public int Win;
         public int Lose;
         // Win/Lose retain legacy, unclassified results.
@@ -46,8 +48,10 @@ namespace Assets.Scripts.Prack.BackSys
             InDate = "";
             LvVel = 1;
             LvProc = 0;
-            Coin = 20;
+            Coin = 0;
             Jem = 0;
+            Cash = 0;
+            Gold = 0;
             Win = 0;
             Lose = 0;
             Ball_4_Win = Ball_4_Lose = Ball_4_Draw = 0;

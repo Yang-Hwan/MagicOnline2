@@ -493,6 +493,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public void ReqMovStory(MovStoryBias bias, Vector3 pos)
         {
+            if (Assets.Scripts.Sight.Surface.Pavilion.MultiplayerSentimentController.Active) return;
             if (bias == MovStoryBias.None) return;
             PoolStory p = pools.Where(p => p.bias == bias).OrderBy(o => Guid.NewGuid()).Take(1).FirstOrDefault();
             if(p == null)
@@ -540,6 +541,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public void ChoiceMovStory(StoryIdentity identity, Vector3 pos)
         {
+            if (Assets.Scripts.Sight.Surface.Pavilion.MultiplayerSentimentController.Active) return;
             //if (_tokenSource != null)
             //{
             //    _tokenSource.Cancel();

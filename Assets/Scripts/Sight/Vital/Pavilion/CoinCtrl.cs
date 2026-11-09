@@ -28,6 +28,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         [Header("Available coins : (coins to pool)")]
         [SerializeField] int maxCoins;
         Queue<GameObject> coinsQueue = new Queue<GameObject>();
+        readonly List<GameObject> visualCoins = new List<GameObject>(30);
         [Space]
         [Header("Animation settings")]
         [SerializeField] [Range(0.2f, 0.5f)] float minAnimDuration;
@@ -73,6 +74,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             get { return (int)PoolPlayer.player(turnId).matchCoin; }
             set
             {
+                if (Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var net) &&
+                    net is Assets.Scripts.Exert.Network.PunNetwork pun && pun.HasScoreCoins) return;
                 //PoolPlayer.currentPlayer.coin = 
                 //_c[PoolPlayer.turnId] = value;
                 PoolLogic.gameState.coinGain += value;
@@ -89,6 +92,32 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             CoinPickUpAnimate(collectedCoinPosition, amount, current_turn).Forget();
             //Debug.Log("ADD COIN ~~~~~~~ " + amount + ", collectedCoinPosition : " + collectedCoinPosition);
         }
+
+        // UI-only flight for ledger-backed matches. Never calls Coins or changes a player balance.
+        public void AddVisualCoin(Vector3 position,int playerId,Action arrived)
+        {
+            if(playerId<0 || playerId>=targetCoin.Length || !targetCoin[playerId] || coinsQueue.Count==0) {
+                arrived?.Invoke(); return;
+            }
+            var coin=coinsQueue.Dequeue();
+            if(!coin) { arrived?.Invoke();return; }
+            visualCoins.Add(coin);
+            coin.SetActive(true);coin.transform.position=position;
+            coin.transform.DOMove(targetCoin[playerId].position,UnityEngine.Random.Range(minAnimDuration,maxAnimDuration))
+                .SetEase(easeType).SetLink(gameObject,LinkBehaviour.KillOnDestroy).OnComplete(()=> {
+                    if(!coin)return;
+                    visualCoins.Remove(coin);
+                    coin.SetActive(false);coinsQueue.Enqueue(coin);arrived?.Invoke();
+                });
+        }
+        public void StopVisualCoins()
+        {
+            foreach(var coin in visualCoins) if(coin) {
+                coin.transform.DOKill();coin.SetActive(false);coinsQueue.Enqueue(coin);
+            }
+            visualCoins.Clear();
+        }
+        void OnDestroy() { StopVisualCoins(); }
 
 
         async UniTaskVoid CoinPickUpAnimate(Vector3 collectedCoinPosition, int amount, int current_turn)

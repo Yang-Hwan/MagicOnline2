@@ -1,4 +1,4 @@
-using MagicOnline.GameApi.Admin;
+﻿using MagicOnline.GameApi.Admin;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -8,8 +8,17 @@ public class ChartEditModel(AdminChartService charts) : PageModel
     [BindProperty(SupportsGet=true)] public string Name { get; set; } = "SkillMatch";
     [BindProperty(SupportsGet=true)] public int? Row { get; set; }
     [BindProperty] public string? Revision { get; set; }
-    [BindProperty] public Dictionary<string,string> Values { get; set; } = new();
+    [BindProperty] public Dictionary<string,string?> Values { get; set; } = new();
     [BindProperty] public string? Reason { get; set; }
+    public Dictionary<long,string> Types { get; private set; } = new();
+    public Dictionary<long,string> Currencies { get; private set; } = new();
+    async Task LoadOptions()
+    {
+        if(Name!="PostReward") return;
+        var common=(await charts.Load("CommonCode")).Rows;
+        Types=PostRewardChart.Codes(common,"PostRewardType");
+        Currencies=PostRewardChart.Codes(common,"Wealth");
+    }
     public ChartField[] Fields => AdminChartService.Fields(Name);
     public string? Error { get; set; }
     public bool CanEdit => User.IsInRole("Owner") || User.IsInRole("Operator");
@@ -19,8 +28,10 @@ public class ChartEditModel(AdminChartService charts) : PageModel
         try
         {
             var doc=await charts.Load(Name); Revision=doc.Revision;
+            await LoadOptions();
             if(Row.HasValue && (Row<0 || Row>=doc.Rows.Count)) return NotFound();
             foreach(var field in Fields) Values[field.Key]=Row.HasValue ? doc.Rows[Row.Value]?[field.Key]?.ToString() ?? "" : "";
+            if(Name=="CommonCode" && string.IsNullOrEmpty(Values["Ord"])) Values["Ord"]="0";
             if(!Row.HasValue && Name=="Attendance") Values["DayNum"]=(doc.Rows.Count+1).ToString();
             ViewData["Title"]=Row.HasValue ? "차트 항목 수정" : "차트 항목 추가";
             return Page();
@@ -33,13 +44,14 @@ public class ChartEditModel(AdminChartService charts) : PageModel
         try
         {
             if(!ModelState.IsValid) throw new ApiFault(400,"입력 내용을 확인해 주세요.");
-            await charts.Save(User,Name,Row,Revision,Values,Reason,HttpContext.TraceIdentifier);
+            await charts.Save(User,Name,Row,Revision,Values.ToDictionary(p=>p.Key,p=>p.Value??""),Reason,HttpContext.TraceIdentifier);
             TempData["ChartSuccess"]=Row.HasValue ? "차트 항목을 수정했습니다." : "차트 항목을 추가했습니다.";
             return Redirect("/admin/charts?name="+Uri.EscapeDataString(Name));
         }
         catch(ApiFault e)
         {
             if(e.Status==404) return NotFound();
+            await LoadOptions();
             Error=e.Message; Response.StatusCode=e.Status;
             ViewData["Title"]="차트 저장 확인";
             return Page();

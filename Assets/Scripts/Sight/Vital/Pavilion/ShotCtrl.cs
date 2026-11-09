@@ -50,6 +50,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         public Transform cueVertical;
         public Transform cueDisplacement;
         public Transform cueSlider;
+        private DoubleTapCue doubleTap;
 
         public Transform turnHandle;
         public Transform forceHandle;
@@ -157,6 +158,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             cueVertical = GameObject.Find("Table/CuePivot/CueVertical").transform;
             cueDisplacement = GameObject.Find("Table/CuePivot/CueVertical/CueDisplacement").transform;
             cueSlider = GameObject.Find("Table/CuePivot/CueVertical/CueDisplacement/CueSlider").transform;
+            doubleTap = DoubleTapCue.Equip(cueSlider);
             turnHandle = GameObject.Find("Table/DetailTurn/DetailTurnPos").transform;
             forceHandle = GameObject.Find("Table/PowerPullSlide/PowerBtn").transform;
             forceGage = GameObject.Find("Table/PowerPullSlide/PowerGage").GetComponent<SpriteRenderer>();
@@ -185,6 +187,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         private void OnDisable()
         {
+            HideGaugeValueLabels();
+            HideOverlapPreview();
             InputOutput.OnMouseState -= InputOutput_OnMouseState;
             prediction?.Cancel(); pendingPreview = false; predictionDirty = true;
 
@@ -286,6 +290,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         // 큐대를 조준 안하고 잠시둔다. (추후 UI파워 비활성화 처리하기)
         public void CuePutAside()
         {
+            doubleTap?.SetCharge(0);
             cueVertical.parent = cuePivotAfterShotPosition;
             cueVertical.localPosition = Vector3.zero;
             cueVertical.localRotation = Quaternion.identity;
@@ -504,6 +509,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 forceHandle.localPosition = new Vector3(0, cueSliderDisplacementY, 0);
                 Vector3 disZ = new Vector3(0, 0, cueSliderDisplacementY * forceSliderToCueRate);
                 cueSlider.localPosition = disZ;
+                doubleTap?.SetCharge(force);
                 float gage_height = Mathf.Lerp(1f, 6.5f, force);
                 forceGage.size = new Vector2(0.75f, gage_height);
 
@@ -542,6 +548,10 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         // 스트로크 실행
         public async UniTaskVoid WaitAndStartShot(string impulse_str)
         {
+            // Remote shots accepted before the timeout barrier must still finish.
+            if (string.IsNullOrEmpty(impulse_str) &&
+                Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var net) &&
+                net is Assets.Scripts.Exert.Network.PunNetwork pun && pun.BlockLegacyShots) return;
 
             physicsManager.moveTime = 0;
             physicsManager.endFromNetwork = false;
@@ -600,6 +610,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
 
             physicsManager.StartShot(cueBall, impulse, "");
+            doubleTap?.Strike();
 
             /////////////////////////////////////////////////////////////////////////////
             //WaitAndStartShotStart();
@@ -1049,6 +1060,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             this.cueDisplacementLocalPositionXY = cueDisplacementLocalPositionXY;
             this.cueSliderLocalPositionZ = cueSliderLocalPositionZ;
             this.force = force;
+            doubleTap?.SetCharge(force);
             this.pullBarHandleLocalPositionY = pullBarHandleLocalPositionY;
             //this.cueSliderDisplacementZ = Mathf.Lerp(0, -cueSlidingMaxDisplacement, force);
         }
@@ -1091,6 +1103,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         // 큐볼 변경과 큐대 큐볼위치로 변경
         public void SetCueBall()
         {
+            doubleTap?.SetCharge(0);
             cueBall?.SetCueBall(false);
 
             //Debug.Log($"ShotCtrl.SetCueBall");

@@ -28,6 +28,8 @@ public sealed class SettlementService
             r.CoinPolicy == CoinPolicy.Unconfigured || !Enum.IsDefined(r.CoinPolicy) ||
             r.EntryCoin < 0 || r.EntryCoin > MaxExactCoin / 2 || string.IsNullOrWhiteSpace(r.RulesSnapshot))
             throw new ArgumentException("Invalid verified registration or unconfigured coin policy.");
+        if (r.CoinPolicy == CoinPolicy.ScoreTransfer && (r.Rules == null || r.Rules.TargetScore < 1 || r.Rules.EntryCoin != r.EntryCoin))
+            throw new ArgumentException("Missing score coin rules.");
         store.Create(new RegisteredMatch { Registration = r, RegisteredAt = clock.UtcMilliseconds });
     }
 
@@ -41,7 +43,7 @@ public sealed class SettlementService
     // Both authenticated participants must accept; repeated calls cannot charge again.
     public bool Ready(string matchId, string authenticatedUser, MatchRulesContract rules = null) => store.Execute(matchId, c => {
         int seat = Seat(c.Match, authenticatedUser);
-        if (c.Receipt != null) return false;
+        if (c.Receipt != null || c.Match.Disputed) return false;
         if ((c.Match.Registration.Rules != null || rules != null) &&
             (c.Match.Registration.Rules == null || !c.Match.Registration.Rules.SameAs(rules)))
             throw new MatchRulesMismatchException();
@@ -52,8 +54,11 @@ public sealed class SettlementService
         ValidateWallet(c.UserA); ValidateWallet(c.UserB);
         if (c.UserA.Coin < r.EntryCoin || c.UserB.Coin < r.EntryCoin)
             throw new InvalidOperationException("Insufficient balance to start the match.");
-        c.UserA.Coin = checked(c.UserA.Coin - r.EntryCoin);
-        c.UserB.Coin = checked(c.UserB.Coin - r.EntryCoin);
+        c.Match.StartCoinA = c.UserA.Coin; c.Match.StartCoinB = c.UserB.Coin;
+        if (r.CoinPolicy != CoinPolicy.ScoreTransfer) {
+            c.UserA.Coin = checked(c.UserA.Coin - r.EntryCoin);
+            c.UserB.Coin = checked(c.UserB.Coin - r.EntryCoin);
+        }
         c.Match.StartedAt = c.Match.LastSeenA = c.Match.LastSeenB = clock.UtcMilliseconds;
         c.Match.Phase = ServerMatchPhase.Playing;
         return true;
@@ -61,7 +66,7 @@ public sealed class SettlementService
 
     public void Heartbeat(string matchId, string authenticatedUser) => store.Execute(matchId, c => {
         int seat = Seat(c.Match, authenticatedUser);
-        if (c.Receipt != null || c.Match.Phase != ServerMatchPhase.Playing) return false;
+        if (c.Receipt != null || c.Match.Disputed || c.Match.Phase != ServerMatchPhase.Playing) return false;
         if (seat == 0) c.Match.LastSeenA = clock.UtcMilliseconds; else c.Match.LastSeenB = clock.UtcMilliseconds;
         return true;
     });
@@ -72,15 +77,48 @@ public sealed class SettlementService
         int seat = Seat(c.Match, authenticatedUser);
         if (c.Receipt != null) return c.Receipt;
         if (c.Match.Phase != ServerMatchPhase.Playing || report == null || report.ScoreA < 0 || report.ScoreB < 0 ||
-            report.ScoreA > 100000 || report.ScoreB > 100000 || report.WinnerSeat is < -1 or > 1 ||
-            report.WinnerSeat != (report.ScoreA == report.ScoreB ? -1 : report.ScoreA > report.ScoreB ? 0 : 1))
+            report.ScoreA > 100000 || report.ScoreB > 100000 || report.WinnerSeat is < -1 or > 1)
             throw new ArgumentException("Invalid result report.");
+        int expectedWinner = report.ScoreA == report.ScoreB ? -1 : report.ScoreA > report.ScoreB ? 0 : 1;
+        if (c.Match.Registration.CoinPolicy == CoinPolicy.ScoreTransfer) {
+            var coins = ReadCoins(c.Match, report.CoinEvents);
+            if (coins.BustWinner >= 0) expectedWinner = coins.BustWinner;
+            if (!(report.CoinEvents ?? "").StartsWith(c.Match.AgreedCoinEvents, StringComparison.Ordinal))
+                throw new ArgumentException("Result omits confirmed coin events.");
+        }
+        if (report.WinnerSeat != expectedWinner) throw new ArgumentException("Invalid result winner.");
         var previous = seat == 0 ? c.Match.ReportA : c.Match.ReportB;
         if (previous != null && previous != report) throw new InvalidOperationException("A submitted report cannot be changed.");
         if (seat == 0) c.Match.ReportA = report; else c.Match.ReportB = report;
         if (c.Match.ReportA == null || c.Match.ReportB == null) return null;
         if (c.Match.ReportA != c.Match.ReportB) { c.Match.Disputed = true; return null; }
+        if (c.Match.Registration.CoinPolicy == CoinPolicy.ScoreTransfer)
+            c.Match.AgreedCoinEvents = report.CoinEvents ?? "";
         return Apply(c, report.WinnerSeat, "MutualConfirmation", report.ScoreA, report.ScoreB, true);
+    });
+
+    static ScoreCoinLedger ReadCoins(RegisteredMatch m, string events) => ScoreCoinLedger.Replay(
+        m.StartCoinA, m.StartCoinB, m.Registration.EntryCoin, m.Registration.Rules.TargetScore, events);
+
+    // Checkpoints persist the agreed round log only, never spendable wallet balances.
+    // A disconnected client cannot claim unacknowledged winnings on behalf of its peer.
+    public bool CheckpointCoins(string id, string user, CoinCheckpoint report) => store.Execute(id, c => {
+        int seat = Seat(c.Match, user);
+        var m = c.Match;
+        if (c.Receipt != null || m.Disputed || m.Phase != ServerMatchPhase.Playing) return false;
+        if (m.Registration.CoinPolicy != CoinPolicy.ScoreTransfer || report == null) throw new ArgumentException("Invalid coin policy.");
+        string events = report.CoinEvents ?? "";
+        ReadCoins(m, events);
+        string previous = seat == 0 ? m.CoinEventsA : m.CoinEventsB;
+        if (previous.StartsWith(events, StringComparison.Ordinal)) return true; // late retry
+        if (!events.StartsWith(previous, StringComparison.Ordinal)) throw new ArgumentException("Coin history changed.");
+        string peer = seat == 0 ? m.CoinEventsB : m.CoinEventsA;
+        string shorter = events.Length < peer.Length ? events : peer;
+        string longer = events.Length < peer.Length ? peer : events;
+        if (!longer.StartsWith(shorter, StringComparison.Ordinal)) { m.Disputed = true; return false; }
+        if (seat == 0) m.CoinEventsA = events; else m.CoinEventsB = events;
+        m.AgreedCoinEvents = shorter;
+        return true;
     });
 
     public SettlementReceipt Surrender(string matchId, string authenticatedUser) => store.Execute(matchId, c => {
@@ -132,7 +170,21 @@ public sealed class SettlementService
         ValidateWallet(c.UserA); ValidateWallet(c.UserB);
         if (began) {
             entryA = entryB = fee;
-            if (!countStats || winner == -1) rewardA = rewardB = fee;
+            if (r.CoinPolicy == CoinPolicy.ScoreTransfer) {
+                var coins = ReadCoins(m, m.AgreedCoinEvents);
+                if (!countStats) rewardA = rewardB = fee;
+                else if (winner == -1) rewardA = rewardB = fee - ScoreCoinLedger.Commission(fee);
+                else {
+                    rewardA = coins.NetA; rewardB = -coins.NetA;
+                    long profit = checked(fee + (winner == 0 ? coins.NetA : -coins.NetA));
+                    long pot = checked(fee * 2 - ScoreCoinLedger.Commission(profit));
+                    if (winner == 0) rewardA = checked(rewardA + pot); else rewardB = checked(rewardB + pot);
+                }
+                // New-policy entry is reserved in match state, not debited until settlement.
+                c.UserA.Coin = checked(c.UserA.Coin - fee);
+                c.UserB.Coin = checked(c.UserB.Coin - fee);
+            }
+            else if (!countStats || winner == -1) rewardA = rewardB = fee;
             else if (winner == 0) rewardA = checked(fee * 2); else rewardB = checked(fee * 2);
         }
         c.UserA.Coin = checked(c.UserA.Coin + rewardA);

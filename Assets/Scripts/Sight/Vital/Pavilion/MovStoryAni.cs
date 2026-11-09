@@ -140,6 +140,18 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             }
         }
 
+        // Teardown must never call SetupSequence: it can recreate [DOTween] during scene unload.
+        public void ReleaseSequence()
+        {
+            IsActive = false;
+            _pos = Vector3.zero;
+            var sequence = mySequence;
+            mySequence = null;
+            if (sequence != null && sequence.IsActive()) sequence.Kill();
+        }
+
+        protected virtual void OnDestroy() { ReleaseSequence(); }
+
 
     }
 }

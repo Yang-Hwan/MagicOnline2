@@ -1,4 +1,4 @@
-﻿using Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital;
+using Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital;
 using UnityEngine;
 
 
@@ -6,6 +6,20 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 {
     public class BallPointBig : MonoBehaviour
     {
+        public void ResetToCenter(ShotCtrl controller)
+        {
+            // The enlarged selector may not have been opened (Awake has not run).
+            if (!point) point = transform.Find("BallFrm/Point").GetComponent<RectTransform>();
+            if (!point_v) point_v = transform.Find("Point_V").GetComponent<RectTransform>();
+            point.anchoredPosition = Vector2.zero;
+            point_v.anchoredPosition = Vector2.zero;
+            isDrag = false;
+            outLineTypeStart = OutLineType.None;
+            outLineTypeIng = OutLineType.None;
+            if (controller) controller.SetCueTargetingPosition(Vector3.zero, Vector2.zero);
+            OnCueSpinState?.Invoke(Vector2.zero);
+        }
+
         public Vector2 CapturePracticePoint() => point.anchoredPosition;
         public void RestorePracticePoint(Vector2 saved)
         {
@@ -62,6 +76,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             ballSpin = 0;
             RectTransform rectTransform = GetComponent<RectTransform>();
             radius = 0.5f * (bigBallFrm.sizeDelta.x - point.sizeDelta.x);
+            CuePointGuide.Install(bigBallFrm);
             //Debug.Log($"rt.x : {bigBallFrm.sizeDelta.x}, po.x : {point.sizeDelta.x}");
 
         }
@@ -133,7 +148,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             float angle = Mathf.Atan2(uiPos.y, uiPos.x) * Mathf.Rad2Deg;
             float radian = angle * Mathf.Deg2Rad;
             float dist = uiPos.magnitude;
-            float dist_limit = dist > ball_point_ui_boundary ? ball_point_ui_boundary : dist;
+            float dist_limit = Mathf.Min(dist, CuePointGuide.Limit(bigBallFrm, point));
             Vector2 pos_ch = dist_limit * new Vector2(Mathf.Cos(radian), Mathf.Sin(radian));
             //Debug.Log($"pos_ch : {pos_ch}, dist_vp : {dist_vp}, dist : {dist}, angle : {angle}, uiPos : {uiPos}");
             return pos_ch;
@@ -167,7 +182,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             transform.rotation = qua;
             this.movAngle = qua.eulerAngles.z;
 
+            point.anchoredPosition = Vector2.ClampMagnitude(point.anchoredPosition, CuePointGuide.Limit(bigBallFrm, point));
             Vector3 pos_v = ChAngToPos(point.anchoredPosition);
+            OnCueSpinState?.Invoke(point.anchoredPosition);
+            SetCuePosition(-point.anchoredPosition / radius, (Vector2)pos_v / radius);
             point_v.anchoredPosition = pos_v;
             //Debug.Log($"movAngle : {movAngle}, point : {point.anchoredPosition}, pos_v : {pos_v} ");
         }
@@ -212,7 +230,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
                 //if(outLineTypeIng == OutLineType.InSide)
                 {
                     Vector2 uiPos = OutSideToRectPos(Input.mousePosition, dist);
-                    Vector2 uiPosIng = Vector2.Lerp(point_v.anchoredPosition, uiPos, Time.deltaTime * 10f);
+                    Vector2 uiPosIng = Vector2.ClampMagnitude(
+                        Vector2.Lerp(point_v.anchoredPosition, uiPos, Time.deltaTime * 10f),
+                        CuePointGuide.Limit(bigBallFrm, point));
                     Vector2 uiPosIng_rat = ChAngToPos(uiPosIng, -1);
                     //Debug.Log($"uiPosIng:{uiPos}, uiPosIng:{uiPosIng}, uiPosIng_rat : {uiPosIng_rat}, ABSOLUTE_NORMAL : {uiPosIng / radius}, radius : {radius}");
                     point_v.anchoredPosition = uiPosIng;

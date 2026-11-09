@@ -19,6 +19,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             scaler.referenceResolution=new Vector2(1600,900);scaler.matchWidthOrHeight=.5f;
             var panel=FindAnyObjectByType<PnlMatch>();
             TMP_FontAsset font=panel ? panel.transform.Find("PlayerBoxs/PlayerSelf/TxtName").GetComponent<TMP_Text>().font : TMP_Settings.defaultFontAsset;
+            Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Install(gaugeValueCanvas,font,panel);
+            Assets.Scripts.Sight.Surface.Pavilion.ScoreFloatMotion.Install(gaugeValueCanvas,panel);
             powerValueLabel=CreateGaugeValueLabel("Power",font,new Color(.65f,.92f,1));
             followValueLabel=CreateGaugeValueLabel("Follow",font,new Color(1,.87f,.52f));
             UpdateGaugeValueLabels();
@@ -43,12 +45,21 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         void UpdateGaugeValueLabels()
         {
             if(!gaugeValueCanvas) return;
+            if (!isActiveAndEnabled || !pnlMatch || !pnlMatch.isActiveAndEnabled ||
+                Assets.Scripts.Exert.Match.PoolLogic.gameState.gameIsComplete)
+            { HideGaugeValueLabels(); return; }
             int power=Mathf.RoundToInt(Mathf.Clamp01(force)*100),follow=Mathf.RoundToInt(Mathf.Clamp01(pull)*100);
             if(power!=displayedPower) { powerValueLabel.text="파워 "+(power*.01f).ToString("0.00",System.Globalization.CultureInfo.InvariantCulture);displayedPower=power; }
             if(follow!=displayedFollow) { followValueLabel.text="팔로 "+(follow*.01f).ToString("0.00",System.Globalization.CultureInfo.InvariantCulture);displayedFollow=follow; }
             var camera=InputOutput.usedCamera ? InputOutput.usedCamera : Camera.main;
             PositionGaugeValue(powerValueLabel,forceHandle,0.1f,camera);
             PositionGaugeValue(followValueLabel,pullBarHandle,pullSliderMaxYPos+.1f,camera);
+        }
+
+        public void HideGaugeValueLabels()
+        {
+            if (powerValueLabel) powerValueLabel.transform.parent.gameObject.SetActive(false);
+            if (followValueLabel) followValueLabel.transform.parent.gameObject.SetActive(false);
         }
 
         void PositionGaugeValue(TextMeshProUGUI label,Transform handle,float top,Camera camera)

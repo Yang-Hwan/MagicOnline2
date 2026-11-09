@@ -55,6 +55,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public event BallMoveHandler<int, Vector3> OnBallMove;
         public event BallSleepHandler<int, Vector3> OnBallSleep;
         public event System.Action<int, string> OnWordBalloon;
+        // Contact observation for local presentation, before the existing score adjudication.
+        public event System.Action<BallC, BallC> OnPracticeSentimentContact;
+        public void ObservePracticeSentimentContact(BallC cue, BallC other)
+        {
+            if (IsLocalPractice && !IsPracticeReplay) OnPracticeSentimentContact?.Invoke(cue, other);
+        }
 
         public Button btnMatchEnd;
 
@@ -510,6 +516,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             {
                 impulsePre = impulse;
                 foreach(var ball in ballcs) {
+                    ball.strokeRailHits = 0;
                     ball.strokeFollowThrough=ball.body==cuball ? impulse.followThrough : -1f;
                     ball.strokeSpinPersistence=ball.body==cuball ? impulse.spinPersistence : -1f;
                 }
@@ -669,9 +676,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
 
 
-        void CoinPickUpAnimate(Vector3 collectedCoinPosition, int amount, int playerId)
+        void CoinPickUpAnimate(Vector3 collectedCoinPosition, int amount, int playerId, Action arrived = null)
         {
-            if (playerId < 0 || playerId >= targetCoin.Length || !targetCoin[playerId]) return;
+            if (playerId < 0 || playerId >= targetCoin.Length || !targetCoin[playerId]) {
+                for (int i = 0; i < amount; i++) arrived?.Invoke();
+                return;
+            }
             Transform _targetCoin = targetCoin[playerId];
             for (int i = 0; i < amount; i++)
             {
@@ -695,11 +705,13 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                         //executes whenever coin reach target position
                         coin.SetActive(false);
                         coinsQueue.Enqueue(coin);
+                        arrived?.Invoke();
 
                         // Score was committed at collection, never by this animation.
                         //Coins++;
                     });
                 }
+                else arrived?.Invoke(); // No visual slot: do not leave the displayed total behind.
             }
         }
 
@@ -715,7 +727,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
 
 
-        public void PlayCoinFeedback(Vector3 position, int amount, int playerId) => CoinPickUpAnimate(position, amount, playerId);
+        public void PlayCoinFeedback(Vector3 position, int amount, int playerId, Action arrived = null) => CoinPickUpAnimate(position, amount, playerId, arrived);
 
         public void AddCoins(Vector3 position, int amount, int playerId)
         {

@@ -36,9 +36,12 @@ namespace Assets.Scripts.Sight.Surface.Consist
 		[SerializeField] Sprite nav_bg_off;
 		[SerializeField] Sprite nav_bg_on;
 		PracticeMenuView practiceMenu;
+		BottomMenuView bottomMenu;
 
 		private void Awake()
 		{
+			bottomMenu = BottomMenuView.Install(this);
+			if (bottomMenu) return;
 			// 스크롤 되는 페이지의 각 value 값을 저장하는 배열 메모리 할당
 			scrollPageValues = new float[transform.childCount];
 			mainComps = new MainComp[transform.childCount];
@@ -91,6 +94,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
 
 		void OnEnable()
         {
+			if (bottomMenu) return;
 			currentPage = 0;
 			mainP = GetInitialPage();
 			Debug.Log($"MainSwipe.OnEnable ... mainP : {mainP}" );
@@ -104,6 +108,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
 
 		private void Start()
 		{
+			if (bottomMenu) return;
 			//for (int i = 0; i < scrollPageValues.Length; ++i)
 			//{
 			//	Debug.Log($"MainSwipe Start circleContents[i] : {circleContents[i].name}");
@@ -138,6 +143,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
 
 		public void SetScrollBarValue(int index)
 		{
+			if (bottomMenu) { bottomMenu.SelectPage(4 - Mathf.Clamp(index, 0, 4)); return; }
 			if (index == currentPage) { return; }
 			//Debug.Log($"currentPage : {currentPage}, index : {index}, val : {scrollPageValues[index]}");
 			currentPage = index;

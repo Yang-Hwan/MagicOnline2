@@ -15,6 +15,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         MatchShotSession shots;
         MatchResultSession results;
         MatchContactRecord contacts;
+        Assets.Scripts.Sight.Surface.Pavilion.MatchAvatarReactions avatars;
         public MatchReplayArchive ReplayArchive { get; } = new MatchReplayArchive();
         public bool CanSaveMatchReplay => results != null && results.Finished && ReplayArchive.Ready && !archived;
         string archiveMessage;
@@ -60,6 +61,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             physics.OnBallHitBall += OnContact;
             physics.OnBallHitBoard += OnCushion;
             panel = FindAnyObjectByType<Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface.PnlMatch>();
+            if (panel)
+            {
+                avatars = panel.gameObject.AddComponent<Assets.Scripts.Sight.Surface.Pavilion.MatchAvatarReactions>();
+                avatars.Configure(session.MatchId, session.Configuration.LocalSeat);
+            }
             initialized = true;
             var transport = FindAnyObjectByType<PracticeMatchSetupTransport>();
             if (transport && transport.Session == session)
@@ -119,6 +125,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void OnShot(MatchShotCommand command)
         {
+            if (avatars) avatars.BeginShot(command.shotId, command.seat);
             Trace($"event=ShotCommitted shot={command.shotId} seat={command.seat}");
             pending = false; frame = 0; target = null;
             lastReceived = Time.unscaledTime;
@@ -198,6 +205,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void OnResult(MatchResultMessage result)
         {
+            if (avatars && result.kind == MatchResultKind.Shot) avatars.Resolve(result.outcome);
             Trace($"event=Result sequence={results.Sequence} kind={result.kind} shot={shots.ShotId} score={results.Score0}:{results.Score1} turn={shots.TurnSeat} finished={results.Finished}");
             pending = false;
             PoolPlayer.ApplyOnlineScores(results.Score0, results.Score1, results.Winner);

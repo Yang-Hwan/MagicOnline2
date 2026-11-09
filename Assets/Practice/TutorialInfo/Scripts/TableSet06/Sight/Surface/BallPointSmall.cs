@@ -12,6 +12,24 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         public GameObject blindBack;
         private RectTransform point;
         float cr;
+        PhysicsMng physics;
+        ShotCtrl shot;
+        bool wasMoving;
+
+        private void LateUpdate()
+        {
+            if (!physics) physics = FindAnyObjectByType<PhysicsMng>();
+            if (!physics) return;
+            if (physics.IsPracticeReplay) { wasMoving = false; return; }
+            bool moving = physics.inMove;
+            if (wasMoving && !moving)
+            {
+                if (!shot) shot = FindAnyObjectByType<ShotCtrl>();
+                pointBig.GetComponent<BallPointBig>().ResetToCenter(shot);
+                point.anchoredPosition = Vector2.zero;
+            }
+            wasMoving = moving;
+        }
 
         private void Awake()
         {
@@ -41,6 +59,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         private void OnEnable()
         {
+            wasMoving = false;
             ShotCtrl.OnCueRotateState += ShotController_OnCueRotateState;
             BallPointBig.OnCueSpinState += BallPointBig_OnCueSpinState;
 

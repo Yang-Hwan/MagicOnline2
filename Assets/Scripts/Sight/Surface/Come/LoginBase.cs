@@ -9,6 +9,8 @@ namespace Assets.Scripts.Sight.Surface.Come
     {
 
         [SerializeField] protected TextMeshProUGUI txtMsg;
+        protected Color fieldNormalColor = Color.white;
+        protected Color fieldErrorColor = Color.red;
 
         protected virtual void Awake()
         {
@@ -19,7 +21,7 @@ namespace Assets.Scripts.Sight.Surface.Come
         protected void ResetUI(params Image[] images)
         {
             txtMsg.text = string.Empty;
-            images.ToList().ForEach(r => r.color = Color.white);
+            images.ToList().ForEach(r => r.color = fieldNormalColor);
         }
 
         protected void SetMessage(string msg) => txtMsg.text = msg;
@@ -27,7 +29,7 @@ namespace Assets.Scripts.Sight.Surface.Come
         protected void GuideForIncorrectlyEnteredData(Image image, string msg)
         {
             txtMsg.text = msg;
-            image.color = Color.red;
+            image.color = fieldErrorColor;
         }
 
         protected bool IsFieldDataEmpty(Image image, string field, string result)

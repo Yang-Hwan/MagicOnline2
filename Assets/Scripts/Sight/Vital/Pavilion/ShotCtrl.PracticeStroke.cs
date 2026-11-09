@@ -25,7 +25,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             return new Impulse(shot.point, shot.impulse, Vector3.zero, cueBall.id, shot.followThrough, shot.spinPersistence);
         }
 
-        public PreviewImpulse BuildGuideImpulse() => BuildImpulseForPower(.4f);
+        public PreviewImpulse BuildGuideImpulse() => BuildImpulseForPower(.5f);
 
         PreviewImpulse BuildImpulseForPower(float power)
         {

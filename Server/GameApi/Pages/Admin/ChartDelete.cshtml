@@ -1,0 +1,19 @@
+@page "/admin/charts/delete"
+@model MagicOnline.GameApi.Pages.Admin.ChartDeleteModel
+<div class="breadcrumb"><a href="/admin/charts?name=@Model.Name">차트 관리</a> / 항목 삭제</div>
+<div class="page-head"><div><h1>차트 항목 삭제</h1><p class="muted">@Model.Name</p></div></div>
+<section class="panel">
+@if(Model.Error != null){
+    <p class="error" role="alert">@Model.Error</p>
+    <a class="button" href="/admin/charts?name=@Model.Name">목록으로 돌아가기</a>
+}else{
+    <p class="notice">아래 항목을 삭제하시겠습니까? 삭제 즉시 서버에 반영되며 변경 전후 값이 관리자 기록에 남습니다.</p>
+    @if(Model.Name == "Attendance"){<p class="hint">출석 보상은 마지막 일차부터 삭제할 수 있으며 1일차는 유지해야 합니다.</p>}
+    <dl>@foreach(var field in Model.Fields){<dt>@field.Label</dt><dd>@Model.Values.GetValueOrDefault(field.Key)</dd>}</dl>
+    <form method="post" class="chart-form">
+        <input type="hidden" asp-for="Name"><input type="hidden" asp-for="Row"><input type="hidden" asp-for="Revision">
+        <label for="Reason">삭제 사유 (선택)<input asp-for="Reason" maxlength="200"></label>
+        <div class="chart-actions"><button type="submit" class="primary">항목 삭제</button><a class="button" href="/admin/charts?name=@Model.Name">취소</a></div>
+    </form>
+}
+</section>

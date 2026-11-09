@@ -40,6 +40,14 @@ namespace Assets.Scripts.Exert.Match
             private set;
         }
 
+        // The legacy rule engine also uses hitCnt for finish/sudden-death progression.
+        // That progression must not extend the chart's score counter in the UI.
+        public int DisplayedHitCount => Mathf.Clamp(hitCnt, 0, PoolCoach.Instance.targetHit);
+        // A finish-mission foul loses the turn, but cannot undo the completed target.
+        public bool ProtectsFinishScore => PoolCoach.Instance.targetHit > 0 &&
+            hitCnt >= PoolCoach.Instance.targetHit &&
+            (finishStep == FinishStep.Push || finishStep == FinishStep.Done);
+
         public FinishStep finishStep
         {
             get;
@@ -300,6 +308,7 @@ namespace Assets.Scripts.Exert.Match
             {
                 if (player.playerId == playerId)
                 {
+                    if (player.ProtectsFinishScore) return;
                     if (player.hitCnt > 0)
                     {
                         player.hitCnt += cnt;
@@ -343,8 +352,12 @@ namespace Assets.Scripts.Exert.Match
                 {
                     if (cnt > 0)
                     {
+                        int scoreBefore = player.hitCnt;
                         player.hitCnt += cnt;
                         player.hitInning += cnt;
+                        if (Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var coinNetwork) &&
+                            coinNetwork is Assets.Scripts.Exert.Network.PunNetwork coinMatch && coinMatch.HasScoreCoins)
+                            coinMatch.AddScoringCoins(playerId, scoreBefore, player.hitInning - cnt + 1, cnt);
 
                         if(player.hitInning > player.hitHigh)
                         {
@@ -452,6 +465,9 @@ namespace Assets.Scripts.Exert.Match
         // id : -1 무승부
         public static int GetHitWin()
         {
+            if (Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var coinNetwork) &&
+                coinNetwork is Assets.Scripts.Exert.Network.PunNetwork coinMatch && coinMatch.CoinWinnerPlayer >= 0)
+                return coinMatch.CoinWinnerPlayer;
             int id = -1;
             if (mainPlayer.hitCnt == otherPlayer.hitCnt)
             {

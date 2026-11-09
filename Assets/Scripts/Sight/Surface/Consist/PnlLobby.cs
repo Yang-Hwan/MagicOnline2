@@ -45,6 +45,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
 
             btnBack = transform.Find("BtnBack").GetComponent<Button>();
             btnBack.onClick.AddListener(btnBack_Click);
+            LobbyLoungeView.Install(transform, txtTitle, txtCounter, txtNickNmSelf, txtNickNmOther, btnBack);
 
         }
 
@@ -83,6 +84,8 @@ namespace Assets.Scripts.Sight.Surface.Consist
                     break;
                 case NetworkState.OpponentLeftRoom:
                     CountDownAbort();
+                    txtNickNmOther.text = string.Empty;
+                    txtCounter.text = "상대 대기";
                     break;
                 case NetworkState.JoinedToRoom:
                     txtCounter.text = "상대 대기";
@@ -138,7 +141,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 }
                 else
                 {
-                    if (!await PoolPlayer.OnGotoPlayWithPlayer(players[i]) || !this) return;
+                    if (!await PoolPlayer.OnGotoPlayWithPlayer(players[i]) || !this || !isActiveAndEnabled) return;
                     txtNickNmOther.text = PoolPlayer.otherPlayer.name;  // players[i].nickname;
                 }
             }

@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Often;
+using Assets.Scripts.Often;
 using Assets.Scripts.Sight.Vital.Pavilion;
 using System;
 using System.Collections.Generic;
@@ -115,8 +115,8 @@ namespace Assets.Scripts.Exert.Match
 
         public void ResetMatchInit()
         {
-            gameState.gameIsComplete = false;
-            gameState.isSurvival = false;
+            // Discard the prior match's contacts, foul/turn flags and finish state together.
+            _gameState = new PoolState();
         }
 
         // 스트로크마다 실행. 시합 첫시작시 isMatchTimePlay(false) 시작됨
@@ -463,6 +463,13 @@ namespace Assets.Scripts.Exert.Match
 
             // 득점애니, 점수 반영 
             PoolCoach.Instance.ScoreChanged(cnt, reward, runPath);
+            if (Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var coinNetwork) &&
+                coinNetwork is Assets.Scripts.Exert.Network.PunNetwork coinMatch && coinMatch.CoinWinnerPlayer >= 0)
+            {
+                PoolPlayer.SetWinner(coinMatch.CoinWinnerPlayer);
+                gameState.gameIsComplete = true;
+                return;
+            }
 
             // 목표타격개수를 다 맞혔다면
             //Debug.Log($"BallHitAchieve MYTURN : {PoolPlayer.mainPlayer.myTurn}, cnt : {cnt}, targetHit : {PoolCoach.Instance.targetHit}, cur.hitCnt : {PoolPlayer.currentPlayer.hitCnt}");
@@ -601,6 +608,13 @@ namespace Assets.Scripts.Exert.Match
                     // 생존 단계라면(성공)
                     else
                     {
+                        // The opponent finishing only grants the rear player's last inning.
+                        // This player must still reach their own target before the finish mission.
+                        if (PoolPlayer.currentPlayer.hitCnt < PoolCoach.Instance.targetHit)
+                        {
+                            PoolLogic.gameState.needToChangeTurn = false;
+                            return;
+                        }
                         // 목표개수에 도달했다면 
                         // 마무리 미션 없는 경우 승패처리
                         if (PoolPlayer.currentPlayer.finishStep == FinishStep.None)

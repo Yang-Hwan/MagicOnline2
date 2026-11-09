@@ -74,6 +74,14 @@ MonoBehaviour:
   - HistoryReadyRPC
   - HistoryResultRPC
   - HistoryStartRequestRPC
+  - HistoryClockRPC
+  - HistoryTimeoutCommitRPC
+  - HistoryTimeoutPrepareRPC
+  - HistoryTimeoutReadyRPC
+  - LegacyShotEndRPC
+  - CushionMotionRPC
+  - ThreeBallScoreMotionRPC
+  - SentimentMotionRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

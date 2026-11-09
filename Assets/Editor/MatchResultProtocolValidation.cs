@@ -26,7 +26,7 @@ public static class MatchResultProtocolValidation
             Require(contacts.Resolve() == MatchShotOutcome.Point, "three-cushion point rejected");
         }
         var starts = new MatchStartSession[2]; var shots = new MatchShotSession[2]; var results = new MatchResultSession[2];
-        var hall = new SkillMatchData { HallIdx = 1, MatchBall = ballCount, TargetHit = 2,
+        var hall = new SkillMatchData { HallIdx = 1, MatchBall = ballCount, TargetHit = ballCount == 4 ? 5 : 2,
             MatchCushion = ballCount == 3 ? 3 : 0, MatchTotMin = 1 };
         var state = new MatchBallSnapshot { matchId = "result-test", frame = 0, settled = true, balls = new MatchBallState[ballCount] };
         for (int i = 0; i < ballCount; i++) state.balls[i].rotation = Quaternion.identity;
@@ -84,9 +84,13 @@ public static class MatchResultProtocolValidation
         Shot(MatchShotOutcome.Point, 125); Shot(MatchShotOutcome.Point, 126);
         if (ballCount == 4)
         {
-            Require(!results[0].Finished && results[0].Score1 == 2 && starts[0].Configuration.TargetScore == 3,
-                "four-ball finished before the agreed three-point target");
-            Shot(MatchShotOutcome.Point, 127);
+            Require(!results[0].Finished && results[0].Score1 == 2 && starts[0].Configuration.TargetScore == hall.TargetHit,
+                "four-ball target does not follow chart");
+            for (int score = 3; score <= hall.TargetHit; score++)
+            {
+                Shot(MatchShotOutcome.Point, 124 + score);
+                Require(results[0].Finished == (score == hall.TargetHit), "four-ball completed at the wrong chart target");
+            }
         }
         Require(results[0].Finished && results[1].Finished && results[0].Winner == 1 &&
             !results[0].CanShoot(128), "target win failed");

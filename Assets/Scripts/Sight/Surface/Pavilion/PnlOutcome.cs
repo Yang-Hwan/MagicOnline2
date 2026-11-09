@@ -12,6 +12,7 @@ using UnityEngine.UI;
 using System.IO;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 using Assets.Scripts.Prack.BackSys;
 
 namespace Assets.Scripts.Sight.Surface.Pavilion
@@ -29,6 +30,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         [SerializeField] Button btnPlay;
         [SerializeField] Button btnMain;
         Button btnSaveMatchReplay;
+        bool opponentUnavailable;
+        int localAvatarSeat;
         PnlMatch matchReplayPanel;
         GameObject matchReplaySavePanel;
         TMP_InputField matchReplayTitle;
@@ -70,14 +73,68 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             saveRect.anchoredPosition = btnMain.GetComponent<RectTransform>().anchoredPosition + new Vector2(0, -58);
             var saveLabel = saveObject.GetComponentInChildren<TextMeshProUGUI>(true);
             if (saveLabel) saveLabel.text = "시합 저장";
+            settlementText = UiText(transform, "SettlementStatus", 20, new Vector2(0, -255), new Vector2(760, 45));
+            RematchLoungeView.Install(transform, LoungeState,
+                () => { if (btnPlay.interactable) btnPlay.onClick.Invoke(); },
+                () => { if (btnSaveMatchReplay.interactable) btnSaveMatchReplay.onClick.Invoke(); },
+                () => btnMain.onClick.Invoke());
 
             //NetworkManager.network.OnNetwork += NetworkManager_network_OnNetwork;
             //PoolCoach.Instance.OnSetPlayer += PoolCoach_OnSetPlayer;
 
         }
 
+        bool checkingEntryCoin, entryCoinChecked, leavingOutcome;
+        int outcomeVersion;
+        bool returnToLobbyScheduled;
+        float nextEntryCoinCheck;
+
+        bool Friendly => NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.IsFriendly;
+
+        async void CheckRematchEntryCoin()
+        {
+            if (Friendly) { entryCoinChecked = true; return; }
+            var history = Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance;
+            string id = history.LastMatchId;
+            if (leavingOutcome || checkingEntryCoin || entryCoinChecked ||
+                Time.unscaledTime < nextEntryCoinCheck || !history.IsSettled(id)) return;
+            checkingEntryCoin = true;
+            int version = outcomeVersion;
+            try
+            {
+                // Read the settled match's entry fee and a fresh wallet, never the in-game preview.
+                var state = await history.GetState(id);
+                if (state.Phase != "Applied" || state.Rules == null) return;
+                await BackendGame.Instance.LoadAsync();
+                if (!this || !isActiveAndEnabled || version != outcomeVersion ||
+                    history.LastMatchId != id || leavingOutcome) return;
+                long balance = BackendGame.Instance.UserMainData.Coin;
+                if (balance <= 0 || balance < state.Rules.EntryCoin)
+                {
+                    Debug.Log($"[재대결] 입장 코인 부족으로 자동 퇴장: 보유 {balance}, 필요 {state.Rules.EntryCoin}");
+                    btnMain_Click();
+                    return;
+                }
+                entryCoinChecked = true;
+            }
+            catch (Exception e) { if (this) Debug.LogWarning("재대결 입장 코인 확인 재시도: " + e.Message); }
+            finally
+            {
+                if (this && version == outcomeVersion)
+                {
+                    checkingEntryCoin = false;
+                    nextEntryCoinCheck = Time.unscaledTime + 3;
+                }
+            }
+        }
+
         private void OnEnable()
         {
+            outcomeVersion++;
+            returnToLobbyScheduled = false;
+            checkingEntryCoin = entryCoinChecked = leavingOutcome = false;
+            nextEntryCoinCheck = 0;
+            btnPlay.interactable = false;
 
             matchReplayPanel = PnlMatch.Instance;
             if (btnSaveMatchReplay) btnSaveMatchReplay.gameObject.SetActive(true);
@@ -86,9 +143,13 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             PoolCoach.Instance.OnSetPlayer += PoolCoach_OnSetPlayer;
             BackendGame.Instance.onGameDataLoadEvent.AddListener(RefreshServerCards);
 
-            PoolPlayer.ResetOneMore();
+            opponentUnavailable = !PhotonNetwork.InRoom || PhotonNetwork.PlayerList.Length < 2 ||
+                PhotonNetwork.PlayerList.Any(p => p.IsInactive);
             if (NetworkManager.TryGetExistingNetwork(out var resultNetwork) && resultNetwork is PunNetwork pun)
+            {
+                localAvatarSeat = pun.LoungeLocalSeat;
                 pun.RecordDisplayedLegacyOutcome();
+            }
             //NetworkManager.network.OnNetwork += NetworkManager_network_OnNetwork;
             PoolCoach.Instance.Result(PoolPlayer.mainPlayer);
             PoolCoach.Instance.Result(PoolPlayer.otherPlayer);
@@ -103,10 +164,43 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 txtResult.text = PoolPlayer.mainPlayer.isWinner ? "승리했습니다" : "패배하였습니다";
             }
             //txtResult.text = PoolPlayer.mainPlayer.isWinner ? "승리했습니다" : "패배했습니다";
+            if (NetworkManager.TryGetExistingNetwork(out var confirmedNetwork) && confirmedNetwork is PunNetwork confirmed && confirmed.HasLegacyMatch)
+                txtResult.text = confirmed.ConfirmedResultText ?? "경기 결과 확인 중";
             txtCountDown.text = "";
 
             Debug.Log($"PnlOutcome OnEnable... ...   ");
             RefreshServerCards();
+        }
+
+        RematchLoungeView.State LoungeState()
+        {
+            var own = PoolPlayer.mainPlayer; var other = PoolPlayer.otherPlayer;
+            var hall = Assets.Scripts.Exert.BackSys.BackendChart.skillMatchData?.FirstOrDefault(h => h.HallIdx == NetworkManager.hallIdx);
+            string Vote(PoolPlayer p) => p == null || p.oneMore == OneMore.Disable ? "재대결 불가" : p.oneMore == OneMore.Req ? "재대결 요청!" : "선택 대기 중";
+            bool counting = int.TryParse(txtCountDown.text, out int seconds);
+            bool unavailable = opponentUnavailable || other == null || other.oneMore == OneMore.Disable;
+            bool requested = own != null && own.oneMore == OneMore.Req;
+            NetworkManager.TryGetExistingNetwork(out var resultNet);
+            var series = resultNet as PunNetwork;
+            return new RematchLoungeView.State {
+                Friendly = Friendly,
+                Arena = hall?.HallName ?? "경기 결과", Result = txtResult.text.StartsWith("Master :") ? "경기 준비 중" : txtResult.text,
+                Score = series != null ? series.ResultSeriesScore : "0 : 0",
+                PrizeCoin = series?.ResultPrizeCoin,
+                LocalAvatarSeat = localAvatarSeat,
+                SelfName = own?.name ?? "플레이어", OtherName = other?.name ?? "상대 플레이어",
+                SelfInfo = $"{own?.hitHigh ?? 0}연타",
+                OtherInfo = series != null ? series.ResultDurationText : "--:--",
+                SelfVote = counting ? "재대결 준비 완료" : Vote(own), OtherVote = unavailable ? "상대방이 나갔습니다" : counting ? "재대결 준비 완료" : Vote(other),
+                Status = unavailable ? "상대와 재대결할 수 없습니다." :
+                    counting ? (seconds > 0 ? $"{seconds}초 후 재대결을 시작합니다." : "재대결을 준비하고 있습니다.") :
+                    requested ? "상대의 재대결 응답을 기다리고 있습니다." :
+                    other?.oneMore == OneMore.Req ? "상대가 재대결을 요청했습니다" : "재대결을 선택해 주세요",
+                Settlement = settlementText ? settlementText.text : "",
+                CanRematch = btnPlay.interactable && !requested && !unavailable && !counting,
+                CanSave = btnSaveMatchReplay.interactable, CanLeave = btnMain.interactable,
+                Waiting = requested && !unavailable && !counting
+            };
         }
 
         async void RefreshServerCards()
@@ -127,9 +221,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             if (!settlementText)
                 settlementText = UiText(transform, "SettlementStatus", 20, new Vector2(0, -255), new Vector2(760, 45));
-            settlementText.text = Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance.LastStatus;
+            settlementText.text = Friendly ? "친선 경기 · 코인 및 공식 기록 미반영" : Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance.LastStatus;
             var history = Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance;
-            if (!string.IsNullOrEmpty(history.LastMatchId)) btnPlay.interactable = history.IsSettled(history.LastMatchId);
+            CheckRematchEntryCoin();
+            btnPlay.interactable = !leavingOutcome && entryCoinChecked && (Friendly || history.IsSettled(history.LastMatchId));
             if (!matchReplayPanel)
                 matchReplayPanel = PnlMatch.Instance;
             if (btnSaveMatchReplay)
@@ -277,6 +372,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             Debug.Log("00.PnlOutcome NetworkManager_network_OnNetwork : " + state);
             switch (state)
             {
+                case NetworkState.OpponentLeftRoom:
+                    opponentUnavailable = true;
+                    break;
                 case NetworkState.OpponentOneMoreReq:
                     OneMore more = PoolPlayer.otherPlayer.oneMore;
                     playerOther.SetPlayerMsg(more);
@@ -289,6 +387,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                     }
                     break;
                 case NetworkState.LeftRoom:
+                    // LeaveMatch and Photon's OnLeftRoom can both report this departure.
+                    if (returnToLobbyScheduled) break;
+                    returnToLobbyScheduled = true;
                     PoolPlayer.PlayerScoreClear();
                     Debug.Log("11.PnlOutcome NetworkManager_network_OnNetwork : " + state);
                     WaitLoadScene(state);
@@ -301,8 +402,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async void WaitLoadScene(NetworkState state)
         {
+            int version = outcomeVersion;
             await Task.Delay(1000);
-            BackendDuty.Instance.ConsistPage(2);
+            if (!this || !isActiveAndEnabled || version != outcomeVersion) return;
+            BackendDuty.Instance.ConsistPage(Friendly ? 0 : 2);
             SceneMove.LoadScene(SceneNames.Consist);
             Debug.Log("22.PnlOutcome NetworkManager_network_OnNetwork : " + state);
         }
@@ -330,12 +433,16 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void btnPlay_Click()
         {
+            if (leavingOutcome || !entryCoinChecked ||
+                !Friendly && !Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance.IsSettled(
+                    Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance.LastMatchId)) return;
             OneMore more = OneMore.Req;
             PoolPlayer.OneMoreReq(PoolPlayer.mainPlayer.playerId, more);
             playerSelf.SetPlayerMsg(more);
             int len = NetworkManager.network.OneMoreTimeReq();
             if(len < 2)
             {
+                opponentUnavailable = true;
                 playerOther.SetPlayerMsg( OneMore.Disable);
                 return;
             }
@@ -349,16 +456,23 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void btnMain_Click()
         {
+            if (leavingOutcome) return;
+            leavingOutcome = true;
+            entryCoinChecked = false;
+            btnPlay.interactable = false;
             NetworkManager.network.LeaveMatch();
         }
 
 
         async UniTaskVoid CountDownStart(int sec)
         {
+            if (leavingOutcome || !entryCoinChecked) return;
+            int version = outcomeVersion;
             txtCountDown.text = $"{sec}";
             while(sec > 0)
             {
                 await UniTask.WaitForSeconds(1);
+                if (!this || !isActiveAndEnabled || version != outcomeVersion || leavingOutcome) return;
                 sec--;
                 txtCountDown.text = $"{sec}";
             }

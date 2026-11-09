@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using System.Linq;
@@ -13,6 +13,7 @@ namespace Assets.Scripts.Exert.Match
 {
     public class PoolCoach
     {
+        public event System.Action<int> OnAvatarShotStarted;
 
         // 
         public event System.Action<int> OnFinishAchieve;
@@ -102,7 +103,8 @@ namespace Assets.Scripts.Exert.Match
 
         public void Initialize(PhysicsMng physicsMng, ShotCtrl shotCtrl)
         {
-            if (_physicsMng != null) return;
+            if (_physicsMng == physicsMng && _shotCtrl == shotCtrl) return;
+            DetachPhysics(_physicsMng);
             _physicsMng = physicsMng;
             _shotCtrl = shotCtrl;
 
@@ -117,18 +119,57 @@ namespace Assets.Scripts.Exert.Match
 
         }
 
+        public void DetachPhysics(PhysicsMng owner)
+        {
+            // An old scene must not detach the replacement scene's manager.
+            if (!ReferenceEquals(_physicsMng, owner)) return;
+            if (!ReferenceEquals(owner, null))
+            {
+                owner.OnStartShot -= PhysicsManager_OnStartShot;
+                owner.OnBallMove -= PhysicsManager_OnBallMove;
+                owner.OnBallHitBall -= PhysicsManager_OnBallHitBall;
+                owner.OnBallHitBoard -= PhysicsManager_OnBallHitBoard;
+                owner.OnBallSleep -= PhysicsManager_OnBallSleep;
+                owner.OnEndShot -= PhysicsManager_OnEndShot;
+            }
+            _physicsMng = null;
+            _shotCtrl = null;
+            balls = null;
+            calculateTime = false;
+            isMatchTimePlay = false;
+            isMatchTimeEnd = false;
+            shotContacts.Clear();
+            remoteShotContacts = null;
+        }
+
+        public void ApplyBallSkin(string matchId)
+        {
+            if (balls == null || string.IsNullOrEmpty(matchId)) return;
+            int style = Assets.Scripts.Often.MatchBallSkins.Choose(matchId);
+            foreach (var ball in balls)
+                if (ball) Assets.Scripts.Often.MatchBallSkins.Apply(ball.transform, style);
+        }
+
         public void MatchReset()
         {
+            completionNotified = false;
+            calculateTime = false;
+            playTime = 0;
+            isMatchTimePlay = false;
+            isMatchTimeEnd = false;
+            shotContacts.Clear();
+            remoteShotContacts = null;
+            PoolLogic.Instance.ResetMatchInit();
 
             SkillMatchData hall = BackendChart.skillMatchData.Where(r => r.HallIdx.Equals(NetworkManager.hallIdx)).FirstOrDefault();
             //Debug.Log("PnlMatch.MatchInit hallidx : " + NetworkManager.hallIdx + " .. hall : " + hall?.ToString() ?? "xx");
 
 
             playType = PlayType.Online;                         // 같이 하기(인간,인간)
-            hitReward = 200;            
+            hitReward = NetworkManager.TryGetExistingNetwork(out var gameNet) && gameNet is PunNetwork friend && friend.IsFriendly ? 0 : 200;            
             timeInningSec = 30;                                 // 
 
-            targetHit = hall.MatchBall == (int)MatchBall.FourBall ? 3 : hall.TargetHit; // 4구 대전 목표는 3개
+            targetHit = hall.TargetHit; // 경기장 차트의 목표 개수 사용
             timeMatchSec = hall.MatchTotMin * 60;               // 대전시간(초) 
             matchBall = (MatchBall)hall.MatchBall;              // 4구 또는 3구..  MatchBall.ThreeBall;            // 3볼 개수
             matchCushion = (MatchCushion)hall.MatchCushion;     // 미션쿠션  MatchCushion.OneCusion;      // 시합룰 . 쿠션 1번
@@ -153,15 +194,16 @@ namespace Assets.Scripts.Exert.Match
 
             _physicsMng.SetBalls((int)matchBall);
             balls = _physicsMng.balls;
+            if (NetworkManager.TryGetExistingNetwork(out var skinNetwork) && skinNetwork is PunNetwork skinPun)
+                ApplyBallSkin(skinPun.BallSkinMatchId);
 
             //Debug.Log($"PoolCoach MatchReset ball cnt : {balls.Length}");
 
+            PoolPlayer.ResetMatch(finishMission != FinishMission.None ? FinishStep.Task : FinishStep.None, checkCushion);
+            PoolPlayer.ResetOneMore();
+            PoolPlayer.SetTurn(PoolPlayer.turnId);
             OnSetPlayer?.Invoke(PoolPlayer.mainPlayer);
             OnSetPlayer?.Invoke(PoolPlayer.otherPlayer);
-
-            PoolLogic.Instance.ResetMatchInit();
-            PoolPlayer.ResetMatch(finishMission != FinishMission.None ? FinishStep.Task : FinishStep.None, checkCushion);
-            PoolPlayer.SetTurn(PoolPlayer.turnId);
             isMatchTimePlay = false;                    // true일때 실제 시작 .. 초구뿌리기 완료후 참
             isMatchTimeEnd = false;
 
@@ -183,8 +225,15 @@ namespace Assets.Scripts.Exert.Match
         }
 
 
+        readonly List<int> shotContacts = new List<int>();
+        int[] remoteShotContacts;
+        public int[] ShotContacts => shotContacts.ToArray();
+        public void StageRemoteShotContacts(int[] contacts) { remoteShotContacts = contacts; }
+        bool UsesSharedContacts => NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.HasLegacyMatch;
+
         void PhysicsManager_OnStartShot(string info)
         {
+            shotContacts.Clear(); remoteShotContacts = null;
             for (int i = 0; i < (int)matchBall; i++)
             {
                 balls[i].OnState(BallState.SetState);
@@ -196,7 +245,14 @@ namespace Assets.Scripts.Exert.Match
 
             //Debug.Log($"0.PhysicsManager_OnStartShot needToChangeTurn : {PoolLogic.gameState.needToChangeTurn} .. isMatchTimePlay : {isMatchTimePlay} .. gameIsComplete : {PoolLogic.gameState.gameIsComplete}");
             // 슈팅 시작 직후 초기화 
+            Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             PoolLogic.Instance.ResetTurnState(isMatchTimePlay);
+            if (NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.HasLegacyMatch)
+            {
+                int serial = pun.BeginLegacyShot();
+                if (isMatchTimePlay && info != "InitRandPosFlutter")
+                    OnAvatarShotStarted?.Invoke(serial);
+            }
             //Debug.Log($"1.PhysicsManager_OnStartShot myturn : {PoolPlayer.mainPlayer.myTurn} ... Inn : {PoolPlayer.inning} ... Ord : {PoolPlayer.ord} ...  needToChangeTurn : {PoolLogic.gameState.needToChangeTurn} .. isMatchTimePlay : {isMatchTimePlay} .. gameIsComplete : {PoolLogic.gameState.gameIsComplete}");
 
         }
@@ -221,7 +277,11 @@ namespace Assets.Scripts.Exert.Match
             // 
             if (ball.isCueBall)
             {
+                if (UsesSharedContacts && PoolLogic.controlFromNetwork) return;
+                shotContacts.Add(hitBall.id);
                 PoolLogic.Instance.OnCueBallHitBall(ball, hitBall);
+                if (PoolLogic.gameState.ballHitBall_2 != -1 || PoolLogic.gameState.hitKinds.Contains(HitKind.Ball_Foul))
+                    PresentCushionCount(0);
             }
 
         }
@@ -243,9 +303,27 @@ namespace Assets.Scripts.Exert.Match
             }
             if (ball.isCueBall)
             {
+                if (UsesSharedContacts && PoolLogic.controlFromNetwork) return;
+                shotContacts.Add((int)dir);
                 _physicsMng.CusionHit(dir);
+                int before = PoolLogic.gameState.ballsHitBoardCount;
                 PoolLogic.Instance.OnBallHitBoard(ball, dir);
+                if (!PoolLogic.gameState.gameIsComplete && !PoolLogic.gameState.hitKinds.Contains(HitKind.Ball_Foul) &&
+                    PoolLogic.gameState.ballHitBall_2 == -1 && PoolLogic.gameState.ballsHitBoardCount > before)
+                    PresentCushionCount(PoolLogic.gameState.ballsHitBoardCount);
             }
+        }
+
+        void PresentCushionCount(int count)
+        {
+            if (NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.HasLegacyMatch)
+            {
+                if (PoolLogic.controlInNetwork) pun.PublishCushionMotion(count);
+                else if (count == 0) Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
+                return;
+            }
+            if (count > 0) Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Show(count);
+            else Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
         }
 
         void PhysicsManager_OnBallSleep(int ballId, Vector3 position)
@@ -255,6 +333,22 @@ namespace Assets.Scripts.Exert.Match
 
         void PhysicsManager_OnEndShot(float moveTime)
         {
+            PresentCushionCount(0);
+            if (isMatchTimePlay && UsesSharedContacts && PoolLogic.controlFromNetwork)
+            {
+                if (remoteShotContacts == null)
+                {
+                    Debug.LogError("[ShotContacts] Missing authoritative contacts; refusing independent score judgment.");
+                    return;
+                }
+                var cue = balls.First(b => b.isCueBall);
+                foreach (int contact in remoteShotContacts)
+                {
+                    if (contact >= 100) PoolLogic.Instance.OnBallHitBoard(cue, (CushionDir)contact);
+                    else PoolLogic.Instance.OnCueBallHitBall(cue, balls[contact]);
+                }
+                remoteShotContacts = null;
+            }
             bool gameIsEnd;
 
 
@@ -264,6 +358,11 @@ namespace Assets.Scripts.Exert.Match
             reward = 0;
 
             PoolLogic.Instance.ShotEnded();
+            // Publish terminal emotion before the shot-end packet can change the peer's turn.
+            if (Assets.Scripts.Sight.Surface.Pavilion.MultiplayerSentimentController.Active)
+                Assets.Scripts.Sight.Surface.Pavilion.MultiplayerSentimentController.Instance.CompleteShot();
+            if (UsesSharedContacts)
+                Debug.Log($"[ShotContacts] judged local={PoolPlayer.mainPlayer.hitCnt} opponent={PoolPlayer.otherPlayer.hitCnt} turn={PoolPlayer.turnId}");
             OnEndShot?.Invoke(PoolPlayer.turnId, isHit, reward, moveTime);   // 상대에게 마무리 알림 메시지보냄
 
             
@@ -337,6 +436,8 @@ namespace Assets.Scripts.Exert.Match
         public void Update(float deltaTime)
         {
             if (!isMatchTimePlay) return;
+            if (Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var net) &&
+                net is Assets.Scripts.Exert.Network.PunNetwork pun && pun.BlockLegacyShots) return;
 
             if (calculateTime)
             {
@@ -359,49 +460,32 @@ namespace Assets.Scripts.Exert.Match
         // 상대와 자신의 스트로크전 타임종료시 호출
         void EndTime()
         {
+            if (!calculateTime || PoolLogic.gameState.gameIsComplete || isMatchTimeEnd) return;
+            if (NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.BlockLegacyShots) return;
 
+            // OnEndTime can synchronously change ord/turn. Judge the player whose clock expired.
+            bool finish = PoolLogic.gameState.isSurvival && PoolPlayer.ord == 1 &&
+                PoolPlayer.mainPlayer.hitCnt != PoolPlayer.otherPlayer.hitCnt;
             other_play_time_send_cnt = 0;
             playTime = 1.0f;
-            //PoolLogic.Instance.OnEndTime();
             calculateTime = false;
-            OnEndTime?.Invoke();
-
-            // 승부치기 중에 배팅을 안한상태.
-            if (PoolLogic.gameState.isSurvival)
+            if (finish)
             {
-                // 후구턴인 상태
-                if (PoolPlayer.ord == 1)
-                {
-                    // 상대와 동일 개수가 아니라면
-                    if (PoolPlayer.mainPlayer.hitCnt != PoolPlayer.otherPlayer.hitCnt)
-                    {
-                        if (PoolPlayer.mainPlayer.hitCnt > PoolPlayer.otherPlayer.hitCnt)
-                        {
-                            PoolPlayer.SetWinner(PoolPlayer.mainPlayer.playerId);
-                        }
-                        else
-                        {
-                            PoolPlayer.SetWinner(PoolPlayer.otherPlayer.playerId);
-                        }
-                        PoolLogic.gameState.gameIsComplete = true;
-                        //PoolCoach.Instance.CallOnGameComplite();
-                    }
-                    CallOnGameComplite();
-                }
-                    
+                PoolLogic.gameState.gameIsComplete = true;
+                CallOnGameComplite();
+                return;
             }
-            //PoolPlayer.ChangeTurn();
-            //PoolPlayer.ChangeTurnReady();
-            //ChangeTurnReady();
+            // Equal scores in sudden death continue; a turn timeout is not a match timeout.
+            OnEndTime?.Invoke();
         }
-
         public void CallMatchTimeout()
         {
+            if (isMatchTimeEnd || PoolLogic.gameState.gameIsComplete) return;
             isMatchTimeEnd = true;
             calculateTime = false;
 
             // 볼의 멈춰있는 상태 
-            if (!_physicsMng.inMove)
+            if (!_physicsMng.inMove && !_physicsMng.IsResolvingShot)
             {
                 other_play_time_send_cnt = 0;
                 playTime = 1.0f;
@@ -535,8 +619,11 @@ namespace Assets.Scripts.Exert.Match
             CallOnGameComplite();
         }
 
+        bool completionNotified;
         public void CallOnGameComplite()
         {
+            if (!PoolLogic.gameState.gameIsComplete || completionNotified) return;
+            completionNotified = true;
             Debug.Log("CallOnGameComplite");
             calculateTime = false;
             //PoolLogic.gameState.gameIsComplete = true;

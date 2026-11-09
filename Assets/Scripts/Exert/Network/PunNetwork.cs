@@ -125,6 +125,12 @@ namespace Assets.Scripts.Exert.Network
         {
             base.Update();
             TickLegacyHistory();
+            if (IsFriendly && PhotonNetwork.InRoom && historyOffer == null && PhotonNetwork.CurrentRoom.PlayerCount == 1 &&
+                Time.realtimeSinceStartup >= matchRequestDeadline)
+            {
+                LeaveMatch();
+                return;
+            }
             if (matchRequestPending && Time.realtimeSinceStartup >= matchRequestDeadline)
             {
                 matchRequestPending = false;
@@ -240,6 +246,31 @@ namespace Assets.Scripts.Exert.Network
         }
 
 
+        string friendlyRoom, friendlyOpponent;
+        public bool IsFriendly => friendlyRoom != null;
+
+        public void JoinFriendlyRoom(int hall, string invite, string other)
+        {
+            if (matchRequestPending || !PhotonNetwork.IsConnectedAndReady || PhotonNetwork.InRoom ||
+                !Guid.TryParse(invite, out var ticket) || !Guid.TryParse(other, out _) ||
+                Assets.Scripts.Often.PracticeMatchTestRoute.Enabled)
+            { CallNetworkState(NetworkState.JoinRoomFailed); return; }
+            ResetLegacyHistory();
+            NetworkManager.hallIdx = hall;
+            friendlyRoom = "friend-" + ticket.ToString("N") + ";" + hall;
+            friendlyOpponent = other;
+            matchRequestCancelled = false;
+            matchRequestPending = true;
+            matchRequestDeadline = Time.realtimeSinceStartup + 20f;
+            var options = new RoomOptions { IsVisible=false, IsOpen=true, MaxPlayers=2, PublishUserId=true };
+            if (!PhotonNetwork.JoinOrCreateRoom(friendlyRoom, options, null))
+            {
+                matchRequestPending = false;
+                friendlyRoom = null;
+                CallNetworkState(NetworkState.JoinRoomFailed);
+            }
+        }
+
         // 방정보 생성 또는 조인
         public override void JoinRandomRoom(int hall_idx)
         {
@@ -262,6 +293,8 @@ namespace Assets.Scripts.Exert.Network
             }
             catch (Exception e) when (e is ArgumentException || e is NotSupportedException || e is OverflowException)
             { CallNetworkState(NetworkState.JoinRoomFailed); return; }
+            ResetLegacyHistory();
+            friendlyRoom = friendlyOpponent = null;
             var properties = new ExitGames.Client.Photon.Hashtable {
                 { "hall", hall_idx }, { "rules", rules },
                 { "protocol", Assets.Scripts.Often.PracticeMatchTestRoute.RoomProtocol }
@@ -614,6 +647,10 @@ namespace Assets.Scripts.Exert.Network
             matchRequestPending = false;
             if (matchRequestCancelled) { PhotonNetwork.LeaveRoom(); return; }
             if (!Assets.Scripts.Often.PracticeMatchTestRoute.Enabled) ResetLegacyHistory();
+            if (IsFriendly && (PhotonNetwork.CurrentRoom.Name != friendlyRoom ||
+                PhotonNetwork.PlayerListOthers.Any(p => p.UserId != friendlyOpponent)))
+            { PhotonNetwork.LeaveRoom(); return; }
+            if (IsFriendly) matchRequestDeadline = Time.realtimeSinceStartup + 45f;
             LogMatchContext("JoinedRoom");
             OtherDisconnect = 0;
             CallNetworkState(NetworkState.JoinedToRoom);
@@ -652,6 +689,8 @@ namespace Assets.Scripts.Exert.Network
             if (IgnoreCancelledTestMatchCallback) return;
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             // Debug.Log("OnPlayerEnteredRoom 방장만 받음.. 손님이 조인시 방장에게 알림 IsMasterClient : " + newPlayer.IsMasterClient);
+            if (IsFriendly && newPlayer.UserId != friendlyOpponent)
+            { PhotonNetwork.LeaveRoom(); return; }
             opponentPlayer = newPlayer;
             RoomPlayerUpdate();
         }

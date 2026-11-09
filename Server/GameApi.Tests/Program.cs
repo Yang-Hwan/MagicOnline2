@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -13,6 +13,7 @@ using Assets.Scripts.Prack.BackSys.GameData;
 var url = args.FirstOrDefault() ?? "http://127.0.0.1:5081";
 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || !uri.IsLoopback) throw new Exception("Tests are restricted to a local API.");
 using var http = new HttpClient { BaseAddress = uri };
+const long signupCoin = 100000; // Fresh DB fixture: BustMemReg grants Coin.
 int passed = 0;
 void Check(bool condition, string name) { if (!condition) throw new Exception("FAIL: " + name); Console.WriteLine("PASS: " + name); passed++; }
 async Task<(HttpStatusCode Status, JsonElement Body)> Call(string path, object? body = null, string? token = null, string method = "POST")
@@ -35,9 +36,9 @@ Check(au != bu, "server-generated distinct IDs");
 Check((await Call("/api/auth/register", new { LoginId = "VERIFY_A_" + suffix, Password = password })).Status == HttpStatusCode.Conflict, "case-insensitive login uniqueness");
 Check((await Call("/api/auth/login", new { LoginId = "verify_a_" + suffix, Password = "incorrect-password" })).Status == HttpStatusCode.Unauthorized, "wrong password rejected");
 Check((await Call("/api/auth/login", new { LoginId = "verify_a_" + suffix, Password = password })).Status == HttpStatusCode.OK, "password login succeeds");
-Check((await Call("/api/me", token: at, method: "GET")).Body.GetProperty("Coin").GetInt64() == 20, "initial grant exactly 20");
+Check((await Call("/api/me", token: at, method: "GET")).Body.GetProperty("Coin").GetInt64() == signupCoin, "seed registration reward applied");
 var opponent = (await Call("/api/players/" + bu, token: at, method: "GET")).Body;
-Check(opponent.GetProperty("Coin").GetInt64() == 20, "opponent card can read game coin display");
+Check(opponent.GetProperty("Coin").GetInt64() == signupCoin, "opponent card can read game coin display");
 Check(!opponent.TryGetProperty("Jem", out _) && !opponent.TryGetProperty("LoginId", out _), "opponent card excludes account-private fields");
 Check((await Call("/api/me/profile", new { NickName = "Changed", AvatarIdx = 1, Coin = 9999 }, at, "PATCH")).Status == HttpStatusCode.BadRequest, "profile cannot set wallet fields");
 var refreshed = await Call("/api/auth/refresh", new { RefreshToken = a.Body.GetProperty("RefreshToken").GetString() });
@@ -50,7 +51,7 @@ var halls = (await Call("/api/charts/SkillMatch", token: at, method: "GET")).Bod
 Check(halls.Any(h=>h.GetProperty("HallIdx").GetInt32()==1 && h.GetProperty("MatchBall").GetInt32()==3) &&
       halls.Any(h=>h.GetProperty("HallIdx").GetInt32()==2 && h.GetProperty("MatchBall").GetInt32()==4), "3/4-ball seed charts available");
 await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => Call("/api/me/attendance", token: at)));
-Check((await Call("/api/me", token: at, method: "GET")).Body.GetProperty("Coin").GetInt64() == 30, "concurrent attendance credited once");
+Check((await Call("/api/me", token: at, method: "GET")).Body.GetProperty("Coin").GetInt64() == signupCoin, "concurrent attendance records check-in without crediting wallet");
 string match = Guid.NewGuid().ToString("N");
 var rules = MatchRulesContract.FromHall(JsonSerializer.Deserialize<SkillMatchData>(halls.Single(h => h.GetProperty("HallIdx").GetInt32() == 2).GetRawText(), Database.Json)!, MatchRulesContract.Pavilion);
 var registration = new { RequestId = match, OpponentUserId = bu, HallId = 2, Rules = rules };
@@ -58,19 +59,19 @@ Check((await Call("/api/matches", registration, at)).Status == HttpStatusCode.OK
 Check((await Call("/api/matches", registration, at)).Status == HttpStatusCode.OK, "registration retry idempotent");
 Check(!(await Call($"/api/matches/{match}/ready", new { Rules = rules }, at)).Body.GetProperty("Playing").GetBoolean(), "one readiness cannot debit both users");
 await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => Call($"/api/matches/{match}/ready", new { Rules = rules }, bt)));
-Check((await Call("/api/me", token: at, method: "GET")).Body.GetProperty("Coin").GetInt64() == 29, "entry debit A exactly once");
-Check((await Call("/api/me", token: bt, method: "GET")).Body.GetProperty("Coin").GetInt64() == 19, "entry debit B exactly once");
+Check((await Call("/api/me", token: at, method: "GET")).Body.GetProperty("Coin").GetInt64() == signupCoin - 1, "entry debit A exactly once");
+Check((await Call("/api/me", token: bt, method: "GET")).Body.GetProperty("Coin").GetInt64() == signupCoin - 1, "entry debit B exactly once");
 var report = new { ScoreA = 3, ScoreB = 0, WinnerSeat = 0 };
 Check((await Call($"/api/matches/{match}/result", new { ScoreA=0, ScoreB=3, WinnerSeat=0 },at)).Status == HttpStatusCode.Conflict, "winner contradicting score rejected");
 Check((await Call($"/api/matches/{match}/result", new { ScoreA=0, ScoreB=0, WinnerSeat=1 },at)).Status == HttpStatusCode.Conflict, "tie with a winner rejected");
 Check((await Call($"/api/matches/{match}/result", new { ScoreA=1, ScoreB=0, WinnerSeat=-1 },at)).Status == HttpStatusCode.Conflict, "unequal-score draw rejected");
 Check((await Call($"/api/matches/{match}",token:at,method:"GET")).Body.GetProperty("Phase").GetString() == "Playing" &&
-    (await Call("/api/me",token:at,method:"GET")).Body.GetProperty("Coin").GetInt64() == 29, "invalid results preserve active match and wallet");
+    (await Call("/api/me",token:at,method:"GET")).Body.GetProperty("Coin").GetInt64() == signupCoin - 1, "invalid results preserve active match and wallet");
 await Call($"/api/matches/{match}/result", report, at);
 var settles = await Task.WhenAll(Enumerable.Range(0, 6).Select(_ => Call($"/api/matches/{match}/result", report, bt)));
 Check(settles.All(r => r.Status == HttpStatusCode.OK), "parallel settlement retries all return receipt");
 var pa = (await Call("/api/me", token: at, method: "GET")).Body; var pb = (await Call("/api/me", token: bt, method: "GET")).Body;
-Check(pa.GetProperty("Coin").GetInt64() == 31 && pb.GetProperty("Coin").GetInt64() == 19, "winner paid entry pool once");
+Check(pa.GetProperty("Coin").GetInt64() == signupCoin + 1 && pb.GetProperty("Coin").GetInt64() == signupCoin - 1, "winner paid entry pool once");
 Check(pa.GetProperty("Ball_4_Win").GetInt32() == 1 && pb.GetProperty("Ball_4_Lose").GetInt32() == 1 && pa.GetProperty("Ball_3_Win").GetInt32() == 0, "4-ball and 3-ball stats separated");
 Check((await Call("/api/me/history", token: at, method: "GET")).Body.GetArrayLength() == 1, "one personal history");
 // Direct adapter failure injection verifies rollback against the actual same local database.
@@ -78,7 +79,7 @@ var config = new ConfigurationBuilder().AddUserSecrets<Accounts>().AddEnvironmen
 await using var source = NpgsqlDataSource.Create(config.GetConnectionString("GameDb")!);
 var store = new PostgresSettlementStore(new Database(source));
 try { store.Execute<bool>(match, c => { c.UserA.Coin += 100; throw new InvalidOperationException("injected"); }); } catch (InvalidOperationException) { }
-Check((await Call("/api/me", token: at, method: "GET")).Body.GetProperty("Coin").GetInt64() == 31, "exception rolls back wallet");
+Check((await Call("/api/me", token: at, method: "GET")).Body.GetProperty("Coin").GetInt64() == signupCoin + 1, "exception rolls back wallet");
 // Exercise remaining domain policies using real PostgreSQL with a controllable server clock.
 var clock = new TestClock { UtcMilliseconds = DateTimeOffset.UtcNow.AddDays(1).ToUnixTimeMilliseconds() };
 var service = new SettlementService(store, clock);
@@ -90,7 +91,7 @@ string Register(int ball, long fee = 1)
 string draw = Register(3); service.Ready(draw, au); service.Ready(draw, bu);
 service.ConfirmResult(draw, au, new ResultReport(2,2,-1)); service.ConfirmResult(draw, bu, new ResultReport(2,2,-1));
 pa = (await Call("/api/me", token: at, method: "GET")).Body;
-Check(pa.GetProperty("Coin").GetInt64() == 31 && pa.GetProperty("Ball_3_Draw").GetInt32() == 1, "3-ball draw refunds fees and counts separately");
+Check(pa.GetProperty("Coin").GetInt64() == signupCoin + 1 && pa.GetProperty("Ball_3_Draw").GetInt32() == 1, "3-ball draw refunds fees and counts separately");
 string abandon = Register(3); service.Ready(abandon, au); service.Ready(abandon, bu);
 clock.UtcMilliseconds += 46000; service.Heartbeat(abandon, au);
 Check(service.EvaluateDisconnect(abandon, au)?.WinnerUserId == au, "server heartbeat timeout forfeits disconnected user");
@@ -105,7 +106,7 @@ service.Ready(invite,third.UserId);
 bool busyRejected = false;
 try { service.Ready(invite,bu); } catch(PostgresException e) when(e.SqlState == PostgresErrorCodes.UniqueViolation) { busyRejected = true; }
 Check(busyRejected,"recipient cannot accept two active matches");
-Check((await new GameData(new Database(source)).Profile(Guid.Parse(third.UserId))).Coin == 20,"failed acceptance rolls back inviter entry fee");
+Check((await new GameData(new Database(source)).Profile(Guid.Parse(third.UserId))).Coin == signupCoin,"failed acceptance rolls back inviter entry fee");
 service.Surrender(invite,third.UserId); service.Surrender(otherGame,au);
 string insufficient = Register(4, 999999); service.Ready(insufficient, au);
 bool rejected = false; try { service.Ready(insufficient, bu); } catch(InvalidOperationException) { rejected = true; }

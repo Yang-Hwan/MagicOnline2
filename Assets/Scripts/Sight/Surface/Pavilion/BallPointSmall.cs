@@ -12,6 +12,27 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public GameObject blindBack;
         private RectTransform point;
         float cr;
+        PhysicsMng physics;
+        ShotCtrl shot;
+        bool wasMoving;
+
+        private void LateUpdate()
+        {
+            // Repair a leftover sibling backdrop without affecting an open selector.
+            if (blindBack && blindBack.activeSelf && pointBig && !pointBig.activeInHierarchy)
+                blindBack.SetActive(false);
+            if (!physics) physics = FindAnyObjectByType<PhysicsMng>();
+            if (!physics) return;
+            // Both local and received multiplayer movement use this flag.
+            bool moving = physics.inMove;
+            if (wasMoving && !moving)
+            {
+                if (!shot) shot = FindAnyObjectByType<ShotCtrl>();
+                pointBig.GetComponent<BallPointBig>().ResetToCenter(shot);
+                point.anchoredPosition = Vector2.zero;
+            }
+            wasMoving = moving;
+        }
 
         private void Awake()
         {
@@ -38,6 +59,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         private void OnEnable()
         {
+            wasMoving = false;
             ShotCtrl.OnCueRotateState += ShotController_OnCueRotateState;
             BallPointBig.OnCueSpinState += BallPointBig_OnCueSpinState;
 

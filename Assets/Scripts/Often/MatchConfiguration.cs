@@ -43,8 +43,9 @@ namespace Assets.Scripts.Often
 
         public static MatchConfiguration Practice(int ballCount, bool replay = false) =>
             new MatchConfiguration(replay ? MatchExecutionMode.Replay : MatchExecutionMode.LocalPractice,
-                ballCount, 0, 7, ballCount == 3 ? 3 : 0, 300, ballCount == 4 && !replay ? 60 : 20,
-                0, 0, "Player 1", "Player 2");
+                ballCount, 0, 7, ballCount == 3 ? 3 : 0, replay ? 300 : 20 * 60, replay ? 20 : 20 * 60,
+                // Practice ball 1 is yellow. Preserve the existing replay default.
+                replay ? 0 : 1, 0, "Player 1", "Player 2");
 
         public static MatchConfiguration Online(SkillMatchData hall, string seat0Name, string seat1Name,
             int firstSeat, int localSeat, int turnSeconds)
@@ -54,7 +55,7 @@ namespace Assets.Scripts.Often
             // Do not silently change an unsupported room's agreed rules.
             if (hall.FinishMission != 0) throw new NotSupportedException("Finish missions are not yet supported by the new match runtime.");
             return new MatchConfiguration(MatchExecutionMode.OnlineMatch, hall.MatchBall, hall.HallIdx,
-                hall.MatchBall == 4 ? 3 : hall.TargetHit, hall.MatchCushion, checked(hall.MatchTotMin * 60), turnSeconds,
+                hall.TargetHit, hall.MatchCushion, checked(hall.MatchTotMin * 60), turnSeconds,
                 firstSeat, localSeat, seat0Name, seat1Name);
         }
     }

@@ -138,6 +138,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void OnDestroy()
         {
+            Assets.Scripts.Exert.Match.PoolCoach.Instance.DetachPhysics(this);
             for (int i = 0; i < practiceSurfaces.Count; i++)
                 if (practiceSurfaces[i]) { practiceSurfaces[i].sharedMaterial = originalMaterials[i]; practiceSurfaces[i].contactOffset = originalOffsets[i]; }
             if (practiceCloth) Destroy(practiceCloth);

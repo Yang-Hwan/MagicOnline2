@@ -81,7 +81,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 foreach(var line in targetBallLines)if(line)line.positionCount=0;
                 return;
             }
-            // Reference guide at 40% power; moving the power handle does not invalidate it.
+            // Reference guide at 50% power; moving the power handle does not invalidate it.
             var impulse=BuildGuideImpulse();
             int physicsKey=PreviewPhysicsKey();
             if(previousPhysicsKey!=physicsKey)predictionDirty=true;

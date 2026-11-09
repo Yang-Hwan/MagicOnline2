@@ -6,13 +6,35 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
     {
         // Change to false and rebuild both clients to restore the previous stroke model.
         public static readonly bool UseIndependentSpin = true;
-        public static string ProtocolSuffix => UseIndependentSpin ? "-tipspin1" : "";
+        public static string ProtocolSuffix => UseIndependentSpin ? "-tipspin7-rail2" : "";
+        public const float IndependentSpinGain = 1.5f;
+        public const float SideSpinDecayScale = .45f;
 
-        // Match the old 40%-power stroke. The impulse still scales with power;
+        // Boost the old 40%-power reference stroke by 50%. The impulse still scales with power;
         // compensate its lever arm so torque depends on the tip offset only.
         // Zero power must produce neither translation nor rotation.
         public static float SpinLeverScale(float power) => power <= 0 ? 0 :
-            UseIndependentSpin ? .46f * .4f / power : .46f;
+            UseIndependentSpin ? .46f * .4f * IndependentSpinGain / power : .46f;
+
+        // On the second rail only, convert a small part of the remaining side spin
+        // into an extra tangential deflection while preserving planar rebound speed.
+        public static void ApplySecondRailEnglish(ref int hits, Rigidbody body, Collision collision,
+            Vector3 incoming, float sideSpin, float radius)
+        {
+            if (!UseIndependentSpin || collision.contactCount == 0) return;
+            Vector3 normal = Vector3.ProjectOnPlane(collision.GetContact(0).normal, Vector3.up).normalized;
+            float approach = -Vector3.Dot(incoming, normal);
+            if (approach <= .001f || ++hits != 2) return;
+
+            Vector3 velocity = body.linearVelocity;
+            Vector3 planar = Vector3.ProjectOnPlane(velocity, Vector3.up);
+            float speed = planar.magnitude;
+            if (speed <= .001f || Mathf.Abs(sideSpin) * radius < .001f) return;
+            float limit = Mathf.Min(speed, approach) * .05f;
+            float shift = Mathf.Clamp(sideSpin * radius * .12f, -limit, limit);
+            Vector3 bent = planar + Vector3.Cross(Vector3.up, normal) * shift;
+            body.linearVelocity = bent.normalized * speed + Vector3.up * velocity.y;
+        }
 
         public static float Thickness(Vector3 incoming,Vector3 towardTarget)
         {
@@ -25,7 +47,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         public static float Persistence(float power,float tipOffset,float follow)
         {
-            if (UseIndependentSpin) return Mathf.Lerp(.2f, .9f, Mathf.Clamp01(power));
+            // Reduce additional spin damping by 20% at every power level.
+            if (UseIndependentSpin) return Mathf.Lerp(.36f, .92f, Mathf.Clamp01(power));
             return LegacyPersistence(power, tipOffset, follow);
         }
 
@@ -50,7 +73,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             float decay=Mathf.Exp(-(1f-Mathf.Clamp01(persistence))*1.5f*dt);
             Vector3 slip=planar+Vector3.Cross(spin,Vector3.down*radius);
             if(slip.magnitude>stopSpeed) { spin.x*=decay;spin.z*=decay; }
-            spin.y*=decay;
+            // Let side spin survive soft shots longer without changing follow/draw damping.
+            float sideDecay = UseIndependentSpin ?
+                Mathf.Exp(-(1f-Mathf.Clamp01(persistence))*1.5f*SideSpinDecayScale*dt) : decay;
+            spin.y*=sideDecay;
         }
 
         // Remaining forward surface speed relative to incoming translation, not the selected tip.

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Assets.Scripts.Sight.Surface.Arise;
@@ -99,7 +99,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             int lvVal = BackendGame.Instance.UserMainData.LvVel;
             int lvProc = BackendGame.Instance.UserMainData.LvProc;
-            int lvPlayCnt = BackendChart.commonCodeData.Where(r => r.ComCd.Equals("LvPlayCnt")).Select(r => r.ComVal).FirstOrDefault();
+            int lvPlayCnt = BackendChart.commonCodeData.Where(r => r.ComCd.Equals("LvPlayMax") && r.IsUse == "Y").Select(r => r.ComVal).FirstOrDefault();
             int avatarIdx = BackendGame.Instance.UserMainData.AvatarIdx;
             long coin = BackendGame.Instance.UserMainData.Coin;
             float proc = lvPlayCnt == 0 ? 0 : lvProc / (float)lvPlayCnt;

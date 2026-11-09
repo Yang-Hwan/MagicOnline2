@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -43,8 +43,10 @@ public sealed class Accounts(Database db)
         {
             await using (var cmd = Database.Command(c, "INSERT INTO users(id,login_id,normalized_login,password_hash,nickname) VALUES($1,$2,$3,$4,$2)", id, login, Normalize(login), hash))
                 await cmd.ExecuteNonQueryAsync();
-            foreach (var sql in new[] { "INSERT INTO wallets(user_id) VALUES($1)", "INSERT INTO user_stats(user_id) VALUES($1)", "INSERT INTO wallet_ledger(user_id,request_key,coin_delta) VALUES($1,'InitialGrant',20)" })
-            { await using var cmd = Database.Command(c, sql, id); await cmd.ExecuteNonQueryAsync(); }
+            await RegistrationReward.CreateWallet(c, id);
+            await using (var stats = Database.Command(c, "INSERT INTO user_stats(user_id) VALUES($1)", id))
+                await stats.ExecuteNonQueryAsync();
+            MemberRewards.Load(c).Send(c,id,"가입","Signup");
             var reply = await Issue(c, id);
             await tx.CommitAsync(); return reply;
         }

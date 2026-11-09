@@ -40,7 +40,7 @@ public sealed class Matches(Database db, GameData data, SettlementService settle
             throw new ApiFault(409, "UnsupportedMatchRules");
         var a = await data.Profile(caller); var b = await data.Profile(opponent);
         settlement.Register(new VerifiedRegistration(input.RequestId, caller.ToString(), opponent.ToString(), a.NickName, b.NickName,
-            hall.GetProperty("MatchBall").GetInt32(), input.HallId, hall.GetProperty("PrizeCoin").GetInt64(), CoinPolicy.EntryPool, hall.GetRawText(), expected));
+            hall.GetProperty("MatchBall").GetInt32(), input.HallId, hall.GetProperty("PrizeCoin").GetInt64(), (CoinPolicy)expected.CoinPolicy, hall.GetRawText(), expected));
         return input.RequestId;
     }
     static void RequireProtocol(MatchRulesContract? rules)
@@ -60,7 +60,7 @@ public sealed class Matches(Database db, GameData data, SettlementService settle
         await using var r = await cmd.ExecuteReaderAsync(); if (!await r.ReadAsync()) throw new ApiFault(404, "MatchNotFound");
         var state = JsonSerializer.Deserialize<RegisteredMatch>(r.GetString(0), Database.Json)!;
         var receipt = r.IsDBNull(1) ? null : JsonSerializer.Deserialize<SettlementReceipt>(r.GetString(1), Database.Json);
-        return new { MatchId = id, Phase = state.Phase.ToString(), state.Disputed, state.ReadyA, state.ReadyB, Rules = state.Registration.Rules, Receipt = receipt };
+        return new { MatchId = id, Phase = state.Phase.ToString(), state.Disputed, state.ReadyA, state.ReadyB, state.StartCoinA, state.StartCoinB, Rules = state.Registration.Rules, Receipt = receipt };
     }
     public async Task<object[]> History(Guid caller)
     {

@@ -1,7 +1,7 @@
 @page "/admin/members/{id:guid}"
 @model MagicOnline.GameApi.Pages.Admin.MemberModel
 <div class="breadcrumb"><a href="/admin/members">회원 관리</a> / 회원 상세</div><div class="page-head"><div><h1>@Model.Data.Profile.Rows[0][2]</h1><p class="muted">@Model.Data.Profile.Rows[0][1] · @Model.Id</p></div><span class="badge">@Model.Data.Profile.Rows[0][3]</span></div>
-<nav class="tabs" aria-label="회원 상세">@foreach(var t in new[]{("profile","기본 정보"),("games","대전"),("wallet","재화"),("payments","결제"),("access","접속·제재"),("notes","운영 메모")}){<a class="@(Model.Tab==t.Item1 ? "selected" : "")" href="/admin/members/@Model.Id?tab=@t.Item1">@t.Item2</a>}</nav>
+<nav class="tabs" aria-label="회원 상세">@foreach(var t in new[]{("profile","기본 정보"),("games","대전"),("wallet","재화"),("bust","파산"),("attendance","출석보상"),("mail","우편보상"),("payments","결제"),("access","접속·제재"),("notes","운영 메모")}){<a class="@(Model.Tab==t.Item1 ? "selected" : "")" href="/admin/members/@Model.Id?tab=@t.Item1">@t.Item2</a>}</nav>
 @if(Model.SuccessMessage!=null){<p class="notice" role="status">@Model.SuccessMessage</p>}
 @if(Model.Tab=="profile") {
 <section class="panel"><h2>회원 정보</h2><dl class="details">@for(int i=0;i<Model.Data.Profile.Columns.Length;i++){<dt>@Model.Data.Profile.Columns[i]</dt><dd>@Model.Data.Profile.Rows[0][i]</dd>}</dl></section>
@@ -17,5 +17,44 @@
 </section>}
 <section class="panel"><h2>종목별 전적</h2><partial name="_AdminTable" model="Model.Data.Stats" /></section>}
 else if(Model.Tab=="games"){<section class="panel"><h2>최근 대전</h2><partial name="_AdminTable" model="Model.Data.Matches" /><a class="button" href="/admin/matches?q=@Model.Id">전체 대전 조회</a></section>}
-else if(Model.Tab=="wallet"){<section class="panel"><h2>잔액 · 원장 대조</h2><partial name="_AdminTable" model="Model.Balance" />@if(Model.Balance.Rows.FirstOrDefault() is {} b){<p class="notice">@(b[0]==b[1] && b[2]==b[3] ? "Coin·Jem 잔액과 원장 누계가 일치합니다." : "잔액과 원장 누계가 다릅니다. 운영 확인이 필요합니다.")</p>}</section><section class="panel"><h2>최근 재화 변동</h2><partial name="_AdminTable" model="Model.Data.Ledger" /><a class="button" href="/admin/wallet?q=@Model.Id">전체 원장 조회</a></section>}
+else if(Model.Tab=="wallet"){
+@if (Model.CanEdit) {
+<section class="panel"><h2>코인·보석 조정</h2>
+@if (Model.EditError != null) { <p class="error" role="alert">@Model.EditError</p> }
+<form method="post" asp-page-handler="Wallet" asp-route-id="@Model.Id" class="filters">
+<input type="hidden" name="operation" value="@Model.Operation">
+<label>재화<select name="currency"><option value="Coin">코인 (Coin)</option><option value="Jem">보석 (Jem)</option></select></label>
+<label>방식<select name="direction"><option value="credit">증액</option><option value="debit">차감</option></select></label>
+<label>수량<input name="amount" type="number" min="1" step="1" required></label>
+<label>조정 사유 (선택)<input name="reason" maxlength="200"></label>
+<button class="primary" type="submit">재화 조정</button>
+</form></section>
+}
+<section class="panel"><h2>잔액 · 원장 대조</h2><partial name="_AdminTable" model="Model.Balance" />@if(Model.Balance.Rows.FirstOrDefault() is {} b){<p class="notice">@(b[0]==b[1] && b[2]==b[3] ? "Coin·Jem 잔액과 원장 누계가 일치합니다." : "잔액과 원장 누계가 다릅니다. 운영 확인이 필요합니다.")</p>}</section><section class="panel"><h2>최근 재화 변동</h2><partial name="_AdminTable" model="Model.Data.Ledger" /><a class="button" href="/admin/wallet?q=@Model.Id">전체 원장 조회</a></section>}
+else if(Model.Tab=="mail") {
+<section class="panel"><h2>회원 우편보상</h2><partial name="_AdminTable" model="Model.MemberMail" />
+<nav class="pagination" aria-label="우편 페이지">
+@if(Model.MemberMail.Page>1){<a class="button" href="/admin/members/@Model.Id?tab=mail&amp;page=@(Model.MemberMail.Page-1)">이전</a>}
+<span>@Model.MemberMail.Page 페이지</span>
+@if(Model.MemberMail.HasNext){<a class="button" href="/admin/members/@Model.Id?tab=mail&amp;page=@(Model.MemberMail.Page+1)">다음</a>}
+</nav></section>
+}
+else if(Model.Tab=="attendance") {
+<section class="panel"><h2>회원 출석보상</h2><p class="hint">한국시간 기준 출석 기록입니다. 출석 우편을 받으면 수령일시가 기록됩니다. 기존에 직접 지급된 보상은 원장의 지급 시각을 유지합니다.</p>
+<partial name="_AdminTable" model="Model.AttendanceHistory" />
+<nav class="pagination" aria-label="출석 기록 페이지">
+@if(Model.AttendanceHistory.Page>1){<a class="button" href="/admin/members/@Model.Id?tab=attendance&amp;page=@(Model.AttendanceHistory.Page-1)">이전</a>}
+<span>@Model.AttendanceHistory.Page 페이지</span>
+@if(Model.AttendanceHistory.HasNext){<a class="button" href="/admin/members/@Model.Id?tab=attendance&amp;page=@(Model.AttendanceHistory.Page+1)">다음</a>}
+</nav></section>
+}
+else if(Model.Tab=="bust") {
+<section class="panel"><h2>파산 지원금 지급 목록</h2><p class="hint">파산 지원 코인이 실제 지급된 기록입니다. 지급되지 않은 파산 상태나 지원 한도 초과는 포함하지 않습니다.</p>
+<partial name="_AdminTable" model="Model.BustHistory" />
+<nav class="pagination" aria-label="파산 기록 페이지">
+@if(Model.BustHistory.Page>1){<a class="button" href="/admin/members/@Model.Id?tab=bust&amp;page=@(Model.BustHistory.Page-1)">이전</a>}
+<span>@Model.BustHistory.Page 페이지</span>
+@if(Model.BustHistory.HasNext){<a class="button" href="/admin/members/@Model.Id?tab=bust&amp;page=@(Model.BustHistory.Page+1)">다음</a>}
+</nav></section>
+}
 else {<section class="panel planned"><h2>@(Model.Tab=="payments" ? "결제 연동 예정" : Model.Tab=="access" ? "접속·제재 이력 확장 예정" : "운영 메모 추가 예정")</h2><p class="muted">현재 수집되지 않는 정보를 예시 데이터로 표시하지 않습니다. 후속 개발에서 연결합니다.</p></section>}

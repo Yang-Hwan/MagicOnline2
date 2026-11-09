@@ -6,7 +6,7 @@ namespace Assets.Scripts.Prack.BackSys.GameData
     [Serializable]
     public sealed class MatchRulesContract
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
         public const int Pavilion = 0, Practice = 1;
         // No version initializer: an omitted version must fail validation.
         public int Version, Runtime, HallId, Ball, TargetScore, Cushions, MatchSeconds, TurnSeconds;
@@ -19,10 +19,10 @@ namespace Assets.Scripts.Prack.BackSys.GameData
             if (runtime != Pavilion && runtime != Practice) throw new ArgumentException("Unsupported match runtime.");
             return new MatchRulesContract {
                 Version = CurrentVersion, Runtime = runtime, HallId = hall.HallIdx, Ball = hall.MatchBall,
-                TargetScore = hall.MatchBall == 4 ? 3 : hall.TargetHit, Cushions = hall.MatchCushion,
+                TargetScore = hall.TargetHit, Cushions = hall.MatchCushion,
                 MatchSeconds = checked(hall.MatchTotMin * 60), TurnSeconds = runtime == Practice ? 20 : 30,
                 FinishMission = hall.FinishMission, HeartbeatSeconds = 15, ReconnectGraceSeconds = 30,
-                CoinPolicy = 1, EntryCoin = hall.PrizeCoin, MaxCoin = hall.MaxCoin
+                CoinPolicy = runtime == Pavilion ? 2 : 1, EntryCoin = hall.PrizeCoin, MaxCoin = hall.MaxCoin
             };
         }
 

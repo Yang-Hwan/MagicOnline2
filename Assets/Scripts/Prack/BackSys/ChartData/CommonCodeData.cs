@@ -1,10 +1,11 @@
-﻿namespace Assets.Scripts.Prack.BackSys.ChartData
+namespace Assets.Scripts.Prack.BackSys.ChartData
 {
     [System.Serializable]
     public class CommonCodeData
     {
         public string GrpCd;
         public string ComCd;
+        public int Ord;
         public int ComVal;
         public int ComVal2;
         public string Info;

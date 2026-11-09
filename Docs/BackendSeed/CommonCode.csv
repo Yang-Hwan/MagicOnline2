@@ -1,2 +1,13 @@
 GrpCd,ComCd,ComVal,ComVal2,Info,IsUse
 Level,LvPlayCnt,10,0,Test level progress threshold,Y
+Bust,BustMemReg,100000,1,Registration reward,Y
+Wealth,Coin,1,0,Coin,Y
+Wealth,Jem,2,0,Jem,Y
+Wealth,Cash,3,0,Cash,Y
+Wealth,Gold,4,0,Gold,Y
+PostRewardType,가입,1,0,Mail reward type,Y
+PostRewardType,출석,2,0,Mail reward type,Y
+PostRewardType,파산,3,0,Mail reward type,Y
+PostRewardType,연승,4,0,Mail reward type,Y
+PostRewardType,레벨,5,0,Mail reward type,Y
+PostRewardType,점검,6,0,Mail reward type,Y

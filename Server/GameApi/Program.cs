@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 using MagicOnline.GameApi;
@@ -18,6 +18,10 @@ var connectionString = builder.Configuration.GetConnectionString("GameDb") ?? th
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
 builder.Services.AddSingleton<Database>(); builder.Services.AddSingleton<Accounts>(); builder.Services.AddSingleton<GameData>();
 builder.Services.AddSingleton<Attendance>();
+builder.Services.AddSingleton<Mailbox>();
+builder.Services.AddSingleton<Friends>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<BustSupport>();
 builder.Services.AddSingleton<ISettlementStore, PostgresSettlementStore>();
 builder.Services.AddSingleton<IServerClock, ServerClock>();
 builder.Services.AddSingleton<SettlementService>(); builder.Services.AddSingleton<Matches>();
@@ -71,6 +75,7 @@ app.Use(async (context, next) => {
 app.UseStaticFiles();
 app.UseRateLimiter(); app.UseAuthentication(); app.UseAuthorization();
 AdminSecurity.Map(app);
+Friends.Map(app);
 app.MapGet("/health", async (Database db) => {
     await using var cmd = db.Source.CreateCommand("SELECT 1"); await cmd.ExecuteScalarAsync();
     return Results.Ok(new { Ok = true, Database = "Connected", ApiVersion = 1, MatchProtocolVersion = MatchRulesContract.CurrentVersion });
@@ -81,19 +86,25 @@ app.MapPost("/api/auth/login", (Credentials input, Accounts accounts) => account
 app.MapPost("/api/auth/refresh", (TokenInput input, Accounts accounts) => accounts.Refresh(input.RefreshToken)).RequireRateLimiting("auth");
 app.MapPost("/api/auth/logout", async (ClaimsPrincipal user, Accounts accounts) => { await accounts.Logout(Guid.Parse(user.FindFirstValue("session")!)); return Results.NoContent(); }).RequireAuthorization();
 app.MapGet("/api/me", (ClaimsPrincipal user, GameData data) => data.Profile(UserId(user))).RequireAuthorization();
+app.MapPost("/api/me/bust-support", async (ClaimsPrincipal user, BustSupport support, GameData data) => { var id = UserId(user); var result = await support.CheckResult(id); return new { result.Granted, result.Remaining, Profile = await data.Profile(id) }; }).RequireAuthorization();
 app.MapPatch("/api/me/profile", async (ClaimsPrincipal user, ProfileEdit edit, GameData data) => { await data.EditProfile(UserId(user), edit); return await data.Profile(UserId(user)); }).RequireAuthorization();
 app.MapGet("/api/players/{id:guid}", async (Guid id, GameData data) => {
     var p = await data.Profile(id);
     return new { p.InDate, p.NickName, p.AvatarIdx, p.LvVel, p.Coin, p.Ball_4_Win, p.Ball_4_Lose, p.Ball_4_Draw, p.Ball_3_Win, p.Ball_3_Lose, p.Ball_3_Draw };
 }).RequireAuthorization();
 app.MapGet("/api/charts/{name}", (string name, GameData data) => data.Chart(name)).RequireAuthorization();
+app.MapGet("/api/me/attendance", (ClaimsPrincipal user, Attendance attendance) => attendance.Status(UserId(user))).RequireAuthorization();
 app.MapPost("/api/me/attendance", (ClaimsPrincipal user, Attendance attendance) => attendance.CheckIn(UserId(user))).RequireAuthorization();
+app.MapGet("/api/me/mail", (ClaimsPrincipal user, Mailbox mail) => mail.List(UserId(user))).RequireAuthorization();
+app.MapPost("/api/me/mail/claim-all", (ClaimsPrincipal user, Mailbox mail) => mail.Claim(UserId(user),null)).RequireAuthorization();
+app.MapPost("/api/me/mail/{id:long}/claim", (long id, ClaimsPrincipal user, Mailbox mail) => mail.Claim(UserId(user),id)).RequireAuthorization();
 app.MapGet("/api/me/history", (ClaimsPrincipal user, Matches matches) => matches.History(UserId(user))).RequireAuthorization();
 app.MapPost("/api/matches", async (ClaimsPrincipal user, MatchRegistration input, Matches matches) => new { MatchId = await matches.Register(UserId(user), input) }).RequireAuthorization();
 app.MapGet("/api/matches/{id}", (string id, ClaimsPrincipal user, Matches matches) => matches.Status(id, UserId(user))).RequireAuthorization();
 app.MapPost("/api/matches/{id}/ready", (string id, ClaimsPrincipal user, MatchReady input, Matches matches) => new { Playing = matches.Ready(id, UserId(user), input) }).RequireAuthorization();
 app.MapPost("/api/matches/{id}/heartbeat", (string id, ClaimsPrincipal user, SettlementService service) => { service.Heartbeat(id, UserId(user).ToString()); return Results.NoContent(); }).RequireAuthorization();
 app.MapPost("/api/matches/{id}/result", (string id, ResultReport report, ClaimsPrincipal user, SettlementService service) => Results.Ok(service.ConfirmResult(id, UserId(user).ToString(), report))).RequireAuthorization();
+app.MapPost("/api/matches/{id}/coins", (string id, CoinCheckpoint report, ClaimsPrincipal user, SettlementService service) => Results.Ok(service.CheckpointCoins(id, UserId(user).ToString(), report))).RequireAuthorization();
 app.MapPost("/api/matches/{id}/surrender", (string id, ClaimsPrincipal user, SettlementService service) => Results.Ok(service.Surrender(id, UserId(user).ToString()))).RequireAuthorization();
 app.MapPost("/api/matches/{id}/disconnect", (string id, ClaimsPrincipal user, SettlementService service) => Results.Ok(service.EvaluateDisconnect(id, UserId(user).ToString()))).RequireAuthorization();
 await app.Services.GetRequiredService<Database>().Migrate();

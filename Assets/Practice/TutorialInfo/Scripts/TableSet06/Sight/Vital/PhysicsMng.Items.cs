@@ -15,6 +15,33 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         readonly Dictionary<int, long> appliedBonuses = new Dictionary<int, long>();
         public IEnumerable<StuffBase> ActiveItems => itemViews.Values;
         int itemSessionVersion;
+        readonly long[] pendingCoinDisplay = new long[2];
+        public sealed class CoinDisplayBatch
+        {
+            internal int session, player;
+            internal long remaining;
+        }
+        public CoinDisplayBatch BeginCoinDisplay(int playerId, long amount)
+        {
+            if (!IsLocalPractice || playerId < 0 || playerId >= pendingCoinDisplay.Length) return null;
+            var batch = new CoinDisplayBatch { session = itemSessionVersion, player = playerId, remaining = amount };
+            pendingCoinDisplay[playerId] += amount;
+            return batch;
+        }
+        public void AdvanceCoinDisplay(CoinDisplayBatch batch, long amount = long.MaxValue)
+        {
+            if (batch == null || batch.session != itemSessionVersion) return;
+            long delta = Math.Min(batch.remaining, amount);
+            batch.remaining -= delta;
+            pendingCoinDisplay[batch.player] -= delta;
+            if (batch.player < coinTxts.Length && coinTxts[batch.player])
+                coinTxts[batch.player].text = Utility.CoinNumToStr(DisplayedMatchCoin(batch.player));
+        }
+        public long DisplayedMatchCoin(int playerId)
+        {
+            return PoolPlayer.players[playerId].matchCoin -
+                (IsLocalPractice && playerId >= 0 && playerId < pendingCoinDisplay.Length ? pendingCoinDisplay[playerId] : 0);
+        }
         bool externalItemSession;
         void BeginLocalItemSession()
         {
@@ -33,6 +60,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             undoSnapshot = null; simulationVersion++;
             externalItemSession = true;
             itemSessionVersion++;
+            Array.Clear(pendingCoinDisplay, 0, pendingCoinDisplay.Length);
             if (ObjectPooler.instance)
                 foreach (var effect in ObjectPooler.instance.GetActivePools<EffCtrl>("Effect")) effect.DeactiveDelay();
             coinsQueue.Clear();
@@ -101,7 +129,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 }
                 appliedBonuses[player.playerId] = total;
                 if (player.playerId < coinTxts.Length && coinTxts[player.playerId])
-                    coinTxts[player.playerId].text = Utility.CoinNumToStr(player.matchCoin);
+                    coinTxts[player.playerId].text = Utility.CoinNumToStr(DisplayedMatchCoin(player.playerId));
             }
         }
         void RestoreItemViews()

@@ -28,6 +28,20 @@ namespace Assets.Scripts.Exert.BackSys
             using (var sha = SHA256.Create())
                 return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(json))).Replace("-", "");
         }
+        [Serializable] sealed class LegacyReport { public int ScoreA, ScoreB, WinnerSeat; }
+        [Serializable] sealed class LegacyWrite { public string MatchId; public LegacyReport Report; public bool Surrender; }
+        [Serializable] sealed class LegacyContent { public int Version; public long Generation; public List<LegacyWrite> Writes; }
+        static string LegacyDigest(Journal journal)
+        {
+            var content = new LegacyContent { Version = journal.Version, Generation = journal.Generation, Writes = new List<LegacyWrite>() };
+            foreach (var w in journal.Writes) {
+                if (!string.IsNullOrEmpty(w.Report?.CoinEvents)) return null;
+                content.Writes.Add(new LegacyWrite { MatchId=w.MatchId, Surrender=w.Surrender,
+                    Report=w.Report == null ? null : new LegacyReport { ScoreA=w.Report.ScoreA, ScoreB=w.Report.ScoreB, WinnerSeat=w.Report.WinnerSeat } });
+            }
+            using (var sha = SHA256.Create())
+                return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(JsonUtility.ToJson(content)))).Replace("-", "");
+        }
 
         static Journal Read(string path)
         {
@@ -40,7 +54,8 @@ namespace Assets.Scripts.Exert.BackSys
                 if (journal.Generation != 0 || !string.IsNullOrEmpty(journal.Checksum))
                     throw new InvalidDataException("Invalid legacy result journal.");
             }
-            else if (!string.Equals(journal.Checksum, Digest(journal), StringComparison.Ordinal))
+            else if (!string.Equals(journal.Checksum, Digest(journal), StringComparison.Ordinal) &&
+                     !string.Equals(journal.Checksum, LegacyDigest(journal), StringComparison.Ordinal))
                 throw new InvalidDataException("Result journal checksum mismatch.");
             return journal;
         }
@@ -59,7 +74,8 @@ namespace Assets.Scripts.Exert.BackSys
                 if (write.Surrender) continue;
                 var report = write.Report;
                 if (report == null || report.ScoreA < 0 || report.ScoreB < 0 || report.ScoreA > 100000 || report.ScoreB > 100000 ||
-                    report.WinnerSeat != (report.ScoreA == report.ScoreB ? -1 : report.ScoreA > report.ScoreB ? 0 : 1))
+                    report.WinnerSeat < -1 || report.WinnerSeat > 1 ||
+                    (string.IsNullOrEmpty(report.CoinEvents) && report.WinnerSeat != (report.ScoreA == report.ScoreB ? -1 : report.ScoreA > report.ScoreB ? 0 : 1)))
                     throw new InvalidDataException("Invalid report in result journal.");
             }
         }

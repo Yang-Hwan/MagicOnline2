@@ -169,6 +169,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             aniCtrl = transform.Find("AchieveMsg").GetComponent<AniCtrl>();
             wordBalloonCtrl = transform.Find("WordBalloonMsg").GetComponent<WordBalloonCtrl>();
 
+            gameObject.AddComponent<Assets.Scripts.Sight.Surface.Pavilion.PracticeStoryPreview>();
             BindRuntimeEvents();
             //physicsManager.OnBallAllStop += PhysicsManager_OnBallAllStop;
             //Debug.Log($"PnlMatch Awake -----------------");
@@ -189,6 +190,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         private void OnDisable()
         {
+            Assets.Scripts.Sight.Surface.Pavilion.ScoreFloatMotion.Hide();
+            Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             StopEggAnimations();
             PoolCoach.Instance.OnMatchComplite -= PoolCoach_OnMatchComplite;
             CancelPracticeFinish();
@@ -203,6 +206,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         void PoolCoach_OnMatchComplite()
         {
+            Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             if (!PoolCoach.Instance.isRulePractice || finishReturnRoutine != null) return;
             matchFinish.PracticeResultView(PoolPlayer.currentPlayer.name, PoolCoach.Instance.targetHit);
             finishReturnRoutine = StartCoroutine(ReturnAfterPracticeFinish());
@@ -484,12 +488,22 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             Assets.Scripts.Often.PracticeSceneFlow.ReturnToMenu();
         }
 
+        void ShowScoreFloat(int value)
+        {
+            if (!shotController || !shotController.cueBall) return;
+            var camera = InputOutput.usedCamera ? InputOutput.usedCamera : Camera.main;
+            Assets.Scripts.Sight.Surface.Pavilion.ScoreFloatMotion.Show(
+                shotController.cueBall.transform.position, camera, value);
+        }
+
         void PoolCoach_OnScoreChanged(int playerId, bool isHit, int coin, RunPath runPath)
         {
+            if (isHit) ShowScoreFloat(Mathf.Max(1, PoolPlayer.players[playerId].hitInning));
+            else if (PoolLogic.gameState.hitKinds.Contains(HitKind.Ball_Foul)) ShowScoreFloat(-1);
             if (PoolCoach.Instance.isRulePractice)
             {
+                if (isHit) aniCtrl.AniAchieve(-1, runPath, coin);
                 RefreshPracticeScoreboard();
-                if (isHit) aniCtrl.AniAchieve(-1, runPath);
                 return;
             }
             if (playerId == 0)
@@ -637,8 +651,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             txtHitCntOther.text = hitCntOther.ToString();
             txtCoinSelf.text = Utility.CoinNumToStr(PoolPlayer.mainPlayer.coin);
             txtCoinOther.text = Utility.CoinNumToStr(PoolPlayer.otherPlayer.coin);
-            txtMatchCoinSelf.text = Utility.CoinNumToStr(PoolPlayer.mainPlayer.matchCoin);
-            txtMatchCoinOther.text = Utility.CoinNumToStr(PoolPlayer.otherPlayer.matchCoin);
+            txtMatchCoinSelf.text = Utility.CoinNumToStr(physicsManager.DisplayedMatchCoin(PoolPlayer.mainPlayer.playerId));
+            txtMatchCoinOther.text = Utility.CoinNumToStr(physicsManager.DisplayedMatchCoin(PoolPlayer.otherPlayer.playerId));
             for (int i = 0; i < hitTarget; i++)
             {
                 UpdateEggPosition(eggBoxSelf, i, previousSelf, hitCntSelf, true);
@@ -680,6 +694,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         void PoolCoach_OnWordBalloon(int ballId, string msg)
         {
+            if (PoolCoach.Instance.Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.LocalPractice &&
+                (PoolCoach.Instance.Configuration.BallCount == 3 || PoolCoach.Instance.Configuration.BallCount == 4)) return;
             wordBalloonCtrl.MsgOpen(ballId, msg);
         }
     }

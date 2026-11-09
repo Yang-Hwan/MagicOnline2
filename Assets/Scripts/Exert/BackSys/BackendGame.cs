@@ -22,6 +22,35 @@ namespace Assets.Scripts.Prack.BackSys
             string owner = GameApiClient.UserId;
             var data = await GameApiClient.Request<UserMainData>("/api/me");
             if (owner != GameApiClient.UserId) return;
+            ApplyProfile(data);
+        }
+        [Serializable] public sealed class BustSupportResponse
+        { public bool Granted; public long Remaining; public UserMainData Profile; }
+        string bustNoticeOwner;
+        BustSupportResponse pendingBustNotice;
+        public BustSupportResponse PendingBustNotice =>
+            bustNoticeOwner == GameApiClient.UserId ? pendingBustNotice : null;
+
+        public void AcknowledgeBustNotice(BustSupportResponse notice)
+        {
+            if (ReferenceEquals(notice, pendingBustNotice)) pendingBustNotice = null;
+        }
+
+        public async Task<BustSupportResponse> CheckBustSupportAsync()
+        {
+            string owner = GameApiClient.UserId;
+            var result = await GameApiClient.Request<BustSupportResponse>("/api/me/bust-support", "POST");
+            if (owner != GameApiClient.UserId) return null;
+            if (result.Granted)
+            {
+                bustNoticeOwner = owner;
+                pendingBustNotice = result;
+            }
+            ApplyProfile(result.Profile);
+            return result;
+        }
+        void ApplyProfile(UserMainData data)
+        {
             UserMainData = data; UserInfo.LoadUserInfo();
             NetworkManager.user_coin = data.Coin;
             SyncDisplayedCoin(data);

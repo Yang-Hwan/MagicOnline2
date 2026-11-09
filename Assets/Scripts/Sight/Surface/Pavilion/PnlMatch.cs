@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Exert.Match;
+using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Often;
 using Assets.Scripts.Sight.Vital.Pavilion;
@@ -19,9 +19,31 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
     public class PnlMatch : MonoBehaviour
     {
         public static PnlMatch Instance { get; private set; }
+        MatchAvatarReactions avatars;
+        void ConfigureMatchAvatars()
+        {
+            if (NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.HasLegacyMatch)
+                avatars.Configure(pun.LegacyMatchId, pun.LegacyLocalSeat);
+        }
+
+        void BeginAvatarShot(int serial)
+        {
+            if (NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.HasLegacyMatch)
+            {
+                avatars.Configure(pun.LegacyMatchId, pun.LegacyLocalSeat);
+                int seat = PoolPlayer.turnId == PoolPlayer.mainPlayer.playerId ? pun.LegacyLocalSeat : 1 - pun.LegacyLocalSeat;
+                avatars.BeginShot(serial, seat);
+            }
+        }
+
+        public void ShowPointAvatar() => avatars?.Resolve(MatchShotOutcome.Point);
+        public bool LegacyShotBusy => physicsManager && (physicsManager.inMove || physicsManager.IsResolvingShot) ||
+            shotController && shotController.IsShotAnimating;
+        bool resultPresentationStarted;
 
 
         [SerializeField] GesPnl ges;
+        [SerializeField] SpriteRenderer tableBackground;
         [SerializeField] TextMeshProUGUI txtCoinSelf;
         [SerializeField] TextMeshProUGUI  txtMatchCoinSelf;
         [SerializeField] TextMeshProUGUI txtNameSelf;
@@ -81,6 +103,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         int msgCnt = 0;
         bool isViewMsg = true;
+        CancellationTokenSource matchViewLifetime;
         CancellationTokenSource cancelSendTime;
         CancellationTokenSource cancelMatchTime;
 
@@ -105,6 +128,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             drawStuffPos = FindObjectOfType<DrawStuffPos>();
 
             ges = transform.parent.GetComponent<GesPnl>();
+            avatars = gameObject.AddComponent<MatchAvatarReactions>();
             txtCoinSelf = transform.Find("PlayerBoxs/PlayerSelf/TxtCoin").GetComponent<TextMeshProUGUI>();
             txtMatchCoinSelf = transform.Find("PlayerBoxs/PlayerSelf/TxtMatchCoin").GetComponent<TextMeshProUGUI>();
             txtNameSelf = transform.Find("PlayerBoxs/PlayerSelf/TxtName").GetComponent<TextMeshProUGUI>();
@@ -119,6 +143,13 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
             txtCoinOther = transform.Find("PlayerBoxs/PlayerOther/TxtCoin").GetComponent<TextMeshProUGUI>();
             txtMatchCoinOther = transform.Find("PlayerBoxs/PlayerOther/TxtMatchCoin").GetComponent<TextMeshProUGUI>();
+            foreach (var coinLabel in new[] { txtCoinSelf, txtCoinOther, txtMatchCoinSelf, txtMatchCoinOther })
+            {
+                coinLabel.fontSizeMax = coinLabel.fontSize;
+                coinLabel.fontSizeMin = 12;
+                coinLabel.enableAutoSizing = true;
+                coinLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            }
             txtNameOther = transform.Find("PlayerBoxs/PlayerOther/TxtName").GetComponent<TextMeshProUGUI>();
             txtHitCntOther = transform.Find("PlayerBoxs/PlayerOther/HitCountBox/HitCnt/Txt").GetComponent<TextMeshProUGUI>();
             txtScoreOther = transform.Find("PlayerBoxs/PlayerOther/TxtScore").GetComponent<TextMeshProUGUI>();
@@ -178,8 +209,40 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
 
 
+        private void Start()
+        {
+            if (!NetworkManager.initialized) return;
+            var table = GameObject.Find("Table");
+            var sentimentRoot = table ? table.transform.Find("Addition/Sentiment") : null;
+            if (sentimentRoot) {
+                gameObject.AddComponent<MultiplayerSentimentController>().Initialize(sentimentRoot);
+                var oldStories = table.transform.Find("Addition/MovStorys");
+                if (oldStories) oldStories.gameObject.SetActive(false);
+            }
+        }
+
+        private void CloseCuePointPopup()
+        {
+            var popup = transform.Find("PointBig");
+            if (popup)
+            {
+                var selector = popup.GetComponent<BallPointBig>();
+                if (selector) selector.ClosePopup();
+                else popup.gameObject.SetActive(false);
+            }
+            var backdrop = transform.Find("BlindBack");
+            if (backdrop) backdrop.gameObject.SetActive(false);
+        }
+
         private void OnEnable()
         {
+            matchViewLifetime?.Cancel();
+            matchViewLifetime?.Dispose();
+            matchViewLifetime = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            CloseCuePointPopup();
+            resultPresentationStarted = false;
+            if (txtScoreSelf) txtScoreSelf.text = "";
+            if (txtScoreOther) txtScoreOther.text = "";
 
             PoolCoach.Instance.OnSetPlayer += PoolCoach_OnSetPlayer;
             PoolCoach.Instance.OnSetActivePlayer += PoolCoach_OnSetActivePlayer;
@@ -193,6 +256,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             PoolCoach.Instance.OnFinishAchieve += PoolCoach_OnFinishAchieve;
             PoolCoach.Instance.OnMatchTimeStart += PoolCoach_OnMatchTimeEndProcess;
             physicsManager.OnInitRandForce += PhysicsMng_OnInitRandForce;
+            ConfigureMatchAvatars();
+            PoolCoach.Instance.OnAvatarShotStarted += BeginAvatarShot;
             physicsManager.OnStartReplayShot += PhysicsManager_OnStartReplayShot;
             physicsManager.OnMatchReplayShot += PhysicsManager_OnMatchReplayShot;
             physicsManager.OnEndShot += PhysicsManager_OnMatchReplayShotEnd;
@@ -206,6 +271,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         private void OnDisable()
         {
+            coinGainInitialized=false;coinGainVersion++;
+            matchViewLifetime?.Cancel();
+            Assets.Scripts.Sight.Surface.Pavilion.ScoreFloatMotion.Hide();
+            Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
+            CloseCuePointPopup();
+            if (shotController) { shotController.HideOverlapPreview(); shotController.HideGaugeValueLabels(); }
             PoolCoach.Instance.OnSetPlayer -= PoolCoach_OnSetPlayer;
             PoolCoach.Instance.OnSetActivePlayer -= PoolCoach_OnSetActivePlayer;
             PoolCoach.Instance.OnEndShot -= PoolCoach_OnEndShot;
@@ -219,6 +290,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             PoolCoach.Instance.OnMatchTimeStart -= PoolCoach_OnMatchTimeEndProcess;
 
             physicsManager.OnInitRandForce -= PhysicsMng_OnInitRandForce;
+            PoolCoach.Instance.OnAvatarShotStarted -= BeginAvatarShot;
             physicsManager.OnStartReplayShot -= PhysicsManager_OnStartReplayShot;
             physicsManager.OnMatchReplayShot -= PhysicsManager_OnMatchReplayShot;
             physicsManager.OnEndShot -= PhysicsManager_OnMatchReplayShotEnd;
@@ -257,15 +329,18 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async UniTaskVoid WaitInit()
         {
+            var token = matchViewLifetime.Token;
             matchReplayArchive.Reset();
             matchReplaySaved = false;
             PoolCoach.Instance.Initialize(physicsManager, shotController);
             PoolCoach.Instance.MatchReset();            // 시합정보 리셋
+            if (NetworkManager.TryGetExistingNetwork(out var tableNetwork) && tableNetwork is PunNetwork tableMatch)
+                ArenaTableSkins.Apply(tableBackground, NetworkManager.hallIdx, tableMatch.BallSkinMatchId);
 
 
 
 
-            await UniTask.WaitForSeconds(0.1f , cancellationToken: this.GetCancellationTokenOnDestroy());
+            if (await UniTask.Delay(100, cancellationToken: token).SuppressCancellationThrow()) return;
             MatchInit();
         }
 
@@ -331,26 +406,50 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void MatchTimeStart(int durationInSeconds)
         {
+            cancelMatchTime?.Cancel();
+            cancelMatchTime?.Dispose();
             DateTime endTime = DateTime.UtcNow.AddSeconds(durationInSeconds);
             cancelMatchTime = new CancellationTokenSource();
+            if (NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.HasLegacyMatch)
+            {
+                pun.StartLegacyClock(durationInSeconds);
+                NetworkMatchCountdown(pun, durationInSeconds, cancelMatchTime.Token).Forget();
+                return;
+            }
             MatchCountdown(endTime, cancelMatchTime.Token).Forget();
+        }
+
+        async UniTaskVoid NetworkMatchCountdown(PunNetwork pun, int seconds, CancellationToken token)
+        {
+            while (!token.IsCancellationRequested && isActiveAndEnabled && !PoolLogic.gameState.gameIsComplete)
+            {
+                double remaining = pun.LegacySecondsRemaining;
+                int value = remaining < 0 ? seconds : (int)Math.Ceiling(remaining);
+                txtTime.text = $" {value / 60:D2}:{value % 60:D2}";
+                if (await UniTask.Delay(100, cancellationToken: token).SuppressCancellationThrow()) return;
+            }
         }
 
         async UniTaskVoid MatchCountdown(DateTime endTime, CancellationToken _cancellationToken)
         {
             while (DateTime.UtcNow < endTime)
             {
+                if (_cancellationToken.IsCancellationRequested || !isActiveAndEnabled ||
+                    PoolLogic.gameState.gameIsComplete) return;
                 int remainingSeconds = (int)(endTime - DateTime.UtcNow).TotalSeconds;
                 string remainTime = $" {remainingSeconds / 60:D2}:{remainingSeconds % 60:D2}";
                 txtTime.text = remainTime;
                 if (_cancellationToken.IsCancellationRequested)
                 {
                     Debug.Log($"{this.name} .._cancellationToken.IsCancellationRequested : {_cancellationToken.IsCancellationRequested}");
-                    break;
+                    return;
                 }
                 //Debug.Log($"Time remaining: {remainTime}");
-                await UniTask.Delay(1000, cancellationToken: _cancellationToken);
+                if (await UniTask.Delay(1000, cancellationToken: _cancellationToken).SuppressCancellationThrow()) return;
             }
+
+            if (_cancellationToken.IsCancellationRequested || !isActiveAndEnabled ||
+                PoolLogic.gameState.gameIsComplete) return;
 
             // 게임 종료
             //if (PoolLogic.controlInNetwork)
@@ -388,6 +487,33 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 EggBoxReset(); // 점수
             }
 
+        }
+
+        bool coinGainInitialized;
+        long displayedCoinGain, targetCoinGain;
+        int coinGainVersion;
+        private void LateUpdate()
+        {
+            if (NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.HasScoreCoins)
+            {
+                txtCoinSelf.text = pun.SelfCoinBalance.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+                txtCoinOther.text = pun.OtherCoinBalance.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+                long gain=pun.SelfCoinGain;
+                if(!coinGainInitialized) {
+                    coinGainInitialized=true;displayedCoinGain=targetCoinGain=gain;
+                } else if(gain!=targetCoinGain) {
+                    long from=displayedCoinGain;
+                    int scorer=gain>targetCoinGain ? PoolPlayer.mainPlayer.playerId : PoolPlayer.otherPlayer.playerId;
+                    targetCoinGain=gain;
+                    int version=++coinGainVersion;
+                    if(!shotAchieveAni.PlayCoinGain(scorer,Math.Abs(gain-from),fraction=> {
+                        if(version!=coinGainVersion || !isActiveAndEnabled)return;
+                        displayedCoinGain=fraction>=1 ? gain : from+(long)((decimal)(gain-from)*(decimal)fraction);
+                    }))displayedCoinGain=gain;
+                }
+                txtMatchCoinSelf.text = displayedCoinGain.ToString("+#,##0;-#,##0;0", System.Globalization.CultureInfo.InvariantCulture);
+                txtMatchCoinOther.text = (-displayedCoinGain).ToString("+#,##0;-#,##0;0", System.Globalization.CultureInfo.InvariantCulture);
+            }
         }
 
         private void FixedUpdate()
@@ -476,14 +602,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void PoolCoach_OnSetPlayer(PoolPlayer player)
         {
-            bool isFirstMatch = PoolPlayer.mainPlayer.winCnt == 0 && PoolPlayer.otherPlayer.winCnt == 0 ? true : false;
+            ConfigureMatchAvatars();
+            var series = NetworkManager.TryGetExistingNetwork(out var network) ? network as PunNetwork : null;
             if (player.playerId == 0)
             {
                 txtNameSelf.text = player.name;
                 txtCoinSelf.text = Utility.CoinNumToStr(player.coin);
                 txtMatchCoinSelf.text = "0";
                 txtHitCntSelf.text = "0";
-                txtScoreSelf.text = isFirstMatch ? "" : $"{PoolPlayer.mainPlayer.winCnt}";
+                txtScoreSelf.text = series ? series.SeriesSelfWinsText : "";
 
                   
                 ///
@@ -512,7 +639,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 txtCoinOther.text = Utility.CoinNumToStr(player.coin);
                 txtMatchCoinOther.text = "0";
                 txtHitCntOther.text = "0";
-                txtScoreOther.text = isFirstMatch ? "" : $"{PoolPlayer.otherPlayer.winCnt}";
+                txtScoreOther.text = series ? series.SeriesOtherWinsText : "";
                 if (rectInningBarOther != null)
                 {
 
@@ -646,6 +773,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
              
             //PoolCoach_OnSetGameInfo($"자신이 메시지 모두멈춤완료 보냄.");
             this.moveTime = moveTime;
+            var state = PoolLogic.gameState;
+            avatars.Resolve(state.hitKinds.Contains(HitKind.Ball_Foul) ? MatchShotOutcome.Foul :
+                state.shotAchieve ? MatchShotOutcome.Point : MatchShotOutcome.Miss);
 
 
             //if (!PoolCoach.Instance.isMatchTimePlay)
@@ -671,7 +801,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
             if (PoolLogic.controlInNetwork)
             {
-                NetworkManager.network.SendRemoteMessage(nameof(NetworkManager.network.WaitAndStopMoveFromNetwork), moveTime);
+                if (!(NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.SendLegacyShotEnd(moveTime)))
+                    NetworkManager.network.SendRemoteMessage(nameof(NetworkManager.network.WaitAndStopMoveFromNetwork), moveTime);
             }
 
             string stuffData = string.Empty;
@@ -888,8 +1019,19 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         }
 
+        public void ShowScoreFloat(int value)
+        {
+            if (!shotController || !shotController.cueBall) return;
+            var camera = InputOutput.usedCamera ? InputOutput.usedCamera : Camera.main;
+            Assets.Scripts.Sight.Surface.Pavilion.ScoreFloatMotion.Show(
+                shotController.cueBall.transform.position, camera, value);
+        }
+
         void PoolCoach_OnScoreChanged(int playerId, int cnt, int reward, RunPath runPath)
         {
+            var scoringPlayer = PoolPlayer.player(playerId);
+            int before = Mathf.Max(0, scoringPlayer.hitCnt - cnt);
+            cnt = Mathf.Max(0, scoringPlayer.DisplayedHitCount - Mathf.Min(before, PoolCoach.Instance.targetHit));
 
             //Debug.Log($" PoolCoach_OnScoreChanged myturn : {PoolPlayer.mainPlayer.myTurn}, playerId : {playerId}, cnt : {cnt}, reward : {reward}, runPath : {runPath}");
 
@@ -897,12 +1039,19 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
             if (cnt > 0)
             {
+                int streak = Mathf.Max(1, scoringPlayer.hitInning);
+                if (PoolCoach.Instance.matchBall == MatchBall.ThreeBall &&
+                    NetworkManager.TryGetExistingNetwork(out var scoreNetwork) &&
+                    scoreNetwork is PunNetwork scorePun && scorePun.HasLegacyMatch)
+                    scorePun.PresentThreeBallScore(streak);
+                else ShowScoreFloat(streak);
                 if (playerId == 0)
                     HitSelf(cnt).Forget(); // 점수
                 else
                     HitOther(cnt).Forget();
 
-                shotAchieveAni.AniAchieve(turnId, - 1, reward, runPath);
+                if(!(NetworkManager.TryGetExistingNetwork(out var coinNetwork) && coinNetwork is PunNetwork coinPun && (coinPun.HasScoreCoins || coinPun.IsFriendly)))
+                    shotAchieveAni.AniAchieve(turnId, - 1, reward, runPath);
             }
 
         }
@@ -937,20 +1086,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async UniTaskVoid HitSelf(int cnt = 1)
         {
-            await UniTask.Delay(1500);
+            var token = matchViewLifetime.Token;
+            if (await UniTask.Delay(1500, cancellationToken: token).SuppressCancellationThrow()) return;
 
             for (int i = 0; i < cnt; i++)
             {
                 if (hitTarget >= 15) break;
                 int choice = hitTarget - hitCntSelf;
 
-                if (hitCntSelf == hitTarget)
-                {
-                    eggBoxSelf.GetChild(hitTarget).gameObject.SetActive(true);
-                    eggBoxSelf.GetChild(hitTarget).GetComponent<RectTransform>().anchoredPosition = new Vector2(hitTarget * 0, 0);
-                    hitTarget++;
-                    choice = hitTarget;
-                }
+                if (hitCntSelf >= hitTarget) break;
 
                 if (hitCntSelf < hitTarget)
                 {
@@ -964,13 +1108,13 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                         x_ing = egg.anchoredPosition.x + 10f;
                         if (x_ing > x_end) x_ing = x_end;
                         egg.anchoredPosition = new Vector2(x_ing, 0);
-                        await UniTask.Yield( cancellationToken: this.GetCancellationTokenOnDestroy());
+                        if (await UniTask.Yield(cancellationToken: token).SuppressCancellationThrow()) return;
                     }
                     hitCntSelf++;
                     txtHitCntSelf.text = $"{hitCntSelf}";
                 }
 
-                await UniTask.Delay(500, cancellationToken: this.GetCancellationTokenOnDestroy());
+                if (await UniTask.Delay(500, cancellationToken: token).SuppressCancellationThrow()) return;
 
             }
 
@@ -987,6 +1131,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async UniTaskVoid HitSelfMinus()
         {
+            var token = matchViewLifetime.Token;
+            if (hitCntSelf <= PoolPlayer.mainPlayer.DisplayedHitCount) return;
             if (hitCntSelf <= 0) return;
             int choice = hitTarget - hitCntSelf;
             RectTransform egg = eggBoxSelf.GetChild(choice - 0).GetComponent<RectTransform>();
@@ -999,7 +1145,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 x_ing = egg.anchoredPosition.x - 10f;
                 if (x_ing < x_end) x_ing = x_end;
                 egg.anchoredPosition = new Vector2(x_ing, 0);
-                await UniTask.Yield( cancellationToken: this.GetCancellationTokenOnDestroy());
+                if (await UniTask.Yield(cancellationToken: token).SuppressCancellationThrow()) return;
             }
             hitCntSelf--;
             txtHitCntSelf.text = $"{hitCntSelf}";
@@ -1008,20 +1154,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async UniTaskVoid HitOther(int cnt = 1)
         {
-            await UniTask.Delay(1500);
+            var token = matchViewLifetime.Token;
+            if (await UniTask.Delay(1500, cancellationToken: token).SuppressCancellationThrow()) return;
 
             for (int i = 0; i < cnt; i++)
             {
                 if (hitTarget >= 15) break;
                 int choice = hitTarget - hitCntOther;
 
-                if (hitCntOther == hitTarget)
-                {
-                    eggBoxOther.GetChild(hitTarget).gameObject.SetActive(true);
-                    eggBoxOther.GetChild(hitTarget).GetComponent<RectTransform>().anchoredPosition = new Vector2(230 - hitTarget * 0, 0);
-                    hitTarget++;
-                    choice = hitTarget;
-                }
+                if (hitCntOther >= hitTarget) break;
 
                 if (hitCntOther < hitTarget)
                 {
@@ -1035,7 +1176,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                         x_ing = egg.anchoredPosition.x - 10f;
                         if (x_ing < x_end) x_ing = x_end;
                         egg.anchoredPosition = new Vector2(x_ing, 0);
-                        await UniTask.Yield( cancellationToken: this.GetCancellationTokenOnDestroy());
+                        if (await UniTask.Yield(cancellationToken: token).SuppressCancellationThrow()) return;
                     }
                     hitCntOther++;
                     txtHitCntOther.text = $"{hitCntOther}";
@@ -1058,6 +1199,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async UniTaskVoid HitOtherMinus()
         {
+            var token = matchViewLifetime.Token;
+            if (hitCntOther <= PoolPlayer.otherPlayer.DisplayedHitCount) return;
 
  
             if (hitCntOther <= 0) return;
@@ -1072,7 +1215,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 x_ing = egg.anchoredPosition.x + 10f;
                 if (x_ing > x_end) x_ing = x_end;
                 egg.anchoredPosition = new Vector2(x_ing, 0);
-                await UniTask.Yield( cancellationToken: this.GetCancellationTokenOnDestroy());
+                if (await UniTask.Yield(cancellationToken: token).SuppressCancellationThrow()) return;
             }
             hitCntOther--;
             txtHitCntOther.text = $"{hitCntOther}";
@@ -1108,7 +1251,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                     PoolCoach.Instance.OtherLefted();
                     break;
                 case NetworkState.LeftRoom:
-                    BackendDuty.Instance.ConsistPage(2);
+                    bool friendlyExit = NetworkManager.TryGetExistingNetwork(out var leavingNet) && leavingNet is PunNetwork friend && friend.IsFriendly;
+                    BackendDuty.Instance.ConsistPage(friendlyExit ? 0 : 2);
                     SceneMove.LoadScene(SceneNames.Consist);
                     //SceneMove.LoadScene(SceneNames.Hall);
                     break;
@@ -1117,7 +1261,72 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void PoolCoach_OnMatchComplite()
         {
+            Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
+            CloseCuePointPopup();
+            if (shotController) { shotController.HideOverlapPreview(); shotController.HideGaugeValueLabels(); }
+            if (resultPresentationStarted) return;
+            resultPresentationStarted = true;
+            PresentConfirmedResult().Forget();
+        }
+
+        async UniTaskVoid PresentConfirmedResult()
+        {
             PoolCoach.Instance.SetCalculateTimeEnable(false);
+
+            if (NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.HasLegacyMatch)
+            {
+                if (pun.IsFriendly)
+                {
+                    pun.RecordDisplayedLegacyOutcome();
+                    var friendlyToken = matchViewLifetime.Token;
+                    double deadline = Time.realtimeSinceStartupAsDouble + 12;
+                    while (pun.ConfirmedResultText == null && Photon.Pun.PhotonNetwork.PlayerList.Length == 2 &&
+                        Time.realtimeSinceStartupAsDouble < deadline)
+                        if (await UniTask.Delay(100, ignoreTimeScale:true, cancellationToken:friendlyToken).SuppressCancellationThrow()) return;
+                    popMatchFinish.MatchStatusView(pun.ConfirmedResultText ?? "경기 결과 확인 필요", "친선 경기 · 공식 기록 미반영");
+                    MatchCompliteMotionAsync().Forget();
+                    return;
+                }
+                string matchId = pun.LegacyMatchId;
+                pun.RecordDisplayedLegacyOutcome();
+                popMatchFinish.MatchStatusView("경기 결과 확인 중", "양쪽 경기 결과를 서버에서 확인하고 있습니다.");
+                var token = matchViewLifetime.Token;
+                while (!token.IsCancellationRequested && isActiveAndEnabled && pun.LegacyMatchId == matchId)
+                {
+                    Assets.Scripts.Exert.BackSys.BackendMatchHistory.State state = null;
+                    try { state = await Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance.GetState(matchId); }
+                    catch (Exception e) { Debug.LogWarning("[MatchResult] confirmation pending: " + e.Message); }
+                    if (token.IsCancellationRequested || !this || !isActiveAndEnabled || pun.LegacyMatchId != matchId) return;
+                    // A receipt object alone is not confirmation (including an empty decoded object).
+                    bool settled = state != null && state.Phase == "Applied" && state.Receipt != null &&
+                        state.Receipt.MatchId == matchId &&
+                        ((state.Receipt.ResultA == "Win" && state.Receipt.ResultB == "Lose" && state.Receipt.WinnerUserId == state.Receipt.UserA) ||
+                         (state.Receipt.ResultA == "Lose" && state.Receipt.ResultB == "Win" && state.Receipt.WinnerUserId == state.Receipt.UserB) ||
+                         (state.Receipt.ResultA == "Draw" && state.Receipt.ResultB == "Draw" && string.IsNullOrEmpty(state.Receipt.WinnerUserId)) ||
+                         (state.Receipt.ResultA == "Void" && state.Receipt.ResultB == "Void"));
+                    if (state != null && state.MatchId == matchId && (state.Disputed || settled))
+                    {
+                        pun.RecordConfirmedSeriesWin(state);
+                        string winner = state.Receipt?.WinnerUserId;
+                        PoolPlayer.mainPlayer.isWinner = !state.Disputed && !string.IsNullOrEmpty(winner) &&
+                            winner == Assets.Scripts.Exert.BackSys.GameApiClient.UserId;
+                        PoolPlayer.otherPlayer.isWinner = !state.Disputed && !string.IsNullOrEmpty(winner) &&
+                            winner == PoolPlayer.otherPlayer.uuid;
+                        pun.ConfirmedResultText = state.Disputed ? "경기 결과 확인 필요" :
+                            state.Receipt.ResultA == "Void" ? "경기 취소" :
+                            state.Receipt.ResultA == "Draw" ? "비겼습니다" :
+                            winner == Assets.Scripts.Exert.BackSys.GameApiClient.UserId ? "승리했습니다" : "패배하였습니다";
+                        popMatchFinish.MatchStatusView(pun.ConfirmedResultText, state.Disputed ?
+                            "양쪽 점수가 일치하지 않아 정산을 보류했습니다." : "서버에서 경기 결과를 확인했습니다.");
+                        var award = settled && !state.Disputed && state.Receipt.ResultA != "Void"
+                            ? state.Receipt.AwardFor(Assets.Scripts.Exert.BackSys.GameApiClient.UserId) : null;
+                        MatchCompliteMotionAsync(award).Forget();
+                        return;
+                    }
+                    if (await UniTask.Delay(1000, cancellationToken: token).SuppressCancellationThrow()) return;
+                }
+                return;
+            }
 
             int matchCoin = 0;
             int winId = PoolPlayer.GetHitWin();
@@ -1153,9 +1362,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             MatchCompliteMotionAsync().Forget();
         }
 
-        public async UniTaskVoid MatchCompliteMotionAsync()
+        async UniTaskVoid MatchCompliteMotionAsync(Assets.Scripts.Exert.BackSys.BackendMatchHistory.LevelUpAward award = null)
         {
-            await UniTask.Delay(TimeSpan.FromSeconds(3f), cancellationToken: this.GetCancellationTokenOnDestroy());
+            var token = matchViewLifetime.Token;
+            if (await UniTask.Delay(TimeSpan.FromSeconds(3f), ignoreTimeScale: true, cancellationToken: token).SuppressCancellationThrow()) return;
+            if (award != null && award.Level > 0)
+            {
+                popMatchFinish.ShowLevelUp(award);
+                if (await UniTask.Delay(TimeSpan.FromSeconds(3f), ignoreTimeScale: true, cancellationToken: token).SuppressCancellationThrow()) return;
+            }
             popMatchFinish.MatchResultClose();
             ges.Open(GesPnl.Pnl.One);
             Debug.Log("MatchCompliteMotion");
@@ -1178,7 +1393,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             switch (notice)
             {
                 case NoticeHitBall.Foul:
+                    avatars.Resolve(MatchShotOutcome.Foul);
                     popNoticeMsg.NoticeView(notice);
+                    if (PoolPlayer.currentPlayer.ProtectsFinishScore) break;
+                    ShowScoreFloat(-1);
                     if (PoolPlayer.mainPlayer.myTurn)
                         HitSelfMinus().Forget();
                     else
@@ -1186,6 +1404,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
                     break;
                 case NoticeHitBall.Finish:
+                    if (PoolPlayer.currentPlayer.hitCnt < PoolCoach.Instance.targetHit ||
+                        PoolPlayer.currentPlayer.finishStep != FinishStep.Push) return;
                     if (PoolPlayer.mainPlayer.myTurn)
                     {
                         gamFinishSelf.anchoredPosition = new Vector2(20f, 0f);
@@ -1206,7 +1426,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void PoolCoach_OnFinishAchieve(int playerId)
         {
-            if(playerId == 0)
+            if(playerId == PoolPlayer.mainPlayer.playerId)
             {
                 txtFinishSelf.color = new Color(1, 1, 1, 0.15f);
             }

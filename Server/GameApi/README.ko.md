@@ -85,6 +85,6 @@ dotnet run --project Server/GameApi.Tests/GameApi.Tests.csproj -- http://127.0.0
 
 `/admin/charts`에서 경기장 규칙(SkillMatch), 출석 보상(Attendance), 공통 코드(CommonCode)의 `항목 추가` 또는 행별 `수정`을 사용한다. Owner·Operator만 저장할 수 있고 Viewer는 조회만 가능하다. 숫자 형식·범위·중복 키와 출석 일차 연속성을 서버에서 검사한다. 저장은 차트 잠금·원본 버전 확인·감사 기록을 하나의 DB 트랜잭션으로 처리한다. 다른 관리자가 먼저 저장했다면 목록에서 최신 값을 다시 확인해야 한다.
 
-저장 즉시 API 차트에 반영되며 Unity는 재로그인 시 갱신한다. 기존 경기의 규칙 스냅샷은 유지된다. 삭제 기능은 제공하지 않는다. 관리자 실행 스크립트는 게임 API와 파일 잠금이 충돌하지 않도록 `bin/AdminServer`에 별도로 빌드한다.
+저장 즉시 API 차트에 반영되며 Unity는 재로그인 시 갱신한다. 기존 경기의 규칙 스냅샷은 유지된다. 행별 `삭제`에서 항목을 확인한 뒤 삭제할 수 있다. Owner·Operator만 삭제할 수 있으며 차트 버전 확인·잠금·삭제 전후 감사 기록을 같은 트랜잭션으로 처리한다. 출석 보상은 마지막 일차부터 삭제하고 1일차는 유지한다. 관리자 실행 스크립트는 게임 API와 파일 잠금이 충돌하지 않도록 `bin/AdminServer`에 별도로 빌드한다.
 
 검증: `dotnet run --project Server/AdminChart.Tests/AdminChart.Tests.csproj -- http://127.0.0.1:5082` (관리자 서버 실행 필요). DB 검사는 임시 스키마에 실제 차트를 복사해 진행하고 종료 시 해당 스키마를 정리한다. HTTP 검사는 기존 개발 관리자 로그인과 화면·유효성 검사·CSRF를 확인한다. 실제 차트 값은 변경하지 않는다.

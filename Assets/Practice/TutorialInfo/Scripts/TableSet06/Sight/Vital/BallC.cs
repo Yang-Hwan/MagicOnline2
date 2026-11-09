@@ -22,6 +22,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public Rigidbody body;
         [NonSerialized] public Vector3 impactIncomingVelocity, impactIncomingSpin;
         [NonSerialized] public float strokeFollowThrough=-1f;
+        [NonSerialized] public int strokeRailHits;
         [NonSerialized] public float strokeSpinPersistence=-1f;
         public PhysicsMng physicsManager;
 
@@ -194,6 +195,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             if (!PoolCoach.Instance.isMatchTimePlay && !online) return;
 
             int layer = 1 << collision.collider.gameObject.layer;
+            if (isCueball && strokeSpinPersistence >= 0 && physicsManager.FollowThroughProfileActive &&
+                !physicsManager.IsPracticeReplay && layer == boardLayer)
+                FollowThroughProfile.ApplySecondRailEnglish(ref strokeRailHits, body, collision,
+                    impactIncomingVelocity, impactIncomingSpin.y, GetComponent<SphereCollider>().radius * Mathf.Abs(transform.lossyScale.x));
             // Online adjudication records contact entry: a ball may settle without an exit event.
             if (online && isCueball)
             {
@@ -207,6 +212,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 if (layer == LayerLib.NameToInt(LayerKind.Ball))
                 {
                     BallC ball = collision.collider.GetComponent<BallC>();
+                    if (!online && ball) physicsManager.ObservePracticeSentimentContact(this, ball);
                     float instantWeight=ball && physicsManager.FollowThroughProfileActive
                         ? physicsManager.InstantFollowDrawWeight(impactIncomingVelocity,ball.body.position-body.position) : 1f;
                     if (ball && physicsManager.BallImpactTrialActive && !physicsManager.IsPracticeReplay)
@@ -549,7 +555,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                     if (isCueball)
                     {
                         // 속도가 느려졌을때 반응처리
-                        EdgeStateAct();
+                        if (PoolCoach.Instance.Configuration.Execution != Assets.Scripts.Often.MatchExecutionMode.LocalPractice ||
+                            (PoolCoach.Instance.Configuration.BallCount != 3 && PoolCoach.Instance.Configuration.BallCount != 4)) EdgeStateAct();
 
                         // 적구충돌 > 첫보드충돌 > 비켜치기여부 체크    
                         AsideHitChk();

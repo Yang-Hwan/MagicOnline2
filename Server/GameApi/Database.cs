@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.VisualBasic.FileIO;
@@ -63,6 +63,15 @@ public sealed class Database(NpgsqlDataSource source)
             await using var seed = Command(c, "INSERT INTO charts(name,rows) VALUES($1,$2::jsonb) ON CONFLICT DO NOTHING", name, JsonSerializer.Serialize(rows));
             await seed.ExecuteNonQueryAsync();
         }
+        await using (var exists = Command(c, "SELECT 1 FROM charts WHERE name='PostReward'"))
+            if (await exists.ExecuteScalarAsync() == null)
+            {
+                await using var common = Command(c, "SELECT rows::text FROM charts WHERE name='CommonCode'");
+                var codes = System.Text.Json.Nodes.JsonNode.Parse((string)(await common.ExecuteScalarAsync())!)!.AsArray();
+                var examples = Admin.PostRewardChart.Examples(codes);
+                await using var create = Command(c,"INSERT INTO charts(name,rows) VALUES('PostReward',$1::jsonb)",examples.ToJsonString());
+                await create.ExecuteNonQueryAsync();
+            }
         await tx.CommitAsync();
     }
 }

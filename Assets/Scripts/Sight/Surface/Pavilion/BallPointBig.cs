@@ -1,10 +1,25 @@
-﻿using Assets.Scripts.Sight.Vital.Pavilion;
+using CuePointGuide = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.CuePointGuide;
+using Assets.Scripts.Sight.Vital.Pavilion;
 using UnityEngine;
 
 namespace Assets.Scripts.Sight.Surface.Pavilion
 {
     public class BallPointBig : MonoBehaviour
     {
+        public void ResetToCenter(ShotCtrl controller)
+        {
+            // The enlarged selector may not have been opened (Awake has not run).
+            if (!point) point = transform.Find("BallFrm/Point").GetComponent<RectTransform>();
+            if (!point_v) point_v = transform.Find("Point_V").GetComponent<RectTransform>();
+            point.anchoredPosition = Vector2.zero;
+            point_v.anchoredPosition = Vector2.zero;
+            isDrag = false;
+            outLineTypeStart = OutLineType.None;
+            outLineTypeIng = OutLineType.None;
+            if (controller) controller.SetCueTargetingPosition(Vector3.zero, Vector2.zero);
+            OnCueSpinState?.Invoke(Vector2.zero);
+        }
+
 
         enum OutLineType
         {
@@ -58,6 +73,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             ballSpin = 0;
             RectTransform rectTransform = GetComponent<RectTransform>();
             radius = 0.5f * (bigBallFrm.sizeDelta.x - point.sizeDelta.x);
+            CuePointGuide.Install(bigBallFrm);
             //Debug.Log($"rt.x : {bigBallFrm.sizeDelta.x}, po.x : {point.sizeDelta.x}");
 
         }
@@ -78,6 +94,11 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         private void OnEnable()
         {
+            isDrag = false;
+            isOff = false;
+            outLineTypeStart = OutLineType.None;
+            outLineTypeIng = OutLineType.None;
+            if (blindBack) blindBack.SetActive(true);
             canControl = true;
             ShotCtrl.canControl = false;
             InputOutput.OnMouseState += InputOutput_OnMouseState;
@@ -88,6 +109,20 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             canControl = false;
             ShotCtrl.canControl = true;
             InputOutput.OnMouseState -= InputOutput_OnMouseState;
+            // The backdrop is a sibling: disabling this popup or its parent
+            // does not clear the backdrop's activeSelf for the next match.
+            if (blindBack) blindBack.SetActive(false);
+            isDrag = false;
+            isOff = false;
+            outLineTypeStart = OutLineType.None;
+            outLineTypeIng = OutLineType.None;
+        }
+
+        public void ClosePopup()
+        {
+            if (!blindBack && transform.parent)
+                blindBack = transform.parent.Find("BlindBack")?.gameObject;
+            if (blindBack) blindBack.SetActive(false);
             gameObject.SetActive(false);
         }
 
@@ -127,7 +162,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             float angle = Mathf.Atan2(uiPos.y, uiPos.x) * Mathf.Rad2Deg;
             float radian = angle * Mathf.Deg2Rad;
             float dist = uiPos.magnitude;
-            float dist_limit = dist > ball_point_ui_boundary ? ball_point_ui_boundary : dist;
+            float dist_limit = Mathf.Min(dist, CuePointGuide.Limit(bigBallFrm, point));
             Vector2 pos_ch = dist_limit * new Vector2(Mathf.Cos(radian), Mathf.Sin(radian));
             //Debug.Log($"pos_ch : {pos_ch}, dist_vp : {dist_vp}, dist : {dist}, angle : {angle}, uiPos : {uiPos}");
             return pos_ch;
@@ -159,7 +194,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             transform.rotation = qua;
             this.movAngle = qua.eulerAngles.z;
 
+            point.anchoredPosition = Vector2.ClampMagnitude(point.anchoredPosition, CuePointGuide.Limit(bigBallFrm, point));
             Vector3 pos_v = ChAngToPos(point.anchoredPosition);
+            OnCueSpinState?.Invoke(point.anchoredPosition);
+            SetCuePosition(-point.anchoredPosition / radius, (Vector2)pos_v / radius);
             point_v.anchoredPosition = pos_v;
             //Debug.Log($"movAngle : {movAngle}, point : {point.anchoredPosition}, pos_v : {pos_v} ");
         }
@@ -204,7 +242,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 //if(outLineTypeIng == OutLineType.InSide)
                 {
                     Vector2 uiPos = OutSideToRectPos(Input.mousePosition, dist);
-                    Vector2 uiPosIng = Vector2.Lerp(point_v.anchoredPosition, uiPos, Time.deltaTime * 10f);
+                    Vector2 uiPosIng = Vector2.ClampMagnitude(
+                        Vector2.Lerp(point_v.anchoredPosition, uiPos, Time.deltaTime * 10f),
+                        CuePointGuide.Limit(bigBallFrm, point));
                     Vector2 uiPosIng_rat = ChAngToPos(uiPosIng, -1);
                     //Debug.Log($"uiPosIng:{uiPos}, uiPosIng:{uiPosIng}, uiPosIng_rat : {uiPosIng_rat}, ABSOLUTE_NORMAL : {uiPosIng / radius}, radius : {radius}");
                     point_v.anchoredPosition = uiPosIng;
@@ -243,8 +283,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
                 if (isOff)
                 {
-                    gameObject.SetActive(false);
-                    blindBack.SetActive(false);
+                    ClosePopup();
                 }
             }
 

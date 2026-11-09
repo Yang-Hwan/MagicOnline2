@@ -163,15 +163,22 @@ namespace Assets.Scripts.Sight.Surface.Consist
 
 		public void GotoWaitRoom(int hallIdx)
         {
-			Debug.Log($"Btn_Click hallIdx : {hallIdx}");
-			NetworkManager.hallIdx = hallIdx;
+            OpenWaitingPanel(hallIdx);
+            NetworkManager.network.JoinRandomRoom(hallIdx);
+        }
 
-			pnlMainSwipe.SetActive(false);
-			pnlSubLobby.SetActive(true);
-			NetworkManager.network.JoinRandomRoom(hallIdx);
+        public void GotoFriendRoom(PunNetwork network, int hallIdx, string invite, string other)
+        {
+            OpenWaitingPanel(hallIdx);
+            network.JoinFriendlyRoom(hallIdx, invite, other);
+        }
 
-
-		}
+        void OpenWaitingPanel(int hallIdx)
+        {
+            NetworkManager.hallIdx = hallIdx;
+            pnlMainSwipe.SetActive(false);
+            pnlSubLobby.SetActive(true);
+        }
 
 
 

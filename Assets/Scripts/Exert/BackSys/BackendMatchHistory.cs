@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
@@ -15,9 +15,18 @@ namespace Assets.Scripts.Exert.BackSys
     {
         [Serializable] sealed class Registration { public string RequestId, OpponentUserId; public int HallId; public MatchRulesContract Rules; }
         [Serializable] sealed class ReadyBody { public MatchRulesContract Rules; }
-        [Serializable] public sealed class ResultBody { public int ScoreA, ScoreB, WinnerSeat; }
-        [Serializable] public sealed class Receipt { public string MatchId, Reason, WinnerUserId; public long RewardA, RewardB; }
-        [Serializable] public sealed class State { public string MatchId, Phase; public bool Disputed, ReadyA, ReadyB; public MatchRulesContract Rules; public Receipt Receipt; }
+        [Serializable] public sealed class ResultBody { public int ScoreA, ScoreB, WinnerSeat; public string CoinEvents; }
+        [Serializable] sealed class CoinBody { public string CoinEvents; }
+        [Serializable] public sealed class LevelUpAward { public int Level; public string Currency; public long Amount; }
+        [Serializable] public sealed class Receipt
+        {
+            public string MatchId, Reason, WinnerUserId, UserA, UserB, ResultA, ResultB;
+            public long EntryA, EntryB, RewardA, RewardB;
+            public LevelUpAward LevelUpA, LevelUpB;
+            public LevelUpAward AwardFor(string userId) =>
+                userId == UserA ? LevelUpA : userId == UserB ? LevelUpB : null;
+        }
+        [Serializable] public sealed class State { public string MatchId, Phase; public bool Disputed, ReadyA, ReadyB; public long StartCoinA, StartCoinB; public MatchRulesContract Rules; public Receipt Receipt; }
         [Serializable] sealed class ReadyReply { public bool Playing; }
         [Serializable] public sealed class PendingWrite { public string MatchId; public ResultBody Report; public bool Surrender; }
         [Serializable] public sealed class Journal
@@ -47,6 +56,33 @@ namespace Assets.Scripts.Exert.BackSys
 #endif
         readonly HashSet<string> active = new HashSet<string>();
         readonly HashSet<string> applied = new HashSet<string>();
+        readonly Dictionary<string, string> coinCheckpoints = new Dictionary<string, string>();
+        Task coinFlushTask;
+        public void QueueCoinCheckpoint(string id, string events)
+        {
+            if (!LoadOwner()) return;
+            coinCheckpoints[id] = events;
+            _ = FlushCoinCheckpoints();
+        }
+        Task FlushCoinCheckpoints()
+        {
+            if (coinFlushTask != null && !coinFlushTask.IsCompleted) return coinFlushTask;
+            return coinFlushTask = SendCoinCheckpoints();
+        }
+        async Task SendCoinCheckpoints()
+        {
+            string current = GameApiClient.UserId;
+            try {
+              while (coinCheckpoints.Count > 0) {
+                foreach (var item in new List<KeyValuePair<string, string>>(coinCheckpoints)) {
+                    if (current != GameApiClient.UserId) return;
+                    await GameApiClient.Request<object>("/api/matches/" + item.Key + "/coins", "POST", new CoinBody { CoinEvents = item.Value });
+                    if (current != GameApiClient.UserId) return;
+                    if (coinCheckpoints.TryGetValue(item.Key, out var latest) && latest == item.Value) coinCheckpoints.Remove(item.Key);
+                }
+              }
+            } catch (Exception e) { Debug.LogWarning("득점 코인 기록 재시도: " + e.Message); }
+        }
         public bool IsSettled(string id) => owner == GameApiClient.UserId && !string.IsNullOrEmpty(id) && applied.Contains(id);
         string owner, path; bool busy; float nextTick;
         bool LoadOwner()
@@ -60,7 +96,7 @@ namespace Assets.Scripts.Exert.BackSys
             var newPath = Path.Combine(Application.persistentDataPath, "ApiResults-" + BitConverter.ToString(hash).Replace("-", "") + ".json");
             var loaded = MatchResultJournalStore.Load(newPath, out var recovery);
             owner = current; path = newPath; journal = loaded;
-            active.Clear(); applied.Clear(); LastStatus = recovery; LastMatchId = "";
+            active.Clear(); applied.Clear(); coinCheckpoints.Clear(); LastStatus = recovery; LastMatchId = "";
             if (!string.IsNullOrEmpty(recovery)) Debug.LogWarning(recovery);
             return true;
         }
@@ -112,6 +148,7 @@ namespace Assets.Scripts.Exert.BackSys
         }
         public async Task SurrenderAsync(string id)
         {
+            await FlushCoinCheckpoints();
             await GameApiClient.Request<object>("/api/matches/"+id+"/surrender", "POST"); active.Remove(id);
             await BackendGame.Instance.LoadAsync();
         }
@@ -133,6 +170,9 @@ namespace Assets.Scripts.Exert.BackSys
             var report = new ResultBody { ScoreA = player.SeatNo == 0 ? player.Score : player.OpponentScore,
                 ScoreB = player.SeatNo == 0 ? player.OpponentScore : player.Score,
                 WinnerSeat = player.Result == "Draw" ? -1 : player.Result == "Win" ? player.SeatNo : 1 - player.SeatNo };
+            if (Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var net) &&
+                net is Assets.Scripts.Exert.Network.PunNetwork pun && pun.LegacyMatchId == player.MatchId)
+                report.CoinEvents = pun.ScoringCoinEvents;
             var existing = journal.Writes.Find(w=>w.MatchId == player.MatchId);
             if(existing == null) journal.Writes.Add(new PendingWrite { MatchId = player.MatchId, Report = report });
             Persist(); LastStatus = "정산 대기 중"; nextTick = 0;
@@ -146,6 +186,7 @@ namespace Assets.Scripts.Exert.BackSys
                 // Account changes are applied only between requests; never send an old journal as another user.
                 busy = false; if (!LoadOwner()) return; busy = true;
                 string current = owner;
+                await FlushCoinCheckpoints();
                 foreach(var id in new List<string>(active))
                 {
                     // A locally disconnected Photon participant must not keep itself alive via HTTP.
@@ -159,7 +200,7 @@ namespace Assets.Scripts.Exert.BackSys
                     catch (GameApiException e) when (e.Status == 403 || e.Status == 404)
                     {
                         active.Remove(id);
-                        LastStatus = "경기 상태 확인 필요: " + e.Message;
+                        if (id == LastMatchId) LastStatus = "경기 상태 확인 필요: " + e.Message;
                     }
                 }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -185,7 +226,7 @@ namespace Assets.Scripts.Exert.BackSys
                     catch (GameApiException e) when (e.Status == 400 || e.Status == 403 || e.Status == 404 || e.Status == 409)
                     {
                         // Preserve the request for review without blocking unrelated valid results.
-                        LastStatus = "결과 확인 필요 (" + write.MatchId + "): " + e.Message;
+                        if (write.MatchId == LastMatchId) LastStatus = "결과 확인 필요 (" + write.MatchId + "): " + e.Message;
                     }
                 }
             }
@@ -195,8 +236,8 @@ namespace Assets.Scripts.Exert.BackSys
         async Task<State> Observe(string id)
         {
             var state = await GetState(id);
-            if(state.Phase == "Applied") { active.Remove(id); applied.Add(id); LastStatus = "정산 완료"; await BackendGame.Instance.LoadAsync(); }
-            else if(state.Disputed) LastStatus = "결과 불일치: 확인 필요";
+            if(state.Phase == "Applied") { active.Remove(id); applied.Add(id); if (id == LastMatchId) LastStatus = "정산 완료"; await BackendGame.Instance.LoadAsync(); }
+            else if(state.Disputed) { active.Remove(id); if (id == LastMatchId) LastStatus = "결과 불일치: 확인 필요"; }
             return state;
         }
     }

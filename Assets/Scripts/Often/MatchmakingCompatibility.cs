@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using Assets.Scripts.Prack.BackSys.ChartData;
 
@@ -7,9 +7,16 @@ namespace Assets.Scripts.Often
     public static class MatchmakingCompatibility
     {
         // Isolate upgraded clients from older clients that join rooms by name only.
-        public static readonly string Protocol = "pavilion-practice-physics-6-rules1" +
+        public static readonly string Protocol = "pavilion-practice-physics-6-rules2-timeout2-charttarget1-contacts1-startorder1-cushionfx1-scorefx1-coins1-finishfoul1" +
             Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ProtocolSuffix;
         public static string GameVersion(string appVersion) => appVersion + "." + Protocol;
+
+        public static int SelectStartingSeat(bool rematch, int previousLoserSeat, int randomSeat)
+        {
+            if (randomSeat != 0 && randomSeat != 1) throw new ArgumentOutOfRangeException(nameof(randomSeat));
+            return rematch && (previousLoserSeat == 0 || previousLoserSeat == 1)
+                ? previousLoserSeat : randomSeat;
+        }
 
         public static string RulesKey(SkillMatchData hall)
         {

@@ -11,12 +11,14 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         Vector3 pos_st, pos_en;
         public Transform egg;
         public Transform bird;
+        ParticleSystem dots;
         float st = -2.1f;
 
         public override void Awake()
         {
             egg = transform.Find("egg");
             bird = transform.Find("bird");
+            dots = egg.GetComponent<ParticleSystem>();
 
             pos_st = new Vector3(-1.9f, 0.1f, 0.31f);
             pos_en = new Vector3(2.2f, 0.1f, 0.31f);
@@ -31,13 +33,18 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public override void SetupSequence()
         {
+            if (dots) dots.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             bird.gameObject.SetActive(false);  
             egg.gameObject.SetActive(false);
             egg.localPosition = pos_st;
             bird.localPosition = pos_st;
             mySequence = DOTween.Sequence()
                 .AppendCallback(() => { bird.gameObject.SetActive(true); bird.localPosition = pos_st; })
-                .JoinCallback(() => { egg.gameObject.SetActive(true); egg.localPosition = pos_st; })
+                .JoinCallback(() => {
+                    egg.gameObject.SetActive(true); egg.localPosition = pos_st;
+                    // Sentiment disables Play On Awake; explicitly start the trailing dots.
+                    if (dots) dots.Play(true);
+                })
                 .Append(bird.DOLocalMove(pos_en, 4f))
                 .Join(egg.DOLocalMove(pos_en, 4f))
                 .AppendCallback(() => { bird.gameObject.SetActive(false); bird.localPosition = pos_st; })

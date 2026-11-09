@@ -3,7 +3,7 @@ using Assets.Scripts.Prack.BackSys.GameData;
 
 namespace MagicOnline.MatchSettlement;
 
-public enum CoinPolicy { Unconfigured, EntryPool }
+public enum CoinPolicy { Unconfigured, EntryPool, ScoreTransfer }
 public enum ServerMatchPhase { Registered, Playing, Applied }
 
 // Construct ONLY after token authentication, opponent consent and server chart lookup.
@@ -15,7 +15,8 @@ public sealed record VerifiedRegistration(
 public sealed class MatchRulesMismatchException : InvalidOperationException
 { public MatchRulesMismatchException() : base("MatchRulesMismatch") { } }
 
-public sealed record ResultReport(int ScoreA, int ScoreB, int WinnerSeat); // -1 draw, 0 A, 1 B
+public sealed record ResultReport(int ScoreA, int ScoreB, int WinnerSeat, string CoinEvents = ""); // -1 draw, 0 A, 1 B
+public sealed record CoinCheckpoint(string CoinEvents);
 
 public sealed class RegisteredMatch
 {
@@ -24,7 +25,11 @@ public sealed class RegisteredMatch
     public long RegisteredAt, StartedAt, LastSeenA, LastSeenB;
     public bool ReadyA, ReadyB, Disputed;
     public ResultReport ReportA, ReportB;
+    public long StartCoinA, StartCoinB;
+    public string CoinEventsA = "", CoinEventsB = "", AgreedCoinEvents = "";
 }
+
+public sealed record LevelUpAward(int Level, string Currency = null, long Amount = 0);
 
 public sealed class SettlementReceipt
 {
@@ -33,6 +38,7 @@ public sealed class SettlementReceipt
     public string UserA, UserB, ResultA, ResultB;
     public int Ball;
     public long EntryA, EntryB, RewardA, RewardB;
+    public LevelUpAward LevelUpA, LevelUpB;
     public long SettledAt;
     // Retained only for six months; production stores these in the history tables.
     public MatchHistoryData Match;

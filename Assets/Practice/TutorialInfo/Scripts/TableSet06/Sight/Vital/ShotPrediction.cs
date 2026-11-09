@@ -59,6 +59,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         bool resolvedContact;
         int contactReleaseSteps;
         float strokeFollowThrough=-1f;
+        int strokeRailHits;
         float strokeSpinPersistence=-1f;
 
         public ShotPrediction(IShotPredictionSource source)
@@ -108,6 +109,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         {
             if (!simulatingShot || index!=cueIndex)return;
             if(collision.collider.gameObject.layer==LayerMask.NameToLayer("Board")) {
+                if(manager.FollowThroughProfileActive && strokeSpinPersistence>=0)
+                    FollowThroughProfile.ApplySecondRailEnglish(ref strokeRailHits, balls[index], collision,
+                        impactIncomingVelocity, impactIncomingSpin.y, radii[index]);
                 resolvedContact=true;contactReleaseSteps=Mathf.Clamp(manager.PredictionCloth.substeps,1,8);
                 return;
             }
@@ -211,6 +215,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             contactCentre=Vector3.zero;contactThickness=0;targetGuideHit=false;
             cueIndex=cue; targetIndex=-1; cuePath.Clear(); targetPath.Clear(); timedCuePath.Clear();
             strokeFollowThrough=impulse.followThrough;
+            strokeRailHits=0;
             strokeSpinPersistence=impulse.spinPersistence;
             for(int i=0;i<balls.Length;i++)
             {

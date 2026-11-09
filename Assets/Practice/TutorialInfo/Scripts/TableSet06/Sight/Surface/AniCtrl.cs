@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using System;
@@ -67,54 +67,78 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             Debug.Log($"Ani02");
         }
 
-        async UniTask CoinBring()
+        async UniTask CoinBring(int scoreReward = 0)
         {
             int ownerPlayerId = PoolPlayer.currentPlayer.playerId;
             var session = physicsManager.Items;
-            // Achievement bonus is gameplay, independent of delayed coin presentation.
-            session.AwardBonus(ownerPlayerId, cnt_coin * 10);
+            long displayedReward = cnt_coin * 10L + Math.Max(0, scoreReward);
+            var display = physicsManager.BeginCoinDisplay(ownerPlayerId, displayedReward);
+            bool dispatched = false;
+            try {
+                // Achievement bonus is gameplay, independent of delayed coin presentation.
+                if (!session.AwardBonus(ownerPlayerId, cnt_coin * 10)) return;
 
-            for (int i = 0; i < cnt_coin; i++)
-            {
-                coins[i]?.SetActive(false);
-            }
-
-            for (int i = 0; i < cnt_coin; i++)
-            {
-                int r = UnityEngine.Random.Range(0, 6);
-                float pos_d = r == 0 ? 3 : 1;
-                float x = UnityEngine.Random.Range(-0.1f * pos_d, 0.1f * pos_d);
-                float y = 0.1f + (0.01f * i);
-                float z = UnityEngine.Random.Range(-0.07f * pos_d, 0.07f * pos_d);
-                Vector3 pos = new Vector3(x, y, z);
-                coins[i] = ObjectPooler.instance.SpawnFromPool("GoldCoin", pos);
-                coins[i].transform.localRotation = Quaternion.Euler(90f, 0, 0);
-                coins[i].transform.localScale = Vector3.one * 0.4f;
-                if (i % 5 == 0)
+                for (int i = 0; i < cnt_coin; i++)
                 {
-                    await UniTask.Delay(100, cancellationToken: this.GetCancellationTokenOnDestroy());
+                    coins[i]?.SetActive(false);
+                }
+
+                for (int i = 0; i < cnt_coin; i++)
+                {
+                    int r = UnityEngine.Random.Range(0, 6);
+                    float pos_d = r == 0 ? 3 : 1;
+                    float x = UnityEngine.Random.Range(-0.1f * pos_d, 0.1f * pos_d);
+                    float y = 0.1f + (0.01f * i);
+                    float z = UnityEngine.Random.Range(-0.07f * pos_d, 0.07f * pos_d);
+                    Vector3 pos = new Vector3(x, y, z);
+                    coins[i] = ObjectPooler.instance.SpawnFromPool("GoldCoin", pos);
+                    coins[i].transform.localRotation = Quaternion.Euler(90f, 0, 0);
+                    coins[i].transform.localScale = Vector3.one * 0.4f;
+                    if (i % 5 == 0)
+                    {
+                        await UniTask.Delay(100, cancellationToken: this.GetCancellationTokenOnDestroy());
+                        if (session != physicsManager.Items || !isActiveAndEnabled) return;
+                    }
+                }
+
+                await UniTask.Delay(1000, cancellationToken: this.GetCancellationTokenOnDestroy());
+                if (session != physicsManager.Items || !isActiveAndEnabled) return;
+                for (int i = 0; i < cnt_coin; i++)
+                {
+                    Vector3 pos = coins[i].transform.position;
+                    Vector3 pos_light = pos;
+                    pos_light.y = 0.3f;
+                    long portion = (i + 1) * displayedReward / cnt_coin - i * displayedReward / cnt_coin;
+                    physicsManager.PlayCoinFeedback(pos, 1, ownerPlayerId,
+                        () => physicsManager.AdvanceCoinDisplay(display, portion));
+                    ObjectPooler.instance.SpawnFromPool("CoinLightUp", pos_light);
+                    coins[i]?.SetActive(false);
+                    await UniTask.Delay(70, cancellationToken: this.GetCancellationTokenOnDestroy());
                     if (session != physicsManager.Items || !isActiveAndEnabled) return;
                 }
+                dispatched = true;
             }
-
-            await UniTask.Delay(1000, cancellationToken: this.GetCancellationTokenOnDestroy());
-                    if (session != physicsManager.Items || !isActiveAndEnabled) return;
-            for (int i = 0; i < cnt_coin; i++)
-            {
-                Vector3 pos = coins[i].transform.position;
-                Vector3 pos_light = pos;
-                pos_light.y = 0.3f;
-                physicsManager.PlayCoinFeedback(pos, 1, ownerPlayerId);
-                ObjectPooler.instance.SpawnFromPool("CoinLightUp", pos_light);
-                coins[i]?.SetActive(false);
-                await UniTask.Delay(70, cancellationToken: this.GetCancellationTokenOnDestroy());
-                    if (session != physicsManager.Items || !isActiveAndEnabled) return;
+            finally {
+                // Cancellation/scene transitions must not strand a partial visual balance.
+                if (!dispatched && physicsManager) physicsManager.AdvanceCoinDisplay(display);
             }
         }
 
         // 0.03 .. 0.01
-        public void AniAchieve(int idx, RunPath _runPath = RunPath.None)
+        public void AniAchieve(int idx, RunPath _runPath = RunPath.None, int scoreReward = 0)
         {
+            var configuration = PoolCoach.Instance.Configuration;
+            if (configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.LocalPractice &&
+                (configuration.BallCount == 3 || configuration.BallCount == 4))
+            {
+                // New sentiments replace the old score banner, but coin rewards and flight remain.
+                HideAchievementGraphic(sideBeamObj);
+                HideAchievementGraphic(achieveMsgObj);
+                HideAchievementGraphic(runPathMsgObj);
+                CoinBring(scoreReward).Forget();
+                return;
+            }
+
             if(idx == -1)
             {
                 idx = UnityEngine.Random.Range(0, achieveMsgs.Length);
@@ -166,6 +190,13 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             });
             CoinBring().Forget();
 
+        }
+
+        static void HideAchievementGraphic(GameObject graphic)
+        {
+            if (!graphic) return;
+            graphic.transform.DOKill();
+            graphic.transform.localScale = Vector3.zero;
         }
 
     }

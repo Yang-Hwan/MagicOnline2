@@ -1049,7 +1049,7 @@ public static class SpinPersistenceValidation
                 var offset = new Vector3(.02f * tip, -.02f * tip, 0);
                 var torque = Vector3.Cross(offset * (FollowThroughProfile.SpinLeverScale(power) / speed),
                     Vector3.forward * (power * speed));
-                var expected = power > 0 ? Vector3.Cross(offset * (.46f * .4f), Vector3.forward) : Vector3.zero;
+                var expected = power > 0 ? Vector3.Cross(offset * (.46f * .4f * 1.5f), Vector3.forward) : Vector3.zero;
                 Require((torque - expected).magnitude < .000001f,
                     "Initial spin changed with power/follow, or a zero-power/centre shot created spin");
             }
@@ -1063,6 +1063,9 @@ public static class SpinPersistenceValidation
         }
         Require(strong.magnitude > weak.magnitude && strong.magnitude < 30,
             "Strong power must retain more spin without increasing initial spin");
+        float previousWeakSpin = 30 * Mathf.Exp(-(1 - FollowThroughProfile.Persistence(.1f, 1, .2f)) * 1.5f);
+        Require(weak.y > previousWeakSpin && weak.y < 30,
+            "Soft-shot side spin must last longer than the previous decay without gaining spin");
         Debug.Log("Spin model validation passed: independent tip spin, zero power, centre hits, follow invariance, monotonic damping and legacy fallback.");
     }
 

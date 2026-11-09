@@ -30,6 +30,11 @@ namespace Assets.Scripts.Sight.Surface.Come
             ConfigureTestLogin(btnLoginTemp, "로그인1", "user01");
             ConfigureTestLogin(btnLoginTemp2, "로그인2", "user02");
             btnGuest.gameObject.SetActive(false); btnHashKey.gameObject.SetActive(false);
+            if (StarryLoginView.Apply(this, inpId, inpPw, btnLogin, btnEntry, txtMsg))
+            {
+                fieldNormalColor = Color.clear;
+                fieldErrorColor = new Color(1, .2f, .3f, .25f);
+            }
         }
         void ConfigureTestLogin(Button button, string label, string loginId)
         {

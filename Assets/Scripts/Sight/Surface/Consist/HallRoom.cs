@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Assets.Scripts.Often;
@@ -136,7 +136,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             txtEnterCoin.text = $"입장: {coin}원";
             txtMatchCushion.text = cushionStr;
             txtMatchBall.text = $"{matchBall}구";
-            txtTargetHit.text = $"목표개수: {(matchBall == (int)MatchBall.FourBall ? 3 : targetHit)}개";
+            txtTargetHit.text = $"목표개수: {targetHit}개";
             txtFinishMission.text = $"{finishStr}";
             txtMatchTotMin.text = $"제한시간: {totMin}분";
         }

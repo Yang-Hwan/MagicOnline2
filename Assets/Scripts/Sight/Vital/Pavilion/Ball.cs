@@ -257,7 +257,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                         if (PoolLogic.controlInNetwork)
                         {
                             // 속도가 느려졌을때 반응처리
-                            EdgeStateAct();
+                            if (!Assets.Scripts.Sight.Surface.Pavilion.MultiplayerSentimentController.Active) EdgeStateAct();
                         }
                         
                     }
@@ -382,6 +382,9 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void FollowMoveFromNetwork(MechanicalState mState)
         {
+            // Shared-contact matches judge only the complete, numbered shot transcript.
+            // Delayed legacy movement packets must never add contacts to the next turn.
+            if (NetworkManager.TryGetExistingNetwork(out var net) && net is Assets.Scripts.Exert.Network.PunNetwork pun && pun.HasLegacyMatch) return;
             //Debug.Log($"FollowMoveFromNetwork HIT ID : {id} .. mState.hitShapeId : {mState.hitShapeId},  mState.position : {mState.position}");
             if (mState.hitShapeId >= 100)
             {

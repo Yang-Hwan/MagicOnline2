@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using DG.Tweening;
 using System;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Assets.Scripts.Sight.Vital.Pavilion;
 using Assets.Scripts.Often;
@@ -24,6 +25,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         PhysicsMng physicsManager;
         CoinCtrl coinCtrl;
+        CancellationTokenSource coinAnimationCancellation;
 
         private int[] _c = new int[2];
 
@@ -71,16 +73,42 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
 
 
-        async UniTask CoinBring(int turnId, int cnt)
+        void StopAnimation()
         {
+            coinAnimationCancellation?.Cancel();
+            coinAnimationCancellation?.Dispose();
+            coinAnimationCancellation = null;
+            if(coinCtrl)coinCtrl.StopVisualCoins();
+            if (coins != null)
+                for (int i = 0; i < coins.Length; i++)
+                {
+                    // Unity destroyed objects are not handled by the ?. operator.
+                    if (coins[i]) coins[i].SetActive(false);
+                    coins[i] = null;
+                }
+            if (sideBeamObj) sideBeamObj.transform.DOKill();
+            if (achieveMsgObj) achieveMsgObj.transform.DOKill();
+            if (runPathMsgObj) runPathMsgObj.transform.DOKill();
+        }
 
-            for (int i = 0; i < cnt_max_coin; i++)
-            {
-                coins[i]?.SetActive(false);
-            }
+        void OnDisable() => StopAnimation();
+        void OnDestroy() => StopAnimation();
 
+        async UniTask CoinBring(int turnId, int cnt, CancellationToken cancellationToken,Action<float> progress=null)
+        {
+            cnt = Mathf.Clamp(cnt, 0, coins.Length);
+            int arrived=0;
+            Action onArrival=()=> {
+                if(cancellationToken.IsCancellationRequested)return;
+                arrived++;
+                progress?.Invoke((float)arrived/Mathf.Max(1,cnt));
+            };
+            bool dispatched=false;
+            try {
             for (int i = 0; i < cnt; i++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!ObjectPooler.instance || !coinCtrl) return;
                 int r = UnityEngine.Random.Range(0, 6);
                 float pos_d = r == 0 ? 3 : 1;
                 float x = UnityEngine.Random.Range(-0.1f * pos_d, 0.1f * pos_d);
@@ -88,27 +116,49 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 float z = UnityEngine.Random.Range(-0.07f * pos_d, 0.07f * pos_d);
                 Vector3 pos = new Vector3(x, y, z);
                 coins[i] = ObjectPooler.instance.SpawnFromPool(ObjectPool.GoldCoin.ToString(), pos);
+                if (!coins[i]) continue;
                 coins[i].transform.localRotation = Quaternion.Euler(90f, 0, 0);
                 coins[i].transform.localScale = Vector3.one * 0.4f;
                 if (i % 5 == 0)
                 {
-                    await UniTask.Delay(100);
+                    await UniTask.Delay(100, cancellationToken: cancellationToken);
                 }
             }
 
-            await UniTask.Delay(1000);
+            await UniTask.Delay(1000, cancellationToken: cancellationToken);
             for (int i = 0; i < cnt; i++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!ObjectPooler.instance || !coinCtrl) return;
+                if (!coins[i]) { if(progress!=null)onArrival(); continue; }
                 Vector3 pos = coins[i].transform.position;
                 Vector3 pos_light = pos;
                 pos_light.y = 0.3f;
-                coinCtrl.AddCoins(pos, 1, turnId);
+                if(progress!=null)coinCtrl.AddVisualCoin(pos,turnId,onArrival);
+                else coinCtrl.AddCoins(pos, 1, turnId);
                 ObjectPooler.instance.SpawnFromPool(ObjectPool.CoinLightUp.ToString(), pos_light);
-                coins[i]?.SetActive(false);
-                await UniTask.Delay(70);
+                coins[i].SetActive(false);
+                coins[i] = null;
+                await UniTask.Delay(70, cancellationToken: cancellationToken);
             }
 
-            //Debug.Log($"CoinBring cnt_coin : {cnt_coin}, coins.len : {coins.Length} ");
+            dispatched=true;
+            } finally {
+                if(!dispatched && !cancellationToken.IsCancellationRequested)progress?.Invoke(1);
+            }
+        }
+
+        public bool PlayCoinGain(int playerId,long amount,Action<float> progress)
+        {
+            if(!isActiveAndEnabled || !coinCtrl || coins==null)return false;
+            StopAnimation();
+            if(sideBeamObj)sideBeamObj.transform.localScale=Vector3.zero;
+            if(achieveMsgObj)achieveMsgObj.transform.localScale=Vector3.zero;
+            if(runPathMsgObj)runPathMsgObj.transform.localScale=Vector3.zero;
+            coinAnimationCancellation=CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            int count=(int)Math.Max(1,Math.Min(cnt_max_coin,amount/Math.Max(1,coinCtrl.coin_ea_val)));
+            CoinBring(playerId,count,coinAnimationCancellation.Token,progress).Forget();
+            return true;
         }
 
 
@@ -116,7 +166,17 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         // 0.03 .. 0.01
         public void AniAchieve(int turnId, int idx, int reward , RunPath _runPath = RunPath.None)
         {
+            if (!isActiveAndEnabled || !coinCtrl || coinCtrl.coin_ea_val <= 0) return;
+            StopAnimation();
+            coinAnimationCancellation = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
             int coin_len = reward / (1 * coinCtrl.coin_ea_val);
+            if(MultiplayerSentimentController.Active) {
+                sideBeamObj.transform.localScale=Vector3.zero;
+                achieveMsgObj.transform.localScale=Vector3.zero;
+                runPathMsgObj.transform.localScale=Vector3.zero;
+                CoinBring(turnId,coin_len,coinAnimationCancellation.Token).Forget();
+                return;
+            }
             if (idx == -1)
             {
                 idx = UnityEngine.Random.Range(0, achieveMsgs.Length);
@@ -167,7 +227,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 });
             });
 
-            CoinBring(turnId, coin_len).Forget();
+            CoinBring(turnId, coin_len, coinAnimationCancellation.Token).Forget();
 
         }
 

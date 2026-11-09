@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface;
@@ -169,7 +169,6 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             bool interpolate = inMove && !scatterPending && !IsPracticeReplay && !IsBallPlacement;
             float alpha = Mathf.Clamp01((float)((Time.timeAsDouble - Time.fixedTimeAsDouble) / Time.fixedDeltaTime));
             foreach (var ball in ballcs) ball.UpdateMotionVisual(interpolate, alpha);
-            UpdatePracticeMotion();
         }
     }
 }

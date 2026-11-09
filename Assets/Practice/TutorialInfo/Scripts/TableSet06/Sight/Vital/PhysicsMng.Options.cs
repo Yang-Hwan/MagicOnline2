@@ -17,7 +17,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             var panel=new GameObject("Game Options",typeof(RectTransform));
             optionsRect=panel.GetComponent<RectTransform>();optionsRect.SetParent(undoButtonRect.parent,false);
             optionsRect.anchorMin=optionsRect.anchorMax=new Vector2(.5f,1);optionsRect.pivot=new Vector2(.5f,1);
-            optionsRect.anchoredPosition=new Vector2(0,-145);optionsRect.sizeDelta=new Vector2(330,36);
+            optionsRect.anchoredPosition=new Vector2(-345,-145);optionsRect.sizeDelta=new Vector2(330,36);
             var match=FindAnyObjectByType<PnlMatch>();
             var font=match ? match.transform.Find("PlayerBoxs/PlayerSelf/TxtName").GetComponent<TMP_Text>().font : TMP_Settings.defaultFontAsset;
             itemsToggle=CreateOptionToggle("아이템",-80,font);
