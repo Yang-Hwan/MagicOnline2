@@ -1,0 +1,11 @@
+@page "/admin/charts/transfer"
+@model MagicOnline.GameApi.Pages.Admin.ChartTransferModel
+<div class="breadcrumb"><a href="/admin/charts">차트 관리</a> / 가져오기</div>
+<section class="panel"><h1>차트 가져오기</h1>
+<p>선택한 JSON 파일로 이 컴퓨터의 경기장 규칙, 출석 보상, 우편보상, 공통코드를 모두 교체합니다.</p>
+@if(Model.Error != null){<p class="error" role="alert">@Model.Error</p>}
+<form method="post" enctype="multipart/form-data">
+    <label>차트 JSON 파일 <input type="file" name="bundle" accept=".json,application/json" required></label>
+    <div class="chart-actions"><button class="primary" type="submit">4개 차트 적용</button>
+    <a class="button" href="/admin/charts">취소</a></div>
+</form></section>

@@ -9,7 +9,7 @@ namespace MagicOnline.GameApi.Admin;
 
 public sealed record ChartField(string Key, string Label, bool Numeric = true, bool Optional = false);
 public sealed record ChartDocument(JsonArray Rows, string Revision);
-public sealed class AdminChartService(Database db)
+public sealed partial class AdminChartService(Database db)
 {
     public static ChartField[] Fields(string name) => name switch {
         "PostReward" => PostRewardChart.Fields,
@@ -63,12 +63,8 @@ public sealed class AdminChartService(Database db)
         var json = await cmd.ExecuteScalarAsync() as string ?? throw new ApiFault(404,"차트를 찾을 수 없습니다.");
         return new(JsonNode.Parse(json)!.AsArray(),Hash(json));
     }
-    public async Task Save(ClaimsPrincipal actor, string name, int? row, string? revision, Dictionary<string,string> values, string? reason, string requestId)
+    static JsonObject ParseRow(string name, ChartField[] fields, Dictionary<string,string> values)
     {
-        if (!(actor.IsInRole("Owner") || actor.IsInRole("Operator")) || !Guid.TryParse(actor.FindFirstValue(ClaimTypes.NameIdentifier),out var admin))
-            throw new ApiFault(403,"차트를 수정할 권한이 없습니다.");
-        var fields = Fields(name);
-        if (reason?.Length > 200 || (reason?.Any(char.IsControl) ?? false)) throw new ApiFault(400,"변경 사유는 제어 문자 없이 200자 이내로 입력해 주세요.");
         var edited = new JsonObject();
         foreach (var f in fields)
         {
@@ -98,6 +94,27 @@ public sealed class AdminChartService(Database db)
         }
         if (name == "Attendance") Require(N("DayNum")>0 && N("RewardType") is 1 or 2 && N("RewardVal")>=0,"일차는 양수, 보상 종류는 1 또는 2, 보상 수량은 0 이상이어야 합니다.");
         if (name == "CommonCode") Require(edited["IsUse"]!.GetValue<string>() is "Y" or "N","사용 여부는 Y 또는 N으로 입력해 주세요.");
+        return edited;
+    }
+
+    static void ValidateKeys(string name, JsonArray rows)
+    {
+        string Key(JsonNode r) => name == "CommonCode" ? JsonSerializer.Serialize(new[]{r["GrpCd"]!.ToString(),r["ComCd"]!.ToString()}) : r[name=="SkillMatch" ? "HallIdx" : name=="PostReward" ? "RewardId" : "DayNum"]!.ToString();
+        if (rows.Select(r=>Key(r!)).Distinct(StringComparer.Ordinal).Count()!=rows.Count) throw new ApiFault(400,"동일한 코드가 이미 있습니다. 다른 코드를 입력해 주세요.");
+        if (name=="Attendance")
+        {
+            var days=rows.Select(r=>int.Parse(r!["DayNum"]!.ToString(),CultureInfo.InvariantCulture)).Order().ToArray();
+            if (!days.SequenceEqual(Enumerable.Range(1,rows.Count))) throw new ApiFault(400,"출석 일차는 1부터 빈 번호 없이 이어져야 합니다. 마지막 일차 다음 번호로 추가해 주세요.");
+        }
+    }
+
+    public async Task Save(ClaimsPrincipal actor, string name, int? row, string? revision, Dictionary<string,string> values, string? reason, string requestId)
+    {
+        if (!(actor.IsInRole("Owner") || actor.IsInRole("Operator")) || !Guid.TryParse(actor.FindFirstValue(ClaimTypes.NameIdentifier),out var admin))
+            throw new ApiFault(403,"차트를 수정할 권한이 없습니다.");
+        var fields = Fields(name);
+        if (reason?.Length > 200 || (reason?.Any(char.IsControl) ?? false)) throw new ApiFault(400,"변경 사유는 제어 문자 없이 200자 이내로 입력해 주세요.");
+        var edited = ParseRow(name, fields, values);
         await using var c = await db.Source.OpenConnectionAsync();
         await using var tx = await c.BeginTransactionAsync();
         string before;
@@ -109,13 +126,7 @@ public sealed class AdminChartService(Database db)
         // Preserve any server-only columns when editing an existing row.
         if (row.HasValue) { var target=rows[row.Value]!.AsObject(); foreach(var p in edited) target[p.Key]=p.Value?.DeepClone(); }
         else rows.Add(edited);
-        string Key(JsonNode r) => name == "CommonCode" ? JsonSerializer.Serialize(new[]{r["GrpCd"]!.ToString(),r["ComCd"]!.ToString()}) : r[name=="SkillMatch" ? "HallIdx" : name=="PostReward" ? "RewardId" : "DayNum"]!.ToString();
-        if (rows.Select(r=>Key(r!)).Distinct(StringComparer.Ordinal).Count()!=rows.Count) throw new ApiFault(400,"동일한 코드가 이미 있습니다. 다른 코드를 입력해 주세요.");
-        if (name=="Attendance")
-        {
-            var days=rows.Select(r=>int.Parse(r!["DayNum"]!.ToString(),CultureInfo.InvariantCulture)).Order().ToArray();
-            if (!days.SequenceEqual(Enumerable.Range(1,rows.Count))) throw new ApiFault(400,"출석 일차는 1부터 빈 번호 없이 이어져야 합니다. 마지막 일차 다음 번호로 추가해 주세요.");
-        }
+        ValidateKeys(name, rows);
         if (name=="PostReward")
         {
             await using var codes=Database.Command(c,"SELECT rows::text FROM charts WHERE name='CommonCode' FOR SHARE");

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using MagicOnline.GameApi;
 using MagicOnline.GameApi.Admin;
 using Microsoft.Extensions.Configuration;
@@ -59,6 +59,26 @@ try
         return;
     }
     var service=new AdminChartService(new Database(source));
+    if (args.Contains("--transfer"))
+    {
+        var backup = await service.ExportCharts();
+        async Task Import(System.Text.Json.Nodes.JsonObject bundle, ClaimsPrincipal actor)
+        {
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(bundle.ToJsonString()));
+            await service.ImportCharts(actor, stream, "test-transfer");
+        }
+        await Sql($"UPDATE {schema}.charts SET rows='[]'");
+        await Import(backup, owner);
+        Check(System.Text.Json.Nodes.JsonNode.DeepEquals(backup,await service.ExportCharts()),"four live charts round-trip exactly");
+        var invalidBundle = backup.DeepClone().AsObject();
+        invalidBundle["charts"]!["PostReward"]![0]!["TypeCode"] = -1000;
+        try { await Import(invalidBundle, owner); throw new Exception("Expected invalid reference"); }
+        catch (ApiFault error) { Check(error.Status==400,"invalid reward reference rejected"); }
+        try { await Import(backup, viewer); throw new Exception("Expected access denial"); }
+        catch (ApiFault error) { Check(error.Status==403,"viewer cannot replace charts"); }
+        Check(System.Text.Json.Nodes.JsonNode.DeepEquals(backup,await service.ExportCharts()),"failed imports preserve all chart data");
+        return;
+    }
     async Task Reject(string name,int? row,string revision,Dictionary<string,string> values,int status,ClaimsPrincipal? actor=null)
     {
         try{await service.Save(actor??owner,name,row,revision,values,"test","test");throw new Exception("Expected rejection");}
