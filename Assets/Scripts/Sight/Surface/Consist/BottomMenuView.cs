@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -176,6 +176,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         void HomeAction(int action)
         {
             if (action == 0) { OpenMailbox(); return; }
+            if (action == 1) { OpenInventory(); return; }
             if (action == 3) { OpenPopup(GesPopConsist.Pop.Attendance); return; }
             if (action == 4) { OpenFriends(); return; }
             if (action == 5)
@@ -281,31 +282,6 @@ namespace Assets.Scripts.Sight.Surface.Consist
             Text("MyName", body, UserInfo.DisplayName ?? "플레이어", 502, 704, 400, 51, 30, Color.white, autoSize: true);
             Text("MyWins", body, wins + "승", 929, 704, 165, 51, 31, Color.white);
             Text("MyRate", body, (wins + losses + draws == 0 ? 0 : 100f * wins / (wins + losses + draws)).ToString("F0") + "%", 1131, 704, 170, 51, 31, Yellow);
-        }
-
-        void Shop()
-        {
-            string[] tabs = { "추천", "보석", "큐대" };
-            for (int i = 0; i < 3; i++)
-            {
-                int f = i;
-                SolidButton(tabs[i], body, 380 + i * 304, 217, 297, 49, () => { shopFilter = f; SelectPage(4); }, shopFilter == i);
-            }
-            string[] names = { "보석", "보석 묶음", "큐대" };
-            for (int i = 0; i < 3; i++)
-            {
-                float x = 300 + i * 370;
-                Text("ProductName" + i, body, names[i], x + 16, 552, 310, 59, 34, Color.white);
-                Text("ProductUnavailable" + i, body, "준비 중", x + 22, 629, 295, 55, 36, Color.black);
-                var button = Hit("Product" + i, body, x, 290, 347, 414, () => Dialog("상점", "판매 상품을 준비하고 있습니다."));
-                button.interactable = false;
-                if ((shopFilter == 1 && i == 2) || (shopFilter == 2 && i != 2))
-                    Box("FilteredProduct" + i, body, x, 290, 347, 414, new Color(0, 0, 0, .8f));
-            }
-            Text("Recommended", body, "추천", 904, 316, 110, 66, 35, Color.black);
-            Hit("RestorePurchase", body, 730, 725, 210, 59, () => Dialog("구매 복원", "결제 서비스 준비 중입니다."));
-            Text("RestoreLabel", body, "구매 복원", 801, 732, 133, 44, 25, Color.white);
-            Text("ShopStatus", body, "판매 상품 및 결제 서비스 준비 중", 475, 793, 720, 35, 24, Color.white);
         }
 
         void OpenPopup(GesPopConsist.Pop popup)
@@ -508,6 +484,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         }
         void OnDestroy()
         {
+            ReleaseShopTextures();
             if (textMaterial) { if (Application.isPlaying) Destroy(textMaterial); else DestroyImmediate(textMaterial); }
         }
         public void Resize()

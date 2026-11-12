@@ -6,6 +6,7 @@
     <UserSecretsId>MagicCushion-Local-GameApi</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Prack/BackSys/GameData/MatchEquipmentSnapshot.cs" Link="Contracts/MatchEquipmentSnapshot.cs" />
     <PackageReference Include="Npgsql" Version="8.0.8" />
     <ProjectReference Include="../MatchSettlement/MatchSettlement.csproj" />
     <Content Include="Migrations/*.sql" CopyToOutputDirectory="PreserveNewest" />

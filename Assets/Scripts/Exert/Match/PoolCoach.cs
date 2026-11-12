@@ -176,12 +176,12 @@ namespace Assets.Scripts.Exert.Match
             finishMission = (FinishMission)hall.FinishMission;  // 마무리미션 // FinishMission.None;         // 마무 리없음
             isBallStopAfterJudge = matchBall == MatchBall.FourBall ? true : false;                       // 4구여부 false : 볼 멈추기 전의 점수처리    
             isRearQuarter = true;                               // 무조건 후구 있음
-            maxPlayTime = timeInningSec;
+            maxPlayTime = MatchEquipmentRuntime.Local.TurnSeconds(timeInningSec);
 
             //scoreStep = ScoreStep.Egg;
             checkCushion = (int)matchCushion;
 
-            other_maxTime = timeInningSec;                                      // 상대 제한시간
+            other_maxTime = MatchEquipmentRuntime.Other.TurnSeconds(timeInningSec);                                      // 상대 제한시간
             other_play_time_send_cnt = 0;                                       // 상대 전송횟수
             float send_sec = 0.6f;                                              // 몇초마다 전송  지정값  
             other_play_time_send_tot = other_maxTime / send_sec;                // 전체시간 전송되는 횟수
@@ -218,6 +218,7 @@ namespace Assets.Scripts.Exert.Match
 
             //_shotCtrl.SetCueBall();
             calculateTime = true;
+            maxPlayTime = MatchEquipmentRuntime.Shooter.TurnSeconds(30); // timeInningSec is a legacy mutable countdown.
             playTime = 0;
             OnStartTime?.Invoke();
 

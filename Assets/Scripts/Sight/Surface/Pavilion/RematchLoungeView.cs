@@ -161,6 +161,11 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             AnimateWinnerBadge(otherWinner, otherWinnerSparkles);
             selfAvatar.sprite = MatchAvatarReactions.NeutralForSeat(s.LocalAvatarSeat);
             otherAvatar.sprite = MatchAvatarReactions.NeutralForSeat(1 - s.LocalAvatarSeat);
+            var selfEquipment = selfAvatar.GetComponent<EquipmentPortrait>() ?? selfAvatar.gameObject.AddComponent<EquipmentPortrait>();
+            var otherEquipment = otherAvatar.GetComponent<EquipmentPortrait>() ?? otherAvatar.gameObject.AddComponent<EquipmentPortrait>();
+            selfEquipment.SetProfile(Assets.Scripts.Exert.Network.MatchEquipmentRuntime.ForSeat(s.LocalAvatarSeat));
+            otherEquipment.SetProfile(Assets.Scripts.Exert.Network.MatchEquipmentRuntime.ForSeat(1 - s.LocalAvatarSeat));
+            selfEquipment.Show("기본", selfAvatar.sprite); otherEquipment.Show("기본", otherAvatar.sprite);
             if (Application.isPlaying && isActiveAndEnabled && s.PrizeCoin > 0 && won != lost &&
                 !prizeFlightPlayed && Time.unscaledTimeAsDouble - prizeCountStarted >= PrizeCountDuration)
                 StartPrizeFlight(won ? selfAvatar : otherAvatar, Time.unscaledTimeAsDouble);

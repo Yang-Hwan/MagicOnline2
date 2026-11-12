@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital;
 using PreviewImpulse = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.Impulse;
 
@@ -27,18 +27,21 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public PreviewImpulse BuildGuideImpulse() => BuildImpulseForPower(.5f);
 
-        PreviewImpulse BuildImpulseForPower(float power)
+        PreviewImpulse BuildImpulseForPower(float power) => BuildImpulseForPower(power, Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter);
+
+        PreviewImpulse BuildImpulseForPower(float power, Assets.Scripts.Prack.BackSys.GameData.MatchEquipmentProfile equipment)
         {
+            float follow = equipment.EffectiveFollow(pull);
             Vector3 forward = Vector3.ProjectOnPlane(cueSlider.forward, Vector3.up).normalized;
-            Vector3 impulse = power * (maxVelocity * cueBall.body.mass) * forward;
+            Vector3 impulse = power * equipment.PowerScale * (maxVelocity * cueBall.body.mass) * forward;
             Vector3 centre = cueBall.body.worldCenterOfMass;
             Vector3 offset = cueDisplacement.position - centre;
             float radius = cueBall.GetComponent<SphereCollider>().radius * Mathf.Abs(cueBall.transform.lossyScale.x);
             float contact = Mathf.Clamp01(Vector3.ProjectOnPlane(offset, forward).magnitude / Mathf.Max(radius, .001f));
-            float blend = pull <= DefaultFollowThrough ? pull / DefaultFollowThrough : (pull - DefaultFollowThrough) / (1 - DefaultFollowThrough);
-            float speed = pull <= DefaultFollowThrough ? Mathf.Lerp(1.04f, 1f, blend) : Mathf.Lerp(1f, .92f, blend);
+            float blend = follow <= DefaultFollowThrough ? follow / DefaultFollowThrough : (follow - DefaultFollowThrough) / (1 - DefaultFollowThrough);
+            float speed = follow <= DefaultFollowThrough ? Mathf.Lerp(1.04f, 1f, blend) : Mathf.Lerp(1f, .92f, blend);
             return new PreviewImpulse(centre + offset * (FollowThroughProfile.SpinLeverScale(power) / speed), impulse * speed, Vector3.zero,
-                pull, FollowThroughProfile.Persistence(power, contact, pull));
+                follow, FollowThroughProfile.Persistence(power, contact, follow));
         }
 
         void OnDestroy()

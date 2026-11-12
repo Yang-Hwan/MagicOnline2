@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Exert.Match;
@@ -344,7 +344,7 @@ namespace Assets.Scripts.Exert.Network
             view.RPC(nameof(HistoryStartRequestRPC), PhotonNetwork.MasterClient, historyStartRequest);
         }
 
-        [PunRPC] void HistoryStartRequestRPC(string requestId, PhotonMessageInfo info)
+        [PunRPC] async void HistoryStartRequestRPC(string requestId, PhotonMessageInfo info)
         {
             if (!LegacyHistoryEnabled || !PhotonNetwork.IsMasterClient || info.Sender != opponentPlayer ||
                 PhotonNetwork.PlayerList.Length != 2 || !Guid.TryParseExact(requestId, "N", out _) ||
@@ -385,6 +385,8 @@ namespace Assets.Scripts.Exert.Network
                 InstallHistoryOffer(offer, 0);
                 if (IsFriendly)
                 {
+                    await LoadMatchEquipment(offer.match.MatchId, true);
+                    if (historyOffer != offer || historyEnded || !HistoryPeerPresent) return;
                     PhotonNetwork.CurrentRoom.IsOpen = false;
                     view.RPC(nameof(HistoryOfferRPC), opponentPlayer, JsonUtility.ToJson(offer));
                     return;
@@ -412,6 +414,7 @@ namespace Assets.Scripts.Exert.Network
             if (!seriesRematch) { seriesWinsA = seriesWinsB = 0; seriesCountedMatch = null; }
             confirmedLoserSeat = -1;
             historyOffer = offer; historyStarted = historyEnded = false;
+            MatchEquipment = null; nextEquipmentSend = 0; nextEquipmentReceive[0] = nextEquipmentReceive[1] = 0;
             PoolCoach.Instance.ApplyBallSkin(offer.match.MatchId);
             scoreCoins = previewScoreCoins = null;
             legacyShotSerial = receivedShotSerial = 0;
@@ -450,6 +453,7 @@ namespace Assets.Scripts.Exert.Network
                     offer.match.Rules == null || offer.match.Rules.CoinPolicy != 0 || offer.match.Rules.EntryCoin != 0)) return;
                 if (historyOffer != null && !historyEnded) return;
                 InstallHistoryOffer(offer, 1);
+                await LoadMatchEquipment(offer.match.MatchId);
                 // Readiness claims come from our own runtime/chart, never the peer's contract.
                 if (!IsFriendly) await BackendMatchHistory.Instance.ReadyAsync(offer.match.MatchId, MatchRulesContract.FromHall(hall, MatchRulesContract.Pavilion));
                 if (historyEnded || historyOffer != offer || !HistoryPeerPresent) return;
@@ -470,6 +474,8 @@ namespace Assets.Scripts.Exert.Network
                     await LoadScoreCoins(matchId);
                 }
                 if (historyEnded || historyStarted || historyOffer?.match.MatchId != matchId || !HistoryPeerPresent) return;
+                await LoadMatchEquipment(matchId);
+                if (historyEnded || historyOffer?.match.MatchId != matchId || !HistoryPeerPresent) return;
                 long startedAt = BackendMatchHistory.Now;
                 view.RPC(nameof(HistoryCommitRPC), info.Sender, matchId, requestId, startedAt);
                 CommitLegacyHistory(startedAt);
@@ -484,6 +490,7 @@ namespace Assets.Scripts.Exert.Network
                 requestId != historyStartRequest || requestId != historyOffer.requestId) return;
             try {
                 if (!IsFriendly) await LoadScoreCoins(matchId);
+                await LoadMatchEquipment(matchId);
                 if (historyEnded || historyStarted || historyOffer?.match.MatchId != matchId || !HistoryPeerPresent) return;
                 CommitLegacyHistory(startedAt);
             } catch (Exception e) { Debug.LogWarning(e.Message); AbortLegacyHistory("CoinSetupFailed"); CallNetworkState(NetworkState.JoinRoomFailed); }

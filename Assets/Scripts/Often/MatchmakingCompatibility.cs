@@ -7,7 +7,7 @@ namespace Assets.Scripts.Often
     public static class MatchmakingCompatibility
     {
         // Isolate upgraded clients from older clients that join rooms by name only.
-        public static readonly string Protocol = "pavilion-practice-physics-6-rules2-timeout2-charttarget1-contacts1-startorder1-cushionfx1-scorefx1-coins1-finishfoul1" +
+        public static readonly string Protocol = "pavilion-practice-physics-6-rules2-timeout2-charttarget1-contacts1-startorder1-cushionfx1-scorefx1-coins1-finishfoul1-equipment1" +
             Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ProtocolSuffix;
         public static string GameVersion(string appVersion) => appVersion + "." + Protocol;
 

@@ -20,6 +20,9 @@ builder.Services.AddSingleton<Database>(); builder.Services.AddSingleton<Account
 builder.Services.AddSingleton<Attendance>();
 builder.Services.AddSingleton<Mailbox>();
 builder.Services.AddSingleton<Friends>();
+builder.Services.AddSingleton<ShopPurchases>();
+builder.Services.AddSingleton<ShopEquipment>();
+builder.Services.AddSingleton<MatchEquipment>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<BustSupport>();
 builder.Services.AddSingleton<ISettlementStore, PostgresSettlementStore>();
@@ -76,6 +79,10 @@ app.UseStaticFiles();
 app.UseRateLimiter(); app.UseAuthentication(); app.UseAuthorization();
 AdminSecurity.Map(app);
 Friends.Map(app);
+ShopCatalog.Map(app);
+ShopPurchases.Map(app);
+ShopEquipment.Map(app);
+MatchEquipment.Map(app);
 app.MapGet("/health", async (Database db) => {
     await using var cmd = db.Source.CreateCommand("SELECT 1"); await cmd.ExecuteScalarAsync();
     return Results.Ok(new { Ok = true, Database = "Connected", ApiVersion = 1, MatchProtocolVersion = MatchRulesContract.CurrentVersion });

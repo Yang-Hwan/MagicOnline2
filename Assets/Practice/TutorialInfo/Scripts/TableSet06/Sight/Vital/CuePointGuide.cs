@@ -8,8 +8,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
     public sealed class CuePointGuide : MaskableGraphic
     {
         public const float InnerRatio = .8f;
+        static float EquipmentRatio => InnerRatio * Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter.TipScale;
         public static float Limit(RectTransform frame, RectTransform marker) =>
-            Mathf.Max(0, Mathf.Min(frame.rect.width,frame.rect.height)*.5f*InnerRatio
+            Mathf.Max(0, Mathf.Min(frame.rect.width,frame.rect.height)*.5f*EquipmentRatio
                 - Mathf.Max(marker.rect.width,marker.rect.height)*.5f);
 
         public static void Install(RectTransform frame)
@@ -59,7 +60,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             if(r<=3)return;
             Disc(mesh,rect.center,r-1,Color.white);
             Ring(mesh,rect.center,r-3,4,new Color(1,1,1,.95f));
-            Ring(mesh,rect.center,r*InnerRatio,2,new Color(0,0,0,.25f));
+            Ring(mesh,rect.center,r*EquipmentRatio,2,new Color(0,0,0,.25f));
             // Centre the upward arrow halfway between the ball centre and its top rim.
             var arrowCentre=rect.center+Vector2.up*(r*.5f);
             var a=arrowCentre+Vector2.down*30;

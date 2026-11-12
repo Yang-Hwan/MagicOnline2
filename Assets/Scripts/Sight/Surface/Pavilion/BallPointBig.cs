@@ -94,6 +94,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         private void OnEnable()
         {
+            if (bigBallFrm) CuePointGuide.Install(bigBallFrm);
             isDrag = false;
             isOff = false;
             outLineTypeStart = OutLineType.None;
@@ -112,6 +113,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             // The backdrop is a sibling: disabling this popup or its parent
             // does not clear the backdrop's activeSelf for the next match.
             if (blindBack) blindBack.SetActive(false);
+            if (bigBallFrm) CuePointGuide.Install(bigBallFrm);
             isDrag = false;
             isOff = false;
             outLineTypeStart = OutLineType.None;

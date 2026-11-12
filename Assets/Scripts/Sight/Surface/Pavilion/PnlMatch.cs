@@ -212,6 +212,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         private void Start()
         {
             if (!NetworkManager.initialized) return;
+            if (NetworkManager.TryGetExistingNetwork(out var equipmentNet) && equipmentNet is PunNetwork equipmentPun)
+                gameObject.AddComponent<MatchEquipmentChat>().Initialize(equipmentPun);
             var table = GameObject.Find("Table");
             var sentimentRoot = table ? table.transform.Find("Addition/Sentiment") : null;
             if (sentimentRoot) {
