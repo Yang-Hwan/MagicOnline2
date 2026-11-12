@@ -11,14 +11,18 @@ public sealed partial class AdminChartService
 
     public async Task<JsonObject> ExportCharts()
     {
-        await using var cmd = db.Source.CreateCommand("SELECT name,rows::text FROM charts WHERE name=ANY($1)");
+        await using var connection = await db.Source.OpenConnectionAsync();
+        await using var tx = await connection.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead);
+        await using var cmd = Database.Command(connection,"SELECT name,rows::text FROM charts WHERE name=ANY($1)");
         cmd.Parameters.AddWithValue(TransferNames);
         var charts = new JsonObject();
-        await using var reader = await cmd.ExecuteReaderAsync();
+        await using (var reader = await cmd.ExecuteReaderAsync())
         while (await reader.ReadAsync())
             charts[reader.GetString(0)] = JsonNode.Parse(reader.GetString(1));
         if (charts.Count != TransferNames.Length) throw new ApiFault(409,"DB에 차트 4종이 모두 있어야 내보낼 수 있습니다.");
-        return new JsonObject { ["version"] = 1, ["charts"] = charts };
+        var shop = await ShopTransfer.Read(connection);
+        await tx.CommitAsync();
+        return new JsonObject { ["version"] = 2, ["charts"] = charts, ["shop"] = shop };
     }
 
     static void CheckProperties(JsonElement element)
@@ -34,7 +38,7 @@ public sealed partial class AdminChartService
         }
     }
 
-    public async Task ImportCharts(ClaimsPrincipal actor, Stream file, string requestId)
+    public async Task<int> ImportCharts(ClaimsPrincipal actor, Stream file, string requestId)
     {
         if (!(actor.IsInRole("Owner") || actor.IsInRole("Operator")) ||
             !Guid.TryParse(actor.FindFirstValue(ClaimTypes.NameIdentifier),out var admin))
@@ -44,10 +48,12 @@ public sealed partial class AdminChartService
         var root = document.RootElement;
         CheckProperties(root);
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("version",out var version) ||
-            version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out int v) || v != 1 ||
+            version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out int v) || v is not (1 or 2) ||
             !root.TryGetProperty("charts",out var charts) || charts.ValueKind != JsonValueKind.Object ||
             charts.EnumerateObject().Count() != TransferNames.Length)
-            throw new ApiFault(400,"전체 내보내기로 받은 버전 1 차트 파일을 선택해 주세요.");
+            throw new ApiFault(400,"전체 내보내기로 받은 버전 1 또는 2 파일을 선택해 주세요.");
+        bool hasShop = root.TryGetProperty("shop",out var shop);
+        if (hasShop != (v == 2)) throw new ApiFault(400,"파일 버전과 상점 데이터가 일치하지 않습니다.");
 
         var incoming = new Dictionary<string,JsonArray>();
         foreach (string name in TransferNames)
@@ -96,6 +102,8 @@ public sealed partial class AdminChartService
             await using var audit = Database.Command(connection,"INSERT INTO admin_audit_logs(admin_id,action,target,request_id,before_value,after_value,reason) VALUES($1,'ChartImported',$2,$3,$4::jsonb,$5::jsonb,'차트 전체 가져오기')",admin,name,requestId,before,after);
             await audit.ExecuteNonQueryAsync();
         }
+        if (hasShop) await ShopTransfer.Replace(connection,shop,admin,requestId);
         await tx.CommitAsync();
+        return v;
     }
 }

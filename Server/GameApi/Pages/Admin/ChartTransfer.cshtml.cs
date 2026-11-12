@@ -36,8 +36,8 @@ public class ChartTransferModel(AdminChartService charts) : PageModel
         {
             if (bundle == null || bundle.Length == 0) throw new ApiFault(400,"차트 JSON 파일을 선택해 주세요.");
             using var input = bundle.OpenReadStream();
-            await charts.ImportCharts(User,input,HttpContext.TraceIdentifier);
-            TempData["ChartSuccess"] = "차트 4종을 적용했습니다.";
+            var version = await charts.ImportCharts(User,input,HttpContext.TraceIdentifier);
+            TempData["ChartSuccess"] = version==2 ? "차트 4종과 상점 상품을 적용했습니다." : "기존 차트 4종을 적용했습니다. 상점 상품은 유지했습니다.";
             return Redirect("/admin/charts");
         }
         catch (JsonException) { Error = "JSON 형식을 읽을 수 없습니다. 내보낸 원본 파일을 확인해 주세요."; }

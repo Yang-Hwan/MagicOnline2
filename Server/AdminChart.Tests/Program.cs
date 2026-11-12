@@ -61,6 +61,23 @@ try
     var service=new AdminChartService(new Database(source));
     if (args.Contains("--transfer"))
     {
+        async Task ShopSql(string sql)
+        {
+            await using var cmd=source.CreateCommand(sql);
+            await cmd.ExecuteNonQueryAsync();
+        }
+        await ShopSql("CREATE TABLE users(id uuid PRIMARY KEY)");
+        await ShopSql(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory,"Migrations","010_shop.sql")));
+        await ShopSql("""
+            INSERT INTO shop_content_assets(asset_key) VALUES('cue/red'),('face/base');
+            INSERT INTO shop_products(id,kind,name,price_gem) OVERRIDING SYSTEM VALUE VALUES
+                (10,'Cue','빨간 큐',100),(20,'GemPack','보석',NULL),(30,'Character','선수',50),(40,'MessagePack','응원',5);
+            INSERT INTO shop_cues VALUES(10,'cue/red',20,-40,10,-5);
+            INSERT INTO shop_gem_packs VALUES(20,100,5);
+            INSERT INTO shop_character_emotions SELECT 30,unnest(ARRAY['기본','감사','미안','미소','환희','짜증','우울','좌절','분노']),'face/base';
+            INSERT INTO shop_message_packs VALUES(40,'기본');
+            INSERT INTO shop_messages VALUES(40,1,'안녕!'),(40,2,'좋았어!');
+            """);
         var backup = await service.ExportCharts();
         async Task Import(System.Text.Json.Nodes.JsonObject bundle, ClaimsPrincipal actor)
         {
@@ -68,8 +85,21 @@ try
             await service.ImportCharts(actor, stream, "test-transfer");
         }
         await Sql($"UPDATE {schema}.charts SET rows='[]'");
+        await ShopSql("TRUNCATE shop_products,shop_content_assets CASCADE");
         await Import(backup, owner);
-        Check(System.Text.Json.Nodes.JsonNode.DeepEquals(backup,await service.ExportCharts()),"four live charts round-trip exactly");
+        Check(System.Text.Json.Nodes.JsonNode.DeepEquals(backup,await service.ExportCharts()),"charts, products and all details round-trip exactly");
+        var legacy=backup.DeepClone().AsObject();
+        legacy.Remove("shop");
+        legacy["version"]=1;
+        await Import(legacy,owner);
+        Check(System.Text.Json.Nodes.JsonNode.DeepEquals(backup,await service.ExportCharts()),"v1 keeps existing shop");
+        await using(var next=source.CreateCommand("SELECT nextval('shop_products_id_seq')"))
+            Check((long)(await next.ExecuteScalarAsync())!>40,"new product IDs follow restored IDs");
+        var broken=backup.DeepClone().AsObject();
+        broken["shop"]!["character_emotions"]!.AsArray().RemoveAt(0);
+        broken["charts"]!["SkillMatch"]![0]!["HallName"]="rollback";
+        try { await Import(broken,owner); throw new Exception("Expected missing emotion"); }
+        catch(ApiFault error){Check(error.Status==400,"bad shop rejects entire bundle");}
         var invalidBundle = backup.DeepClone().AsObject();
         invalidBundle["charts"]!["PostReward"]![0]!["TypeCode"] = -1000;
         try { await Import(invalidBundle, owner); throw new Exception("Expected invalid reference"); }

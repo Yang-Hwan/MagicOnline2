@@ -2,10 +2,11 @@
 @model MagicOnline.GameApi.Pages.Admin.ChartTransferModel
 <div class="breadcrumb"><a href="/admin/charts">차트 관리</a> / 가져오기</div>
 <section class="panel"><h1>차트 가져오기</h1>
-<p>선택한 JSON 파일로 이 컴퓨터의 경기장 규칙, 출석 보상, 우편보상, 공통코드를 모두 교체합니다.</p>
+<p>선택한 JSON 파일로 경기장 규칙, 출석 보상, 우편보상, 공통코드와 상점 상품 목록을 교체합니다. 기존 4종 백업을 선택하면 상점은 유지됩니다.</p>
+<p class="hint">상품 이미지와 프리팹은 경로가 이전됩니다. 대상 컴퓨터에서도 해당 경로를 사용할 수 있어야 합니다.</p>
 @if(Model.Error != null){<p class="error" role="alert">@Model.Error</p>}
 <form method="post" enctype="multipart/form-data">
     <label>차트 JSON 파일 <input type="file" name="bundle" accept=".json,application/json" required></label>
-    <div class="chart-actions"><button class="primary" type="submit">4개 차트 적용</button>
+    <div class="chart-actions"><button class="primary" type="submit">가져오기 적용</button>
     <a class="button" href="/admin/charts">취소</a></div>
 </form></section>

@@ -1,0 +1,14 @@
+@page "/admin/charts/shop"
+@model MagicOnline.GameApi.Pages.Admin.ShopModel
+<div class="breadcrumb"><a href="/admin/charts">차트 관리</a> / 상점 상품</div>
+<section class="panel"><h1>상점 상품</h1>
+<div class="chart-actions"><a class="button" href="/admin/charts/transfer?handler=Export">전체 내보내기</a>
+@if(Model.CanEdit){<a class="button" href="/admin/charts/transfer">가져오기</a>}</div>
+@if(TempData["ShopSaved"] is string saved){<p class="notice" role="status">@saved</p>}
+@if(Model.CanEdit){
+<div class="chart-actions">@foreach(var kind in ShopModel.Kinds){<a class="button" asp-page="ShopEdit" asp-route-kind="@kind.Key">@kind.Value 등록</a>}</div>
+}
+<div class="table-scroll"><table><thead><tr><th>ID</th><th>종류</th><th>상품명</th><th>보석 가격</th><th>정렬 순서</th><th>노출</th><th>판매 설정</th><th></th></tr></thead><tbody>
+@foreach(var p in Model.Items){<tr><td>@p.Id</td><td>@ShopModel.Kinds[p.Kind]</td><td>@p.Name</td><td>@(p.Price?.ToString("N0") ?? "—")</td><td>@p.Order</td><td>@(p.Visible?"표시":"숨김")</td><td>@(p.Purchasable?"허용":"중지")</td><td>@if(Model.CanEdit){<a asp-page="ShopEdit" asp-route-id="@p.Id">수정</a>}</td></tr>}
+@if(Model.Items.Count==0){<tr><td colspan="8">등록된 상품이 없습니다.</td></tr>}
+</tbody></table></div></section>

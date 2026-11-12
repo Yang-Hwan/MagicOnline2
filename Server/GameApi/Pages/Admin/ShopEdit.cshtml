@@ -1,0 +1,46 @@
+@page "/admin/charts/shop/edit/{id:long?}"
+@model MagicOnline.GameApi.Pages.Admin.ShopEditModel
+@{
+    ViewData["Title"] = ShopModel.Kinds[Model.Input.Kind] + (RouteData.Values["id"]==null?" 등록":" 수정");
+}
+<div class="breadcrumb"><a href="/admin/charts">차트 관리</a> / <a asp-page="Shop">상점 상품</a></div>
+<section class="panel"><h1>@ViewData["Title"]</h1>
+<form method="post" class="chart-form">
+<div asp-validation-summary="All" class="error" role="alert"></div>
+<input asp-for="Input.Kind" type="hidden"><input asp-for="Input.Revision" type="hidden">
+<div class="chart-fields">
+<label>상품명<input asp-for="Input.Name" required maxlength="120"></label>
+<label>대표 이미지 경로<input asp-for="Input.Thumbnail"></label>
+<label>상품 설명<textarea asp-for="Input.Description"></textarea></label>
+<label>정렬 순서<input asp-for="Input.Order"></label>
+@if(Model.Input.Kind!="GemPack"){<label>가격 (보석)<input asp-for="Input.Price" min="0" required></label>}
+<label>판매 시작 (한국 시간)<input asp-for="Input.Starts" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}"></label>
+<label>판매 종료 (한국 시간)<input asp-for="Input.Ends" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}"></label>
+<label><input asp-for="Input.Visible">상점에 표시</label>
+<label><input asp-for="Input.Purchasable">판매 허용</label>
+</div>
+<h2>상품 상세</h2><div class="chart-fields">
+@switch(Model.Input.Kind){
+case "GemPack":
+<label>기본 지급 보석<input asp-for="Input.Amount" min="1" required></label>
+<label>추가 지급 보석<input asp-for="Input.Bonus" min="0"></label>
+break;
+case "Cue":
+<label>큐대 리소스 경로<input asp-for="Input.Visual" required></label>
+<label>파워 (%)<input asp-for="Input.Power" min="-40" max="20"></label>
+<label>팔로스루 (%)<input asp-for="Input.Follow" min="-40" max="20"></label>
+<label>당점 반경 (%)<input asp-for="Input.Tip" min="-10" max="10"></label>
+<label>샷 준비시간 보정 (초)<input asp-for="Input.Seconds" min="-5" max="5"></label>
+break;
+case "Character":
+foreach(var emotion in ShopEditModel.Emotions){
+<label>@emotion 이미지 경로<input name="Input.Faces[@emotion]" value="@Model.Input.Faces.GetValueOrDefault(emotion)" required></label>
+}
+break;
+case "MessagePack":
+<label>성격<input asp-for="Input.Personality" required></label>
+<label>메시지 (한 줄에 한 문장)<textarea asp-for="Input.Messages" rows="7" required></textarea></label>
+break;
+}
+</div><div class="chart-actions"><button class="primary" type="submit">저장</button><a class="button" asp-page="Shop">목록으로</a></div>
+</form></section>
