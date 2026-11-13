@@ -1,4 +1,4 @@
-﻿using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
+using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Often;
 using Cysharp.Threading.Tasks;
 using System;
@@ -33,7 +33,6 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             force = 0; forceSliderYPos = 0; forceSliderMinYPos = 0;
             forceHandle.localPosition = Vector3.zero;
             cueSlider.localPosition = Vector3.zero;
-            doubleTap?.SetCharge(0);
             SetFollowThrough(aim.follow);
             GuideLineReset();
             OnCueRotateState?.Invoke(cuePivot.localRotation);
@@ -73,7 +72,6 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public Transform cueVertical;
         public Transform cueDisplacement;
         public Transform cueSlider;
-        private Assets.Scripts.Often.DoubleTapCue doubleTap;
 
         public BallC cueBall;
 
@@ -146,7 +144,6 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         private void Awake()
         {
-            doubleTap = Assets.Scripts.Often.DoubleTapCue.Equip(cueSlider);
             canControl = true;
             Debug.Log($"{ this.GetType().Name}  ===== ");
             clothLayer = LayerLib.NameToInt(LayerKind.Cloth);
@@ -272,7 +269,6 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         // 큐대를 조준 안하고 잠시둔다.
         public void CuePutAside()
         {
-            doubleTap?.SetCharge(0);
             cueVertical.parent = cuePivotAfterShotPosition;
             cueVertical.localPosition = Vector3.zero;
             cueVertical.localRotation = Quaternion.identity;
@@ -524,7 +520,6 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 forceHandle.localPosition = new Vector3(0, cueSliderDisplacementY, 0);
                 Vector3 disZ = new Vector3(0, 0, cueSliderDisplacementY * forceSliderToCueRate);
                 cueSlider.localPosition = disZ;
-                doubleTap?.SetCharge(force);
                 float gage_height = Mathf.Lerp(1f, 6.5f, force);
                 forceGage.size = new Vector2(0.75f, gage_height);
 
@@ -580,7 +575,6 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
                 // Strike at contact, then extend from that fixed position, independently of shot power.
                 await AnimateCueSlide(cueSlider.localPosition.z, 0f, .08f, token);
-                doubleTap?.Strike();
                 WaitAndStartShotAsync().Forget();
                 await AnimateCueSlide(0f, endZ, .12f, token);
                 await UniTask.Delay(500, cancellationToken: token);

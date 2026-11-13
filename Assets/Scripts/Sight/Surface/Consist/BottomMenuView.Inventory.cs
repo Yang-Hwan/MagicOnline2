@@ -75,6 +75,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 Box("OwnedCard" + p.Id, inventoryCards, x, 175, 370, 410, p.Equipped ? new Color(.16f, .22f, .12f) : new Color(.12f, .14f, .19f));
                 Text("EquippedStatus", inventoryCards, p.Equipped ? "장착 중" : "보유 중", x + 10, 184, 350, 35, 24, p.Equipped ? Yellow : Color.white);
                 var image = Art("OwnedImage", inventoryCards, null, x + 110, 225, 150, 95);
+                if (p.Kind == "Cue") Place(image.rectTransform, x + 15, 225, 340, 95);
                 image.color = Color.clear;
                 var placeholder = Text("ImagePlaceholder", inventoryCards, "이미지 준비 중", x + 10, 240, 350, 55, 25, Color.gray);
                 string asset = p.Thumbnail;

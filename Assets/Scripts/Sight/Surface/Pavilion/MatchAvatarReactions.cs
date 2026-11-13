@@ -40,15 +40,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         EquipmentPortrait selfEquipment, otherEquipment;
         int selfReactionVersion, otherReactionVersion;
         int Advance(Image portrait) => portrait == self ? ++selfReactionVersion : ++otherReactionVersion;
-        public void ShowEquipmentEmotion(int seat, int emotion)
-        {
-            if (!isActiveAndEnabled || emotion < 0 || emotion >= EquipmentPortrait.Emotions.Length || localSeat < 0) return;
-            var portrait = seat == localSeat ? self : other;
-            var faces = seat == localSeat ? selfFaces : otherFaces;
-            var fallback = emotion == 0 ? faces.neutral : faces.Reaction(emotion == 1 || emotion == 3 || emotion == 4 ? MatchShotOutcome.Point : emotion == 2 || emotion == 5 || emotion == 8 ? MatchShotOutcome.Foul : MatchShotOutcome.Miss, 0);
-            (seat == localSeat ? selfEquipment : otherEquipment).Show(EquipmentPortrait.Emotions[emotion], fallback);
-            reset = StartCoroutine(Restore(portrait, faces.neutral, Advance(portrait)));
-        }
+        static readonly string[] Scored = { "감사", "미안", "미소", "환희" };
+        static readonly string[] NotScored = { "짜증", "우울", "좌절", "분노" };
         Faces selfFaces, otherFaces;
         int localSeat = -1;
         string matchId;
@@ -98,7 +91,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 hash = (hash ^ (uint)outcome) * 16777619u;
                 hash ^= hash >> 16;
                 hash *= 0x85ebca6bu;
-                return (int)((hash ^ (hash >> 13)) & 1u);
+                return (int)((hash ^ (hash >> 13)) & 3u);
             }
         }
 
@@ -106,7 +99,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             if (!shooter || !isActiveAndEnabled) return;
             var faces = shooter == self ? selfFaces : otherFaces;
-            (shooter == self ? selfEquipment : otherEquipment).Show(outcome == MatchShotOutcome.Point ? "환희" : outcome == MatchShotOutcome.Foul ? "미안" : "좌절", faces.Reaction(outcome, Variant(outcome)));
+            int variant = Variant(outcome);
+            string emotion = (outcome == MatchShotOutcome.Point ? Scored : NotScored)[variant];
+            (shooter == self ? selfEquipment : otherEquipment).Show(emotion, faces.Reaction(outcome, variant % 2));
             var portrait = shooter;
             shooter = null; // Ignore repeat notifications for this shot.
             reset = StartCoroutine(Restore(portrait, faces.neutral, Advance(portrait)));

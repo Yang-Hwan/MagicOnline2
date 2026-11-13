@@ -86,6 +86,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 string kind = ShopTabs[Mathf.Max(0, Array.IndexOf(ShopKinds, product.Kind))];
                 Text("ProductKind", shopCards, kind, x + 15, 300, 312, 35, 23, Yellow);
                 var image = Art("ProductImage", shopCards, null, x + 76, 346, 190, 150);
+                if (product.Kind == "Cue") Place(image.rectTransform, x + 12, 346, 318, 150);
                 image.color = Color.clear;
                 var placeholder = Text("ImagePlaceholder", shopCards, "이미지 준비 중", x + 15, 385, 312, 55, 27, Color.gray);
                 string asset = product.Thumbnail;
@@ -191,7 +192,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             if (!Uri.TryCreate(key, UriKind.Absolute, out var uri))
             {
                 var local = Resources.Load<Texture2D>(key);
-                if (local && target) { target.texture = local; target.color = Color.white; if (placeholder) placeholder.gameObject.SetActive(false); }
+                if (local && target) SetShopImage(local,target,placeholder);
                 yield break;
             }
             if (uri.Scheme != "https" && !(uri.Scheme == "http" && uri.IsLoopback)) yield break;
@@ -201,9 +202,21 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 yield return request.SendWebRequest();
                 if (request.result != UnityWebRequest.Result.Success || !target) yield break;
                 var texture = DownloadHandlerTexture.GetContent(request);
-                shopTextures.Add(texture); target.texture = texture; target.color = Color.white;
-                if (placeholder) placeholder.gameObject.SetActive(false);
+                shopTextures.Add(texture); SetShopImage(texture,target,placeholder);
             }
+        }
+
+        static void SetShopImage(Texture texture, RawImage target, TMP_Text placeholder)
+        {
+            var rect = target.rectTransform;
+            var box = rect.sizeDelta;
+            float scale = Mathf.Min(box.x / texture.width, box.y / texture.height);
+            var size = new Vector2(texture.width, texture.height) * scale;
+            rect.anchoredPosition += Vector2.Scale((box - size) * .5f, new Vector2(1, -1));
+            rect.sizeDelta = size;
+            target.texture = texture;
+            target.color = Color.white;
+            if (placeholder) placeholder.gameObject.SetActive(false);
         }
 
         void ReleaseShopTextures()

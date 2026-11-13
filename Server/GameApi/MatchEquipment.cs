@@ -60,6 +60,7 @@ public sealed class MatchEquipment(Database db)
             switch (p.GetProperty("Kind").GetString())
             {
                 case "Cue":
+                    profile.CueVisual = p.GetProperty("Visual").GetString() ?? "";
                     profile.CueId = p.GetProperty("Id").GetInt64(); profile.Power = p.GetProperty("Power").GetInt32();
                     profile.FollowThrough = p.GetProperty("FollowThrough").GetInt32(); profile.Tip = p.GetProperty("Tip").GetInt32(); profile.ShotSeconds = p.GetProperty("ShotSeconds").GetInt32(); break;
                 case "Character":

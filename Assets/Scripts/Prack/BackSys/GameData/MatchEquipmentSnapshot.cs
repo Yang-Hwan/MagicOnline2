@@ -14,6 +14,7 @@ namespace Assets.Scripts.Prack.BackSys.GameData
     {
         public string UserId = "";
         public long CueId, CharacterId;
+        public string CueVisual = "";
         public int Power, FollowThrough, Tip, ShotSeconds;
         public MatchEquipmentEmotion[] Emotions = Array.Empty<MatchEquipmentEmotion>();
         public string[] Messages = Array.Empty<string>();

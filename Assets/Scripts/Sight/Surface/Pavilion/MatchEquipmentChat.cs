@@ -14,20 +14,23 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         TMP_Text sendStatus;
         float selfUntil, otherUntil;
         int page;
-        bool expressions;
+        Button avatarButton;
         string displayedMatch;
         public void Initialize(PunNetwork value)
         {
             network = value;
             displayedMatch = network.LegacyMatchId;
             font = Resources.Load<TMP_FontAsset>("Common/Fonts/Asset/NanumBarunGothic SDF");
-            var launch = Rect("EquipmentChatButton", transform, new Vector2(.5f, 1), new Vector2(0, -120), new Vector2(190, 46));
-            Button(launch, "메시지 / 표정", () => { page = 0; Open(); });
+            var avatar = transform.Find("PlayerBoxs/PlayerSelf/Avatar").GetComponent<Image>();
+            avatar.raycastTarget = true;
+            avatarButton = avatar.GetComponent<Button>() ?? avatar.gameObject.AddComponent<Button>();
+            avatarButton.targetGraphic = avatar;
+            avatarButton.onClick.AddListener(OpenFromAvatar);
             selfMessage = Bubble("SelfChat", .25f);
             otherMessage = Bubble("OtherChat", .75f);
             network.EquippedMessageReceived += Receive;
-            network.EquippedEmotionReceived += Emotion;
         }
+        void OpenFromAvatar() { page = 0; Open(); }
         TMP_Text Bubble(string name, float x)
         {
             var root = Rect(name, transform, new Vector2(x, 1), new Vector2(0, -180), new Vector2(420, 96));
@@ -41,19 +44,17 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             if (!network || !network.HasLegacyMatch || network.MatchEquipment == null) return;
             popup = Rect("EquippedChatMenu", transform, Vector2.one * .5f, Vector2.zero, new Vector2(540, 620));
             popup.gameObject.AddComponent<Image>().color = new Color(.035f, .04f, .055f, .98f);
-            Label(Rect("Title", popup, new Vector2(.5f, 1), new Vector2(0, -38), new Vector2(500, 45)), expressions ? "캐릭터 표정" : "장착한 메시지", 30);
-            Button(Rect("Messages", popup, new Vector2(0, 1), new Vector2(140, -94), new Vector2(230, 44)), "메시지", () => { expressions = false; page = 0; Open(); });
-            Button(Rect("Emotions", popup, new Vector2(1, 1), new Vector2(-140, -94), new Vector2(230, 44)), "표정", () => { expressions = true; page = 0; Open(); });
+            Label(Rect("Title", popup, new Vector2(.5f, 1), new Vector2(0, -48), new Vector2(500, 45)), "장착한 메시지", 30);
             var messages = network.MatchEquipment.Players[network.LegacyLocalSeat].Messages;
-            int total = expressions ? EquipmentPortrait.Emotions.Length : messages.Length;
+            int total = messages.Length;
             int pages = Mathf.Max(1, (total + 4) / 5); page = Mathf.Clamp(page, 0, pages - 1);
             for (int i = 0; i < 5 && page * 5 + i < total; i++)
             {
                 int index = page * 5 + i;
-                Button(Rect("Entry" + index, popup, new Vector2(.5f, 1), new Vector2(0, -160 - i * 65), new Vector2(485, 54)),
-                    expressions ? EquipmentPortrait.Emotions[index] : messages[index], () =>
+                Button(Rect("Entry" + index, popup, new Vector2(.5f, 1), new Vector2(0, -112 - i * 65), new Vector2(485, 54)),
+                    messages[index], () =>
                     {
-                        bool sent = expressions ? network.SendEquippedEmotion(index) : network.SendEquippedMessage(index);
+                        bool sent = network.SendEquippedMessage(index);
                         if (sent) Close();
                         else if (sendStatus) sendStatus.text = "잠시 후 다시 보내 주세요.";
                     });
@@ -74,7 +75,6 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             (self ? selfMessage : otherMessage).transform.parent.gameObject.SetActive(true);
             if (self) selfUntil = Time.unscaledTime + 3; else otherUntil = Time.unscaledTime + 3;
         }
-        void Emotion(int seat, int index) => GetComponent<MatchAvatarReactions>()?.ShowEquipmentEmotion(seat, index);
         void Update()
         {
             if (displayedMatch != network?.LegacyMatchId)
@@ -111,7 +111,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         void OnDestroy()
         {
-            if (network) { network.EquippedMessageReceived -= Receive; network.EquippedEmotionReceived -= Emotion; }
+            if (avatarButton) avatarButton.onClick.RemoveListener(OpenFromAvatar);
+            if (network) network.EquippedMessageReceived -= Receive;
         }
     }
 }

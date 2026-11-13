@@ -20,10 +20,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         MatchEquipmentProfile profile;
         Image image;
         string wanted;
+        public string CurrentEmotion { get; private set; }
         void Awake() { image = GetComponent<Image>(); image.preserveAspect = true; }
         public void SetProfile(MatchEquipmentProfile value) { profile = value; }
         public void Show(string emotion, Sprite fallback)
         {
+            CurrentEmotion = emotion;
             string key = profile?.Emotions?.FirstOrDefault(e => e.Code == emotion)?.Asset;
             if (string.IsNullOrWhiteSpace(key)) key = profile?.Emotions?.FirstOrDefault(e => e.Code == "기본")?.Asset;
             wanted = key;

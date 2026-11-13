@@ -74,6 +74,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void LateUpdate()
         {
+            RefreshCueAppearance();
             if (cueBallLineMaterials == null) return;
             UpdateGaugeValueLabels();
             UpdateOverlapPreview();

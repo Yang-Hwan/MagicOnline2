@@ -51,6 +51,36 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         public Transform cueDisplacement;
         public Transform cueSlider;
         private DoubleTapCue doubleTap;
+        private string displayedCue;
+        private MeshRenderer standardCue;
+        private Material standardFinish;
+        private Material shopFinish;
+
+        void RefreshCueAppearance()
+        {
+            string key = MatchEquipmentRuntime.Shooter.CueVisual ?? "";
+            if (key == displayedCue || !standardCue) return;
+            displayedCue = key;
+            doubleTap?.Remove();
+            doubleTap = null;
+            standardCue.enabled = true;
+            standardCue.sharedMaterial = standardFinish;
+            if (key == "Gameplay/DoubleTap/DoubleTap")
+            {
+                doubleTap = DoubleTapCue.Equip(cueSlider);
+                return;
+            }
+            if (!key.StartsWith("Gameplay/ShopCues/", StringComparison.Ordinal)) return;
+            var texture = Resources.Load<Texture2D>(key);
+            var shader = Resources.Load<Shader>("Gameplay/ShopCues/CueFinish");
+            if (!texture || !shader) return;
+            if (!shopFinish) shopFinish = new Material(shader);
+            var bounds = standardCue.GetComponent<MeshFilter>().sharedMesh.bounds;
+            shopFinish.mainTexture = texture;
+            shopFinish.SetVector("_CueAxis", new Vector4(bounds.min.z, bounds.size.z, 0, 0));
+            standardCue.sharedMaterial = shopFinish;
+        }
+
 
         public Transform turnHandle;
         public Transform forceHandle;
@@ -158,7 +188,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             cueVertical = GameObject.Find("Table/CuePivot/CueVertical").transform;
             cueDisplacement = GameObject.Find("Table/CuePivot/CueVertical/CueDisplacement").transform;
             cueSlider = GameObject.Find("Table/CuePivot/CueVertical/CueDisplacement/CueSlider").transform;
-            doubleTap = DoubleTapCue.Equip(cueSlider);
+            standardCue = cueSlider.Find("Cue3D/Standard3DCue").GetComponent<MeshRenderer>();
+            standardFinish = standardCue.sharedMaterial;
             turnHandle = GameObject.Find("Table/DetailTurn/DetailTurnPos").transform;
             forceHandle = GameObject.Find("Table/PowerPullSlide/PowerBtn").transform;
             forceGage = GameObject.Find("Table/PowerPullSlide/PowerGage").GetComponent<SpriteRenderer>();

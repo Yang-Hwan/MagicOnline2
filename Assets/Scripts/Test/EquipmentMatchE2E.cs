@@ -30,6 +30,7 @@ public sealed class EquipmentMatchE2E : MonoBehaviour
         public Vector3 Impulse, Point;
         public float Follow, ExpectedFollow, Magnitude, ExpectedMagnitude, MaxDisplacement;
         public bool Settled, ReactionSeen;
+        public string Emotion;
     }
     [Serializable] public sealed class Report
     {
@@ -85,12 +86,6 @@ public sealed class EquipmentMatchE2E : MonoBehaviour
         if (seat==report.Seat) report.LocalMessage=shown; else report.RemoteMessage=shown;
         report.Messages.Add(seat+":"+text); Save();
     }
-    void ReceivedEmotion(int seat,int index)
-    {
-        bool shown=index==4 && PortraitIs(seat,"환희");
-        if (seat==report.Seat) report.LocalEmotion=shown; else report.RemoteEmotion=shown;
-        Save();
-    }
     void OnShot(Ball ball,Impulse impulse)
     {
         int seat=PoolPlayer.turnId==PoolPlayer.mainPlayer.playerId?report.Seat:1-report.Seat;
@@ -107,7 +102,14 @@ public sealed class EquipmentMatchE2E : MonoBehaviour
         if (activeShot==null || !movingBall || !panel) return;
         activeShot.MaxDisplacement=Mathf.Max(activeShot.MaxDisplacement,Vector3.Distance(shotStart,movingBall.body.position));
         int seat=activeShot.Seat;
-        if (new[] { "환희","미안","좌절" }.Any(emotion=>PortraitIs(seat,emotion))) activeShot.ReactionSeen=true;
+        string emotion=Portrait(seat).GetComponent<EquipmentPortrait>().CurrentEmotion;
+        if (!activeShot.ReactionSeen && !string.IsNullOrEmpty(emotion) && emotion!="기본" && PortraitIs(seat,emotion))
+        {
+            activeShot.ReactionSeen=true;
+            activeShot.Emotion=emotion;
+            if (seat==report.Seat) report.LocalEmotion=true; else report.RemoteEmotion=true;
+            Save();
+        }
     }
     async Task Screenshot(string suffix)
     {
@@ -137,16 +139,14 @@ public sealed class EquipmentMatchE2E : MonoBehaviour
             network=(PunNetwork)NetworkManager.network; panel=PnlMatch.Instance; physics=FindAnyObjectByType<PhysicsMng>(); shot=FindAnyObjectByType<ShotCtrl>();
             await Until(()=>network.HasLegacyMatch && network.MatchEquipment!=null && PoolCoach.Instance.isMatchTimePlay && !physics.inMove && shot.cueBall!=null,70,"opening scatter and equipment");
             report.MatchId=network.LegacyMatchId; report.Seat=network.LegacyLocalSeat; report.Snapshot=network.MatchEquipment;
-            network.EquippedMessageReceived+=ReceivedMessage; network.EquippedEmotionReceived+=ReceivedEmotion;
+            network.EquippedMessageReceived+=ReceivedMessage;
             physics.OnMatchReplayShot+=OnShot; physics.OnEndShot+=ShotEnded;
             await Until(()=>PortraitIs(0,"기본") && PortraitIs(1,"기본"),10,"both equipped neutral portraits"); report.NeutralImages=true; Stage("ready");
             await Until(()=>Peer()?.MatchId==report.MatchId && Peer()?.NeutralImages==true,40,"both clients ready");
             await Screenshot("neutral");
-            Click("EquipmentChatButton"); await Task.Delay(100); Click("EquippedChatMenu/Entry0");
+            Click("PlayerBoxs/PlayerSelf/Avatar"); await Task.Delay(100); Click("EquippedChatMenu/Entry0");
             await Until(()=>report.LocalMessage && report.RemoteMessage,20,"selected messages on both screens"); await Screenshot("messages");
-            await Task.Delay(2300);
-            Click("EquipmentChatButton"); Click("EquippedChatMenu/Emotions"); await Task.Delay(100); Click("EquippedChatMenu/Entry4");
-            await Until(()=>report.LocalEmotion && report.RemoteEmotion,20,"equipped emotions on both screens"); await Screenshot("emotions"); Stage("shots");
+            Stage("shots");
             var deadline=DateTime.UtcNow.AddSeconds(130);
             while (!(report.Shots.Any(s=>s.Seat==0 && s.Settled) && report.Shots.Any(s=>s.Seat==1 && s.Settled)))
             {

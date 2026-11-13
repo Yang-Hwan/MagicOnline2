@@ -135,8 +135,9 @@ try:
         assert all(abs(sa['Point'][axis]-sb['Point'][axis])<.003 for axis in ('x','y','z'))
         assert all(s['Settled'] and s['MaxDisplacement']>.01 for s in (sa,sb))
         assert all(s['ReactionSeen'] for s in (sa,sb)), 'Automatic character reaction missing'
+        assert sa['Emotion']==sb['Emotion'], 'Different automatic reactions for the same shot'
     for role in ('A','B'):
-        for stage in ('neutral','messages','emotions','shots'):
+        for stage in ('neutral','messages','shots'):
             with Image.open(out/f'{role}-{stage}.png') as picture:
                 assert picture.size==(1280,720) and max(hi-lo for lo,hi in picture.convert('RGB').getextrema())>100, 'Rendered screenshot missing'
     summary.update(Ok=True,MatchId=a['MatchId'],Reports=['A.json','B.json'])

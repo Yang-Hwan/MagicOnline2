@@ -31,6 +31,13 @@ namespace Assets.Scripts.Often
             renderer.SetPropertyBlock(properties);
         }
 
+        public void Remove()
+        {
+            var skin = renderer.transform.parent.gameObject;
+            skin.SetActive(false);
+            Object.Destroy(skin);
+        }
+
         public void Strike()
         {
             properties.SetFloat(FlashStart, Time.time);

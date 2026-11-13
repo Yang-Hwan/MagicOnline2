@@ -46,6 +46,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void OnDestroy()
         {
+            if (shopFinish) Destroy(shopFinish);
             prediction?.Dispose();
             if (cueBallLineMaterials != null) foreach (var material in cueBallLineMaterials) if (material) Destroy(material);
             if (targetBallLineMaterials != null) foreach (var material in targetBallLineMaterials) if (material) Destroy(material);

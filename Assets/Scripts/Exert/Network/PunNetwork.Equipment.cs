@@ -13,7 +13,6 @@ namespace Assets.Scripts.Exert.Network
         [Serializable] sealed class EquipmentOpponent { public string OpponentUserId; }
         public MatchEquipmentSnapshot MatchEquipment { get; private set; }
         public event Action<int, string> EquippedMessageReceived;
-        public event Action<int, int> EquippedEmotionReceived;
         float nextEquipmentSend;
         readonly float[] nextEquipmentReceive = new float[2];
 
@@ -29,27 +28,24 @@ namespace Assets.Scripts.Exert.Network
             MatchEquipment = snapshot;
         }
 
-        public bool SendEquippedMessage(int index) => SendEquipmentChat(index, false);
-        public bool SendEquippedEmotion(int index) => SendEquipmentChat(index, true);
-        bool SendEquipmentChat(int index, bool emotion)
+        public bool SendEquippedMessage(int index)
         {
             if (!HasLegacyMatch || historyEnded || MatchEquipment?.MatchId != LegacyMatchId || Time.realtimeSinceStartup < nextEquipmentSend) return false;
             var profile = MatchEquipment.Players[LegacyLocalSeat];
-            if (index < 0 || (emotion ? index >= 9 : index >= profile.Messages.Length)) return false;
+            if (index < 0 || index >= profile.Messages.Length) return false;
             nextEquipmentSend = Time.realtimeSinceStartup + 2;
-            view.RPC(nameof(EquippedChatRPC), RpcTarget.All, LegacyMatchId, index, emotion);
+            view.RPC(nameof(EquippedChatRPC), RpcTarget.All, LegacyMatchId, index, false);
             return true;
         }
         [PunRPC] void EquippedChatRPC(string id, int index, bool emotion, PhotonMessageInfo info)
         {
-            if (!HasLegacyMatch || historyEnded || MatchEquipment?.MatchId != id || id != LegacyMatchId || historyOffer == null) return;
+            if (emotion || !HasLegacyMatch || historyEnded || MatchEquipment?.MatchId != id || id != LegacyMatchId || historyOffer == null) return;
             int seat = info.Sender.ActorNumber == historyOffer.actor0 ? 0 : info.Sender.ActorNumber == historyOffer.actor1 ? 1 : -1;
             if (seat < 0 || index < 0 || Time.realtimeSinceStartup < nextEquipmentReceive[seat]) return;
             string message = MatchEquipment.MessageAt(seat, index);
-            if (emotion ? index >= 9 : message == null) return;
+            if (message == null) return;
             nextEquipmentReceive[seat] = Time.realtimeSinceStartup + 1.9f;
-            if (emotion) EquippedEmotionReceived?.Invoke(seat, index);
-            else EquippedMessageReceived?.Invoke(seat, message);
+            EquippedMessageReceived?.Invoke(seat, message);
         }
     }
 
