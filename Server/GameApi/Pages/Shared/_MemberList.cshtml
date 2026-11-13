@@ -1,0 +1,11 @@
+@model AdminTable
+@{bool canDelete=User.IsInRole("Owner"); bool selectAll=Context.Request.Query["selectAll"]=="true";}
+@if(Model.Rows.Count==0){<div class="empty">조건에 맞는 회원이 없습니다.</div>}
+else{
+<form method="post" asp-page="/Admin/MemberDelete" asp-page-handler="Preview">
+@if(canDelete){<div class="chart-actions"><a class="button" href="@ViewData["MemberSelectAllUrl"]">이 페이지 전체 선택</a><a class="button" href="@ViewData["MemberSelectNoneUrl"]">선택 해제</a><button class="primary" type="submit">선택 회원 삭제 확인</button></div><p class="hint">현재 페이지에서 최대 30명을 선택한 뒤, 다음 화면에서 대상을 확인합니다.</p>}
+<div class="table-scroll"><table><thead><tr>@if(canDelete){<th scope="col">선택</th>}@foreach(var column in Model.Columns){<th scope="col">@column</th>}<th scope="col">작업</th></tr></thead><tbody>
+@foreach(var row in Model.Rows){<tr>@if(canDelete){<td><input type="checkbox" name="Ids" value="@row[0]" checked="@selectAll" aria-label="@row[1] 삭제 대상 선택"></td>}
+@for(int i=0;i<row.Length;i++){<td>@if(i is 0 or 1){<a href="/admin/members/@row[0]">@row[i]</a>}else{@row[i]}</td>}
+<td><a href="/admin/members/@row[0]">상세</a>@if(canDelete){<text> · </text><a href="/admin/members/delete?id=@row[0]">삭제</a>}</td></tr>}
+</tbody></table></div></form>}

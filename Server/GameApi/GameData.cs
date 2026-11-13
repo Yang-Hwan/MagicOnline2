@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Assets.Scripts.Prack.BackSys;
 using Npgsql;
 
@@ -17,7 +17,7 @@ public sealed class GameData(Database db)
     public const string UserSql = "SELECT u.id,u.nickname,u.level,u.level_progress,u.avatar_idx,w.coin,w.jem,s.ball_4_win,s.ball_4_lose,s.ball_4_draw,s.ball_3_win,s.ball_3_lose,s.ball_3_draw,s.legacy_win,s.legacy_lose,w.cash,w.gold FROM users u JOIN wallets w ON w.user_id=u.id JOIN user_stats s ON s.user_id=u.id ";
     public async Task<UserMainData> Profile(Guid user)
     {
-        await using var cmd = db.Source.CreateCommand(UserSql + "WHERE u.id=$1"); cmd.Parameters.AddWithValue(user);
+        await using var cmd = db.Source.CreateCommand(UserSql + "WHERE u.id=$1 AND u.deleted_at IS NULL"); cmd.Parameters.AddWithValue(user);
         await using var r = await cmd.ExecuteReaderAsync();
         if (!await r.ReadAsync()) throw new ApiFault(404, "UserNotFound");
         return ReadUser(r);

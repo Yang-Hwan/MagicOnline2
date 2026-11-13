@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using Assets.Scripts.Often;
 using Photon.Pun;
 using UnityEditor;
 
 public static class PracticeMatchRouteValidation
 {
+    static string TestProtocol(string options = "") => PracticeMatchTestRoute.Protocol + options + Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.FollowThroughProfile.ProtocolSuffix;
     public static void Run()
     {
         if (PhotonNetwork.IsConnected) throw new InvalidOperationException("Route validation requires a disconnected client.");
@@ -20,7 +21,7 @@ public static class PracticeMatchRouteValidation
             string normal = PracticeMatchTestRoute.Version("1.0");
             Require(PracticeMatchTestRoute.ConnectionSettings(source, "1.0").AppVersion == normal, "normal connection version missing");
             Require(PracticeMatchTestRoute.AcceptsProtocol(MatchmakingCompatibility.Protocol), "normal route rejected normal rooms");
-            Require(!PracticeMatchTestRoute.AcceptsProtocol(PracticeMatchTestRoute.Protocol), "normal route accepted test rooms");
+            Require(!PracticeMatchTestRoute.AcceptsProtocol(TestProtocol()), "normal route accepted test rooms");
             EditorPrefs.SetBool("MagicOnline2.PracticeMatchTest", true);
             ValidateCancelledCallbacks();
             ValidateCancellationOrdering(3);
@@ -29,7 +30,7 @@ public static class PracticeMatchRouteValidation
             Require(connection.AppVersion == PracticeMatchTestRoute.Version("1.0") && connection.FixedRegion == "kr" &&
                 source.AppVersion == "asset-value" && !ReferenceEquals(source, connection), "connection settings lost version/region or modified shared asset");
             Require(PracticeMatchTestRoute.Version("1.0") != normal, "test client shared normal matchmaking version");
-            Require(PracticeMatchTestRoute.AcceptsProtocol(PracticeMatchTestRoute.Protocol), "test route rejected test rooms");
+            Require(PracticeMatchTestRoute.AcceptsProtocol(TestProtocol()), "test route rejected test rooms");
             Require(!PracticeMatchTestRoute.AcceptsProtocol(MatchmakingCompatibility.Protocol) &&
                 !PracticeMatchTestRoute.AcceptsProtocol(null), "test route accepted old/unknown protocol");
             var hall = new Assets.Scripts.Prack.BackSys.ChartData.SkillMatchData {
@@ -44,21 +45,21 @@ public static class PracticeMatchRouteValidation
             var quickHall = PracticeMatchTestRoute.MatchHall(hall);
             Require(quickHall.MatchTotMin == 1 && hall.MatchTotMin == 20 && quickHall.TargetHit == 2 &&
                 quickHall.MatchCushion == 3 && !ReferenceEquals(hall, quickHall), "quick match modified source or scoring rules");
-            Require(PracticeMatchTestRoute.RoomProtocol == PracticeMatchTestRoute.Protocol + "-quick" &&
-                !PracticeMatchTestRoute.AcceptsProtocol(PracticeMatchTestRoute.Protocol) &&
+            Require(PracticeMatchTestRoute.RoomProtocol == TestProtocol("-quick") &&
+                !PracticeMatchTestRoute.AcceptsProtocol(TestProtocol()) &&
                 PracticeMatchTestRoute.Version("1.0") != connection.AppVersion, "quick match isolation failed");
             Require(MatchConfiguration.Online(quickHall, "A", "B", 0, 0, 20).MatchSeconds == 60,
                 "quick match did not use normal 60-second deadline");
             EditorPrefs.SetBool("MagicOnline2.PracticeMatchTargetWin", true);
-            Require(PracticeMatchTestRoute.RoomProtocol == PracticeMatchTestRoute.Protocol + "-quick-target1",
+            Require(PracticeMatchTestRoute.RoomProtocol == TestProtocol("-quick-target1"),
                 "combined options share another protocol");
             EditorPrefs.SetBool("MagicOnline2.PracticeMatchQuick", false);
             var targetHall = PracticeMatchTestRoute.MatchHall(hall);
             Require(targetHall.TargetHit == 1 && hall.TargetHit == 10 && targetHall.MatchTotMin == 20 &&
                 targetHall.MatchCushion == 3 && !ReferenceEquals(hall, targetHall), "target test mutated original or rules");
-            Require(PracticeMatchTestRoute.RoomProtocol == PracticeMatchTestRoute.Protocol + "-target1" &&
-                !PracticeMatchTestRoute.AcceptsProtocol(PracticeMatchTestRoute.Protocol) &&
-                !PracticeMatchTestRoute.AcceptsProtocol(PracticeMatchTestRoute.Protocol + "-quick") &&
+            Require(PracticeMatchTestRoute.RoomProtocol == TestProtocol("-target1") &&
+                !PracticeMatchTestRoute.AcceptsProtocol(TestProtocol()) &&
+                !PracticeMatchTestRoute.AcceptsProtocol(TestProtocol("-quick")) &&
                 MatchConfiguration.Online(targetHall, "A", "B", 0, 0, 20).TargetScore == 1,
                 "target score or matchmaking isolation failed");
             EditorPrefs.SetBool("MagicOnline2.PracticeMatchTest", false);

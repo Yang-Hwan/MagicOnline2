@@ -5,6 +5,7 @@
 @if(Model.SuccessMessage!=null){<p class="notice" role="status">@Model.SuccessMessage</p>}
 @if(Model.Tab=="profile") {
 <section class="panel"><h2>회원 정보</h2><dl class="details">@for(int i=0;i<Model.Data.Profile.Columns.Length;i++){<dt>@Model.Data.Profile.Columns[i]</dt><dd>@Model.Data.Profile.Rows[0][i]</dd>}</dl></section>
+@if(User.IsInRole("Owner")){<section class="panel"><h2>회원 삭제</h2><p class="hint">실수로 생성한 회원을 목록에서 제거하고 로그인을 차단합니다. 삭제 전 대상과 사유를 확인합니다.</p><a class="button" href="/admin/members/delete?id=@Model.Id">회원 삭제 확인</a></section>}
 @if(Model.CanEdit){
 <section class="panel"><h2>닉네임 수정</h2>
 @if(Model.EditError!=null){<p class="error" role="alert">@Model.EditError</p>}

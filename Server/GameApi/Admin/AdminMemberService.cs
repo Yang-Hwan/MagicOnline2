@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace MagicOnline.GameApi.Admin;
 
-public sealed class AdminMemberService(Database db)
+public sealed partial class AdminMemberService(Database db)
 {
     public async Task AdjustWallet(ClaimsPrincipal actor, Guid member, string currency, string direction, long amount, Guid operation, string? reason)
     {
@@ -24,7 +24,7 @@ public sealed class AdminMemberService(Database db)
         string key = $"AdminAdjust:{admin:N}:{operation:N}";
         await using var c = await db.Source.OpenConnectionAsync();
         await using var tx = await c.BeginTransactionAsync();
-        await using var wallet = Database.Command(c, "SELECT coin,jem FROM wallets WHERE user_id=$1 FOR UPDATE", member);
+        await using var wallet = Database.Command(c, "SELECT w.coin,w.jem FROM wallets w JOIN users u ON u.id=w.user_id WHERE w.user_id=$1 AND u.deleted_at IS NULL FOR UPDATE OF w FOR SHARE OF u", member);
         long before;
         await using (var row = await wallet.ExecuteReaderAsync())
         {
@@ -64,7 +64,7 @@ public sealed class AdminMemberService(Database db)
         await using var c = await db.Source.OpenConnectionAsync();
         await using var tx = await c.BeginTransactionAsync();
         string before;
-        await using (var cmd = Database.Command(c, "SELECT nickname FROM users WHERE id=$1 FOR UPDATE", member))
+        await using (var cmd = Database.Command(c, "SELECT nickname FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE", member))
             before=await cmd.ExecuteScalarAsync() as string ?? throw new ApiFault(404, "회원을 찾을 수 없습니다.");
         // A repeated submission of the same desired value has no additional effect.
         if (before==nickname) return;

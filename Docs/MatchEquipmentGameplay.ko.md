@@ -75,4 +75,6 @@ dotnet build Server/ShopPurchase.Tests/ShopPurchase.Tests.csproj --output "$env:
 dotnet "$env:TEMP/MagicOnline2-MatchEquipmentTests/ShopPurchase.Tests.dll"
 ```
 
-실제 Photon 두 기기의 경기 전체를 재검증하는 작업과 외부 CDN 이미지 성공 다운로드 검증은 별도로 남아 있다. 서버는 기존과 마찬가지로 클라이언트 샷의 물리 시뮬레이션 자체를 검증하지 않으며, 이번 기능을 서버 물리 검증으로 해석하면 안 된다.
+2026-11-13 같은 Windows PC에서 두 개의 실제 개발용 플레이어를 실행해 정상 Pavilion 경기 경로를 검증했다. 실제 로그인·Photon 매칭·초구 배치 이후 양쪽에서 메시지/표정 UI를 사용하고 각자 샷을 쳤다. 양쪽의 동일 경기 장비 정보, 기본/감정 초상화, 서로 다른 장착 메시지, 파워·팔로스루·당점 범위·턴 제한 반영과 실제 공 이동, 기권 종료·서버 정산을 확인했다. 재현은 최신 개발 빌드 생성 후 `python Server/GameApi/Run-EquipmentE2E.py`로 실행한다. 상세 결과와 범위는 `EquipmentTwoClientTest.ko.md`를 참고한다.
+
+외부 CDN 이미지 다운로드와 서로 다른 물리 기기·모바일 플랫폼 검증은 별도로 남아 있다. 서버는 기존과 마찬가지로 클라이언트 샷의 물리 시뮬레이션 자체를 검증하지 않으며, 이번 기능을 서버 물리 검증으로 해석하면 안 된다.

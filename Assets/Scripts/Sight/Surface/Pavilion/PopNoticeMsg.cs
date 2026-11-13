@@ -45,7 +45,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             }
             txtMsg.text = msg;
 
-            await UniTask.WaitForSeconds(sec);
+            if (await UniTask.Delay((int)(sec * 1000), cancellationToken: this.GetCancellationTokenOnDestroy()).SuppressCancellationThrow()) return;
+            if (!txtMsg || !rectTransform) return;
             txtMsg.text = string.Empty;
             rectTransform.anchoredPosition = new Vector2(0, 1300f);
 

@@ -24,7 +24,7 @@ public class IndexModel(AdminReadService read) : PageModel
         switch (Section)
         {
             case "dashboard": Title="대시보드"; Description="실제 게임 DB의 회원·대전·정산 현황"; Dashboard=await read.Dashboard(); Table=await read.Matches(null,"disputed",1); break;
-            case "members": Title="회원 관리"; Description="회원 검색과 프로필·전적·원장 연결 조회"; Table=await read.Members(Q,State,Number); break;
+            case "members": Title="회원 관리"; Description="회원 검색과 프로필·전적·원장 조회 및 삭제"; Table=await read.Members(Q,State,Number); ViewData["MemberSelectAllUrl"]=PageUrl(Number)+"&selectAll=true"; ViewData["MemberSelectNoneUrl"]=PageUrl(Number); break;
             case "matches": Title="대전 관리"; Description="경기 상태·종료 사유·결과 보고·정산 기록"; Table=await read.Matches(Q,State,Number); break;
             case "wallet": Title="재화 원장"; Description="회원·요청 키·경기 ID별 Coin·Jem 변동"; Table=await read.Ledger(Q,State,Number); if(Guid.TryParse(Q,out var user))Extra=await read.WalletCheck(user); break;
             case "charts": Title="차트 관리"; Description="경기장 규칙·출석 보상·공통 코드 조회 및 추가·수정·삭제"; Name=Name is "PostReward" or "Attendance" or "CommonCode" ? Name : "SkillMatch"; Table=await read.Chart(Name); break;

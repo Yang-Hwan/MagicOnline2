@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.Json;
 
 namespace MagicOnline.GameApi.Admin;
@@ -42,7 +42,7 @@ public sealed class AdminReadService(Database db)
     };
     public async Task<AdminDashboard> Dashboard()
     {
-        await using var cmd = db.Source.CreateCommand("SELECT (SELECT count(*) FROM users),(SELECT count(*) FROM users WHERE created_at >= date_trunc('day',now() AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'Asia/Seoul'),(SELECT count(*) FROM matches WHERE phase=1),(SELECT count(*) FROM matches WHERE phase<>2 AND COALESCE((state->>'Disputed')::boolean,false)),(SELECT count(*) FROM settlement_receipts),now()");
+        await using var cmd = db.Source.CreateCommand("SELECT (SELECT count(*) FROM users WHERE deleted_at IS NULL),(SELECT count(*) FROM users WHERE deleted_at IS NULL AND created_at >= date_trunc('day',now() AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'Asia/Seoul'),(SELECT count(*) FROM matches WHERE phase=1),(SELECT count(*) FROM matches WHERE phase<>2 AND COALESCE((state->>'Disputed')::boolean,false)),(SELECT count(*) FROM settlement_receipts),now()");
         await using var r = await cmd.ExecuteReaderAsync(); await r.ReadAsync();
         return new(r.GetInt64(0), r.GetInt64(1), r.GetInt64(2), r.GetInt64(3), r.GetInt64(4), Format(r.GetValue(5)));
     }
@@ -50,11 +50,11 @@ public sealed class AdminReadService(Database db)
     {
         var condition = state is "disabled" or "active" ? state : "";
         return Table(new[] { "회원 UUID", "로그인 ID", "닉네임", "상태", "Coin", "Jem", "가입일 (KST)" },
-            "SELECT u.id,u.login_id,u.nickname,CASE WHEN u.disabled THEN '제한' ELSE '정상' END,w.coin::text,w.jem::text,u.created_at FROM users u JOIN wallets w ON w.user_id=u.id WHERE ($1='' OR position(lower($1) in lower(u.id::text||' '||u.login_id||' '||u.nickname))>0) AND ($2='' OR ($2='disabled' AND u.disabled) OR ($2='active' AND NOT u.disabled)) ORDER BY u.created_at DESC,u.id LIMIT 31 OFFSET $3", new object[] { Query(q), condition, (Page(page) - 1) * Size }, page, true);
+            "SELECT u.id,u.login_id,u.nickname,CASE WHEN u.disabled THEN '제한' ELSE '정상' END,w.coin::text,w.jem::text,u.created_at FROM users u JOIN wallets w ON w.user_id=u.id WHERE u.deleted_at IS NULL AND ($1='' OR position(lower($1) in lower(u.id::text||' '||u.login_id||' '||u.nickname))>0) AND ($2='' OR ($2='disabled' AND u.disabled) OR ($2='active' AND NOT u.disabled)) ORDER BY u.created_at DESC,u.id LIMIT 31 OFFSET $3", new object[] { Query(q), condition, (Page(page) - 1) * Size }, page, true);
     }
     public async Task<AdminMember> Member(Guid id)
     {
-        var profile = await Table(new[] { "회원 UUID", "로그인 ID", "닉네임", "상태", "레벨", "레벨플레이 수 (LvPlay)", "Coin", "Jem", "Cash", "Gold", "가입일 (KST)" }, "SELECT u.id,u.login_id,u.nickname,CASE WHEN u.disabled THEN '제한' ELSE '정상' END,u.level,u.level_progress,w.coin::text,w.jem::text,w.cash::text,w.gold::text,u.created_at FROM users u JOIN wallets w ON w.user_id=u.id WHERE u.id=$1", new object[] { id });
+        var profile = await Table(new[] { "회원 UUID", "로그인 ID", "닉네임", "상태", "레벨", "레벨플레이 수 (LvPlay)", "Coin", "Jem", "Cash", "Gold", "가입일 (KST)" }, "SELECT u.id,u.login_id,u.nickname,CASE WHEN u.disabled THEN '제한' ELSE '정상' END,u.level,u.level_progress,w.coin::text,w.jem::text,w.cash::text,w.gold::text,u.created_at FROM users u JOIN wallets w ON w.user_id=u.id WHERE u.id=$1 AND u.deleted_at IS NULL", new object[] { id });
         if (profile.Rows.Count == 0) throw new ApiFault(404, "MemberNotFound");
         var stats = await Table(new[] { "4구 승", "4구 패", "4구 무", "3구 승", "3구 패", "3구 무" }, "SELECT ball_4_win,ball_4_lose,ball_4_draw,ball_3_win,ball_3_lose,ball_3_draw FROM user_stats WHERE user_id=$1", new object[] { id });
         return new(profile, stats, await Matches(id.ToString(), null, 1), await Ledger(id.ToString(), null, 1));

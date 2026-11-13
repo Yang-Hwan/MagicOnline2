@@ -46,7 +46,7 @@ try
     if (args.Contains("--wallet"))
     {
         var member = Guid.NewGuid();
-        await Sql($"CREATE TABLE {schema}.wallets (user_id uuid PRIMARY KEY,coin bigint,jem integer); CREATE TABLE {schema}.wallet_ledger (user_id uuid,request_key text,coin_delta bigint,jem_delta integer,UNIQUE(user_id,request_key)); INSERT INTO {schema}.wallets VALUES('{member}',100,5)");
+        await Sql($"CREATE TABLE {schema}.users(id uuid PRIMARY KEY,deleted_at timestamptz); INSERT INTO {schema}.users VALUES('{member}',NULL); CREATE TABLE {schema}.wallets (user_id uuid PRIMARY KEY,coin bigint,jem integer); CREATE TABLE {schema}.wallet_ledger (user_id uuid,request_key text,coin_delta bigint,jem_delta integer,UNIQUE(user_id,request_key)); INSERT INTO {schema}.wallets VALUES('{member}',100,5)");
         var members = new AdminMemberService(new Database(source));
         var key = Guid.NewGuid();
         Task Credit() => members.AdjustWallet(owner,member,"Coin","credit",10,key,null);

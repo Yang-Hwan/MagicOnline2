@@ -35,7 +35,7 @@ public sealed class Friends(Database db, GameData data)
     public async Task<FriendList> List(Guid user)
     {
         await using var c=await db.Source.OpenConnectionAsync();
-        using var q=Database.Command(c,$"SELECT u.id,u.nickname,u.level,u.avatar_idx,{StatusSql} FROM friend_links f JOIN users u ON u.id=CASE WHEN f.sender=$1 THEN f.recipient ELSE f.sender END LEFT JOIN friend_presence p ON p.user_id=u.id WHERE (f.sender=$1 OR f.recipient=$1) AND f.accepted ORDER BY u.nickname,u.id",user);
+        using var q=Database.Command(c,$"SELECT u.id,u.nickname,u.level,u.avatar_idx,{StatusSql} FROM friend_links f JOIN users u ON u.id=CASE WHEN f.sender=$1 THEN f.recipient ELSE f.sender END LEFT JOIN friend_presence p ON p.user_id=u.id WHERE (f.sender=$1 OR f.recipient=$1) AND f.accepted AND NOT u.disabled ORDER BY u.nickname,u.id",user);
         using var r=await q.ExecuteReaderAsync();var rows=new List<Player>();
         while(await r.ReadAsync()) rows.Add(new(r.GetGuid(0),r.GetString(1),r.GetInt32(2),r.GetInt32(3),r.GetString(4)));
         return new(rows.OrderBy(x=>x.Status=="online"?0:x.Status=="busy"?1:2));
@@ -112,9 +112,9 @@ public sealed class Friends(Database db, GameData data)
             """,user,available))
             await q.ExecuteNonQueryAsync();
         Guid? from=null;string? name=null;
-        using(var q=Database.Command(c,"SELECT u.id,u.nickname FROM friend_links f JOIN users u ON u.id=f.sender WHERE f.recipient=$1 AND NOT f.accepted ORDER BY u.id LIMIT 1",user))
+        using(var q=Database.Command(c,"SELECT u.id,u.nickname FROM friend_links f JOIN users u ON u.id=f.sender WHERE f.recipient=$1 AND NOT f.accepted AND NOT u.disabled ORDER BY u.id LIMIT 1",user))
         using(var r=await q.ExecuteReaderAsync())if(await r.ReadAsync()){from=r.GetGuid(0);name=r.GetString(1);}
-        using var query=Database.Command(c,"SELECT ch.id,u.id,u.nickname,ch.hall_id,ch.state,ch.recipient=$1 FROM friend_challenges ch JOIN users u ON u.id=CASE WHEN ch.sender=$1 THEN ch.recipient ELSE ch.sender END WHERE (ch.sender=$1 OR ch.recipient=$1) AND ch.expires_at>now() AND ch.state <> 'closed' ORDER BY ch.expires_at DESC LIMIT 1",user);
+        using var query=Database.Command(c,"SELECT ch.id,u.id,u.nickname,ch.hall_id,ch.state,ch.recipient=$1 FROM friend_challenges ch JOIN users u ON u.id=CASE WHEN ch.sender=$1 THEN ch.recipient ELSE ch.sender END WHERE (ch.sender=$1 OR ch.recipient=$1) AND ch.expires_at>now() AND ch.state <> 'closed' AND NOT u.disabled ORDER BY ch.expires_at DESC LIMIT 1",user);
         using var row=await query.ExecuteReaderAsync();
         Invite? invite=await row.ReadAsync()?new(row.GetGuid(0),row.GetGuid(1),row.GetString(2),row.GetInt32(3),row.GetString(4),row.GetBoolean(5)):null;
         return new(from,name,invite);
@@ -122,7 +122,7 @@ public sealed class Friends(Database db, GameData data)
 
     static async Task CheckAvailable(NpgsqlConnection c,Guid user,Guid other)
     {
-        using var q=Database.Command(c,$"SELECT u.id,{StatusSql} FROM users u LEFT JOIN friend_presence p ON p.user_id=u.id WHERE u.id IN ($1,$2) ORDER BY u.id FOR UPDATE OF u",user,other);
+        using var q=Database.Command(c,$"SELECT u.id,{StatusSql} FROM users u LEFT JOIN friend_presence p ON p.user_id=u.id WHERE u.id IN ($1,$2) AND NOT u.disabled ORDER BY u.id FOR UPDATE OF u",user,other);
         using var r=await q.ExecuteReaderAsync();int count=0;
         while(await r.ReadAsync())
         {

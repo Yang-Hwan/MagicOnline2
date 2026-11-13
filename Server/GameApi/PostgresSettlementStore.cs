@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Text.Json;
 using Assets.Scripts.Prack.BackSys;
 using MagicOnline.MatchSettlement;
@@ -24,6 +24,10 @@ public sealed class PostgresSettlementStore(Database db) : ISettlementStore
                 return;
             }
         }
+        // Prevent a deletion race from registering a new game for a removed/disabled user.
+        using (var users = Database.Command(c, "SELECT id FROM users WHERE id IN ($1,$2) AND NOT disabled ORDER BY id FOR SHARE", Guid.Parse(r.UserA), Guid.Parse(r.UserB)))
+        using (var rows = users.ExecuteReader())
+        { int count = 0; while (rows.Read()) count++; if (count != 2) throw new ApiFault(409, "UnavailableMatchParticipant"); }
         using (var add = Database.Command(c, "INSERT INTO matches(id,user_a,user_b,state) VALUES($1,$2,$3,$4::jsonb)", r.MatchId, Guid.Parse(r.UserA), Guid.Parse(r.UserB), Serialize(match))) add.ExecuteNonQuery();
         // Reserve only the caller's slot. An unaccepted invitation cannot block its recipient.
         foreach (var id in new[] { r.UserA, r.UserB }.Order(StringComparer.Ordinal))
