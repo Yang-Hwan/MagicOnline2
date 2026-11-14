@@ -1,4 +1,7 @@
+using System.Collections;
+using System.Linq;
 using Assets.Scripts.Exert.Network;
+using Assets.Scripts.Prack.BackSys.GameData;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,112 +10,245 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 {
     public sealed class MatchEquipmentChat : MonoBehaviour
     {
+        static readonly Color Ink = new Color32(24, 27, 35, 255);
+        static readonly Color Gold = new Color32(255, 201, 45, 255);
         PunNetwork network;
         TMP_FontAsset font;
-        RectTransform popup;
-        TMP_Text selfMessage, otherMessage;
-        TMP_Text sendStatus;
+        Sprite rounded;
+        RectTransform popup, ownAvatar, opponentAvatar;
+        TMP_Text selfMessage, otherMessage, status;
         float selfUntil, otherUntil;
         int page;
+        Coroutine selection;
         Button avatarButton;
         string displayedMatch;
+        RectTransform Panel => (RectTransform)transform;
+
         public void Initialize(PunNetwork value)
         {
             network = value;
             displayedMatch = network.LegacyMatchId;
             font = Resources.Load<TMP_FontAsset>("Common/Fonts/Asset/NanumBarunGothic SDF");
-            var avatar = transform.Find("PlayerBoxs/PlayerSelf/Avatar").GetComponent<Image>();
+            rounded = CreateRoundedSprite();
+            ownAvatar = (RectTransform)transform.Find("PlayerBoxs/PlayerSelf/Avatar");
+            opponentAvatar = (RectTransform)transform.Find("PlayerBoxs/PlayerOther/Avatar");
+            var avatar = ownAvatar.GetComponent<Image>();
             avatar.raycastTarget = true;
             avatarButton = avatar.GetComponent<Button>() ?? avatar.gameObject.AddComponent<Button>();
             avatarButton.targetGraphic = avatar;
-            avatarButton.onClick.AddListener(OpenFromAvatar);
-            selfMessage = Bubble("SelfChat", .25f);
-            otherMessage = Bubble("OtherChat", .75f);
+            avatarButton.onClick.AddListener(Toggle);
+            selfMessage = Bubble("SelfChat", true);
+            otherMessage = Bubble("OtherChat", false);
             network.EquippedMessageReceived += Receive;
         }
-        void OpenFromAvatar() { page = 0; Open(); }
-        TMP_Text Bubble(string name, float x)
+
+        void Toggle()
         {
-            var root = Rect(name, transform, new Vector2(x, 1), new Vector2(0, -180), new Vector2(420, 96));
-            var image = root.gameObject.AddComponent<Image>(); image.color = new Color(.025f, .035f, .05f, .92f); image.raycastTarget = false;
-            var text = Label(Rect("Text", root, Vector2.one * .5f, Vector2.zero, new Vector2(395, 82)), "", 25);
-            root.gameObject.SetActive(false); return text;
+            if (popup) Close();
+            else { page = 0; Open(); }
         }
+
+        // Use avatar geometry in the HUD's local space, including Canvas scaling.
+        void Place(RectTransform box, RectTransform avatar, bool left)
+        {
+            var bottom = Panel.InverseTransformPoint(avatar.TransformPoint(new Vector2(avatar.rect.center.x, avatar.rect.yMin)));
+            float x = left ? bottom.x - 28 : bottom.x - box.rect.width + 28;
+            box.anchorMin = box.anchorMax = Panel.pivot;
+            box.pivot = new Vector2(0, 1);
+            box.anchoredPosition = new Vector2(Mathf.Clamp(x, Panel.rect.xMin + 6, Panel.rect.xMax - box.rect.width - 6), bottom.y - 10);
+        }
+
+        TMP_Text Bubble(string name, bool self)
+        {
+            var root = Rect(name, transform, 0, 0, 200, 54);
+            var tail = Rect("Tail", root, 0, 0, 18, 18);
+            tail.anchorMin = tail.anchorMax = new Vector2(self ? 0 : 1, 1);
+            tail.pivot = Vector2.one * .5f;
+            tail.anchoredPosition = new Vector2(self ? 28 : -28, -2);
+            tail.localRotation = Quaternion.Euler(0, 0, 45);
+            Fill(tail, Color.white, false, false);
+            var face = Rect("Face", root, 0, 0, 0, 0);
+            Stretch(face, 0); Fill(face, Color.white, false);
+            var label = Label(Rect("Text", root, 0, 0, 0, 0), "", 25, Ink);
+            Stretch(label.rectTransform, 9);
+            root.gameObject.SetActive(false);
+            return label;
+        }
+
         void Open()
         {
             Close();
             if (!network || !network.HasLegacyMatch || network.MatchEquipment == null) return;
-            popup = Rect("EquippedChatMenu", transform, Vector2.one * .5f, Vector2.zero, new Vector2(540, 620));
-            popup.gameObject.AddComponent<Image>().color = new Color(.035f, .04f, .055f, .98f);
-            Label(Rect("Title", popup, new Vector2(.5f, 1), new Vector2(0, -48), new Vector2(500, 45)), "장착한 메시지", 30);
-            var messages = network.MatchEquipment.Players[network.LegacyLocalSeat].Messages;
-            int total = messages.Length;
-            int pages = Mathf.Max(1, (total + 4) / 5); page = Mathf.Clamp(page, 0, pages - 1);
-            for (int i = 0; i < 5 && page * 5 + i < total; i++)
+            var profile = network.MatchEquipment.Players[network.LegacyLocalSeat];
+            var packs = profile.MessagePacks;
+            if ((packs == null || packs.Length == 0) && profile.Messages.Length > 0)
+                packs = new[] { new MatchMessagePack { Name = "보유 메시지", Indices = Enumerable.Range(0, profile.Messages.Length).ToArray() } };
+            int total = packs?.Length ?? 0;
+            int columns = Mathf.Clamp(Mathf.FloorToInt((Panel.rect.width - 36) / 218), 1, 3);
+            int start = page * columns;
+            int count = Mathf.Min(columns, total - start);
+            int rows = 1;
+            for (int i = 0; i < count; i++) rows = Mathf.Max(rows, Mathf.Min(4, packs[start+i].Indices.Length));
+            float width = Mathf.Min(244, (Panel.rect.width - 36) / columns - 8);
+            float height = 52 + rows * 45;
+            float outerWidth = count == 0 ? 330 : 24 + count * (width + 8);
+            popup = Rect("EquippedChatMenu", transform, 0, 0, outerWidth, height + 28 + (total > columns ? 42 : 0));
+            Fill(popup, Ink);
+            Place(popup, ownAvatar, true);
+            for (int i = 0; i < count; i++)
+                Card(packs[start+i], profile.Messages, i, width, height);
+            if (count == 0) Label(Rect("Empty", popup, 10, 10, outerWidth - 20, height), "보유한 메시지가 없습니다.", 23, Color.white);
+            if (total > columns)
             {
-                int index = page * 5 + i;
-                Button(Rect("Entry" + index, popup, new Vector2(.5f, 1), new Vector2(0, -112 - i * 65), new Vector2(485, 54)),
-                    messages[index], () =>
-                    {
-                        bool sent = network.SendEquippedMessage(index);
-                        if (sent) Close();
-                        else if (sendStatus) sendStatus.text = "잠시 후 다시 보내 주세요.";
-                    });
+                PageButton("이전", 16, -1, start > 0);
+                PageButton("다음", outerWidth - 90, 1, start + count < total);
             }
-            if (total == 0) Label(Rect("Empty", popup, Vector2.one * .5f, Vector2.zero, new Vector2(475, 160)), "다음 경기 전에 보유장비에서\n메시지 묶음을 장착해 주세요.", 27);
-            sendStatus = Label(Rect("SendStatus", popup, new Vector2(.5f, 0), new Vector2(0, 155), new Vector2(480, 32)), "", 20);
-            if (pages > 1)
-            {
-                Button(Rect("Prev", popup, new Vector2(.25f, 0), new Vector2(0, 105), new Vector2(140, 42)), "이전", () => { page = (page + pages - 1) % pages; Open(); });
-                Button(Rect("Next", popup, new Vector2(.75f, 0), new Vector2(0, 105), new Vector2(140, 42)), "다음", () => { page = (page + 1) % pages; Open(); });
-            }
-            Button(Rect("Close", popup, new Vector2(.5f, 0), new Vector2(0, 43), new Vector2(250, 48)), "닫기", Close);
         }
-        void Receive(int seat, string text)
+
+        void Card(MatchMessagePack pack, string[] messages, int column, float width, float height)
         {
+            var card = Rect("Pack" + column, popup, 16 + column * (width + 8), 14, width, height);
+            Fill(card, Color.white);
+            var title = Label(Rect("Name", card, 14, 3, width - 28, 41), pack.Name, 24, Ink);
+            title.fontStyle = FontStyles.Bold;
+            title.alignment = TextAlignmentOptions.MidlineLeft;
+            Fill(Rect("Divider", card, 14, 44, width - 28, 2), new Color32(203, 205, 211, 255), false, false);
+            var viewport = Rect("Rows", card, 6, 48, width - 12, height - 52);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            var content = Rect("Content", viewport, 0, 0, width - 12, pack.Indices.Length * 45);
+            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport; scroll.content = content; scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 30;
+            for (int i = 0; i < pack.Indices.Length; i++)
+            {
+                int index = pack.Indices[i];
+                var row = Rect("Entry" + index, content, 0, 45*i, width - 12, 43);
+                var bg = Fill(row, Color.white);
+                var label = Label(Rect("Label", row, 8, 0, width - 28, 43), messages[index], 22, Ink);
+                label.alignment = TextAlignmentOptions.MidlineLeft;
+                var button = row.gameObject.AddComponent<Button>();
+                button.transition = Selectable.Transition.None;
+                button.onClick.AddListener(() => { if (selection == null) selection = StartCoroutine(Send(index, bg)); });
+            }
+        }
+
+        IEnumerator Send(int index, Image row)
+        {
+            row.color = Gold;
+            yield return new WaitForSecondsRealtime(.15f);
+            selection = null;
+            if (network && network.SendEquippedMessage(index)) Close();
+            else
+            {
+                row.color = Color.white;
+                if (!status)
+                {
+                    var strip = Rect("Status", popup, 0, popup.rect.height, popup.rect.width, 34);
+                    Fill(strip, Ink);
+                    status = Label(Rect("Text", strip, 0, 0, strip.rect.width, 34), "잠시 후 다시 보내 주세요.", 18, Color.white);
+                }
+            }
+        }
+
+        void PageButton(string caption, float x, int direction, bool enabled)
+        {
+            var rect = Rect(caption, popup, x, popup.rect.height - 44, 74, 36);
+            var image = Fill(rect, enabled ? Color.white : Color.gray);
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = image; button.interactable = enabled;
+            button.onClick.AddListener(() => { page += direction; Open(); });
+            Label(Rect("Text", rect, 0, 0, 74, 36), caption, 19, Ink);
+        }
+
+        void Receive(int seat, string message)
+        {
+            if (!isActiveAndEnabled) return;
             bool self = seat == network.LegacyLocalSeat;
-            (self ? selfMessage : otherMessage).text = text;
-            (self ? selfMessage : otherMessage).transform.parent.gameObject.SetActive(true);
+            var label = self ? selfMessage : otherMessage;
+            var box = (RectTransform)label.transform.parent;
+            label.text = message;
+            float width = Mathf.Clamp(label.GetPreferredValues(message).x + 40, 125, Mathf.Min(420, Panel.rect.width - 16));
+            box.sizeDelta = new Vector2(width, Mathf.Max(54, label.GetPreferredValues(message, width - 18, Mathf.Infinity).y + 20));
+            Place(box, self ? ownAvatar : opponentAvatar, self);
+            box.gameObject.SetActive(true);
             if (self) selfUntil = Time.unscaledTime + 3; else otherUntil = Time.unscaledTime + 3;
         }
+
         void Update()
         {
             if (displayedMatch != network?.LegacyMatchId)
             {
-                displayedMatch = network?.LegacyMatchId; Close();
-                if (selfMessage) selfMessage.transform.parent.gameObject.SetActive(false);
-                if (otherMessage) otherMessage.transform.parent.gameObject.SetActive(false);
+                displayedMatch = network?.LegacyMatchId;
+                Clear();
             }
             if (selfMessage && Time.unscaledTime > selfUntil) selfMessage.transform.parent.gameObject.SetActive(false);
             if (otherMessage && Time.unscaledTime > otherUntil) otherMessage.transform.parent.gameObject.SetActive(false);
             if (popup && (!network || !network.HasLegacyMatch)) Close();
         }
-        void Close() { if (popup) { popup.gameObject.SetActive(false); Destroy(popup.gameObject); popup = null; } }
-        void OnDisable() => Close();
-        TMP_Text Label(RectTransform root, string value, int size)
+
+        void Close()
+        {
+            if (selection != null) { StopCoroutine(selection); selection = null; }
+            if (popup) { popup.gameObject.SetActive(false); Destroy(popup.gameObject); popup = null; }
+            status = null;
+        }
+        void Clear()
+        {
+            Close();
+            if (selfMessage) selfMessage.transform.parent.gameObject.SetActive(false);
+            if (otherMessage) otherMessage.transform.parent.gameObject.SetActive(false);
+        }
+        void OnDisable() => Clear();
+        static Sprite CreateRoundedSprite()
+        {
+            const int size = 32, radius = 12;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = Mathf.Max(0, Mathf.Abs(x + .5f - size / 2) - (size / 2 - radius));
+                    float dy = Mathf.Max(0, Mathf.Abs(y + .5f - size / 2) - (size / 2 - radius));
+                    byte alpha = (byte)(255 * Mathf.Clamp01(radius + .5f - Mathf.Sqrt(dx * dx + dy * dy)));
+                    pixels[y * size + x] = new Color32(255, 255, 255, alpha);
+                }
+            texture.SetPixels32(pixels); texture.Apply(false, true);
+            return Sprite.Create(texture, new Rect(0, 0, size, size), Vector2.one * .5f, 100, 0, SpriteMeshType.FullRect,
+                new Vector4(radius, radius, radius, radius));
+        }
+        Image Fill(RectTransform rect, Color color, bool raycast = true, bool curved = true)
+        {
+            var image = rect.gameObject.AddComponent<Image>();
+            image.color = color; image.raycastTarget = raycast;
+            if (curved) { image.sprite = rounded; image.type = Image.Type.Sliced; }
+            return image;
+        }
+        TMP_Text Label(RectTransform root, string value, int size, Color color)
         {
             var text = root.gameObject.AddComponent<TextMeshProUGUI>(); text.font = font;
-            text.text = value; text.richText = false; text.fontSize = size; text.alignment = TextAlignmentOptions.Center;
-            text.color = Color.white; text.raycastTarget = false; text.enableAutoSizing = true; text.fontSizeMin = 18; text.fontSizeMax = size;
+            text.text = value; text.richText = false; text.alignment = TextAlignmentOptions.Center;
+            text.color = color; text.raycastTarget = false; text.enableAutoSizing = true; text.fontSizeMin = 15; text.fontSizeMax = size;
             return text;
         }
-        void Button(RectTransform root, string text, UnityEngine.Events.UnityAction action)
+        static void Stretch(RectTransform rect, float inset)
         {
-            var image = root.gameObject.AddComponent<Image>(); image.color = new Color(.16f, .2f, .27f);
-            var button = root.gameObject.AddComponent<Button>(); button.targetGraphic = image; button.onClick.AddListener(action);
-            Label(Rect("Label", root, Vector2.one * .5f, Vector2.zero, root.sizeDelta - new Vector2(12, 4)), text, 25);
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.one * inset; rect.offsetMax = -Vector2.one * inset;
         }
-        static RectTransform Rect(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size)
+        static RectTransform Rect(string name, Transform parent, float x, float y, float width, float height)
         {
             var rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>(); rect.SetParent(parent, false);
             rect.gameObject.layer = parent.gameObject.layer;
-            rect.anchorMin = rect.anchorMax = anchor; rect.pivot = Vector2.one * .5f; rect.anchoredPosition = position; rect.sizeDelta = size;
+            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.up;
+            rect.anchoredPosition = new Vector2(x, -y); rect.sizeDelta = new Vector2(width, height);
             return rect;
         }
         void OnDestroy()
         {
-            if (avatarButton) avatarButton.onClick.RemoveListener(OpenFromAvatar);
+            if (avatarButton) avatarButton.onClick.RemoveListener(Toggle);
             if (network) network.EquippedMessageReceived -= Receive;
+            if (rounded) { Destroy(rounded.texture); Destroy(rounded); }
         }
     }
 }

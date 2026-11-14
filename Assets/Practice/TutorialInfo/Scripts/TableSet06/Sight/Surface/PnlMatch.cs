@@ -208,7 +208,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         {
             Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             if (!PoolCoach.Instance.isRulePractice || finishReturnRoutine != null) return;
-            matchFinish.PracticeResultView(PoolPlayer.currentPlayer.name, PoolCoach.Instance.targetHit);
+            matchFinish.PracticeResultView(PoolPlayer.currentPlayer.name, PoolCoach.Instance.targetHit, PoolCoach.Instance.PracticeTimedOut);
             finishReturnRoutine = StartCoroutine(ReturnAfterPracticeFinish());
         }
 
@@ -221,7 +221,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         private void FixedUpdate()
         {
-            PoolCoach.Instance.Update(Time.fixedDeltaTime);
+            var coach = PoolCoach.Instance;
+            coach.Update(Time.fixedDeltaTime);
+            if (coach.isRulePractice && (!PoolLogic.gameState.gameIsComplete || coach.PracticeTimedOut))
+                DisplayClock(Mathf.CeilToInt((float)coach.PracticeSecondsLeft));
 
         }
 
@@ -472,15 +475,20 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         void PoolCoach_OnUpdateTime(float timeProc)
         {
-            int seconds = Mathf.CeilToInt(PoolCoach.Instance.maxPlayTime * (1f - Mathf.Clamp01(timeProc)));
+            if (!PoolCoach.Instance.isRulePractice)
+                DisplayClock(Mathf.CeilToInt(PoolCoach.Instance.maxPlayTime * (1f - Mathf.Clamp01(timeProc))));
+            float ing = Mathf.Lerp(inningWidthMax, 0, timeProc);
+            RectTransform bar = PoolPlayer.turnId == 0 ? rectInningBarSelf : rectInningBarOther;
+            bar.sizeDelta = new Vector2(ing, inningHeightMax);
+        }
+
+        void DisplayClock(int seconds)
+        {
             if (txtTime && seconds != displayedSeconds)
             {
                 displayedSeconds = seconds;
                 txtTime.text = $"{seconds / 60:00}:{seconds % 60:00}";
             }
-            float ing = Mathf.Lerp(inningWidthMax, 0, timeProc);
-            RectTransform bar = PoolPlayer.turnId == 0 ? rectInningBarSelf : rectInningBarOther;
-            bar.sizeDelta = new Vector2(ing, inningHeightMax);
         }
 
         void btnMatchEnd_Click()

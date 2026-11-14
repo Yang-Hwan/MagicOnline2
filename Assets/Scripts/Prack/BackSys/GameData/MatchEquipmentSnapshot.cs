@@ -18,6 +18,7 @@ namespace Assets.Scripts.Prack.BackSys.GameData
         public int Power, FollowThrough, Tip, ShotSeconds;
         public MatchEquipmentEmotion[] Emotions = Array.Empty<MatchEquipmentEmotion>();
         public string[] Messages = Array.Empty<string>();
+        public MatchMessagePack[] MessagePacks = Array.Empty<MatchMessagePack>();
         public float PowerScale => 1 + Clamp(Power, -40, 20) / 100f;
         public float TipScale => 1 + Clamp(Tip, -10, 10) / 100f;
         public float EffectiveFollow(float value) => Math.Max(0, Math.Min(1, value * (1 + Clamp(FollowThrough, -40, 20) / 100f)));
@@ -25,4 +26,9 @@ namespace Assets.Scripts.Prack.BackSys.GameData
         static int Clamp(int n, int min, int max) => Math.Max(min, Math.Min(max, n));
     }
     [Serializable] public sealed class MatchEquipmentEmotion { public string Code = "", Asset = ""; }
+    [Serializable] public sealed class MatchMessagePack
+    {
+        public string Name = "";
+        public int[] Indices = Array.Empty<int>();
+    }
 }

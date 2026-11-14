@@ -32,7 +32,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         Button undoButton;
         RectTransform undoButtonRect;
         public bool CanUndoShot => undoSnapshot != null && !IsBallPlacement &&
-            IsLocalPractice && HasItemAuthority && !scatterPending && !shotController.IsShotAnimating;
+            IsLocalPractice && !PoolCoach.Instance.PracticeTimedOut && HasItemAuthority && !scatterPending && !shotController.IsShotAnimating;
 
         void CaptureUndoState()
         {

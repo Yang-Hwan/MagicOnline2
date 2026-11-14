@@ -43,7 +43,7 @@ namespace Assets.Scripts.Often
 
         public static MatchConfiguration Practice(int ballCount, bool replay = false) =>
             new MatchConfiguration(replay ? MatchExecutionMode.Replay : MatchExecutionMode.LocalPractice,
-                ballCount, 0, 7, ballCount == 3 ? 3 : 0, replay ? 300 : 20 * 60, replay ? 20 : 20 * 60,
+                ballCount, 0, 7, ballCount == 3 ? 3 : 0, replay ? 300 : 20 * 60, replay ? 20 : 30,
                 // Practice ball 1 is yellow. Preserve the existing replay default.
                 replay ? 0 : 1, 0, "Player 1", "Player 2");
 

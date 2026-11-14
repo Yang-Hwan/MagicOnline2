@@ -55,9 +55,12 @@ public sealed class MatchEquipment(Database db)
         using var doc = JsonDocument.Parse((string)(await cmd.ExecuteScalarAsync())!);
         var profile = new MatchEquipmentProfile { UserId = user.ToString() };
         var messages = new List<string>();
-        foreach (var p in doc.RootElement.GetProperty("Products").EnumerateArray().Where(p => p.GetProperty("Equipped").GetBoolean()))
+        var packs = new List<MatchMessagePack>();
+        foreach (var p in doc.RootElement.GetProperty("Products").EnumerateArray())
         {
-            switch (p.GetProperty("Kind").GetString())
+            var kind = p.GetProperty("Kind").GetString();
+            if (kind != "MessagePack" && !p.GetProperty("Equipped").GetBoolean()) continue;
+            switch (kind)
             {
                 case "Cue":
                     profile.CueVisual = p.GetProperty("Visual").GetString() ?? "";
@@ -67,10 +70,20 @@ public sealed class MatchEquipment(Database db)
                     profile.CharacterId = p.GetProperty("Id").GetInt64();
                     profile.Emotions = JsonSerializer.Deserialize<MatchEquipmentEmotion[]>(p.GetProperty("Emotions").GetRawText(), Database.Json)!; break;
                 case "MessagePack":
-                    messages.AddRange(p.GetProperty("Messages").EnumerateArray().Select(m => m.GetString()!)); break;
+                    var indices = new List<int>();
+                    foreach (var item in p.GetProperty("Messages").EnumerateArray())
+                    {
+                        string message = item.GetString()!;
+                        int index = messages.IndexOf(message);
+                        if (index < 0) { index = messages.Count; messages.Add(message); }
+                        indices.Add(index);
+                    }
+                    if (indices.Count > 0) packs.Add(new MatchMessagePack { Name = p.GetProperty("Name").GetString()!, Indices = indices.ToArray() });
+                    break;
             }
         }
-        profile.Messages = messages.Distinct(StringComparer.Ordinal).ToArray();
+        profile.Messages = messages.ToArray();
+        profile.MessagePacks = packs.ToArray();
         return profile;
     }
 }

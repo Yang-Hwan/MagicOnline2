@@ -80,6 +80,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
         public Assets.Scripts.Often.MatchConfiguration Configuration { get; private set; } =
             Assets.Scripts.Often.PracticeSceneFlow.Configuration;
         public bool isRulePractice => Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.LocalPractice;
+        public double PracticeSecondsLeft { get; private set; }
+        public bool PracticeTimedOut => isRulePractice && PracticeSecondsLeft <= 0;
         public int practiceAttempts { get; private set; }
         public int practiceStreak { get; private set; }
 
@@ -249,6 +251,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
             hitReward = 100;
             targetHit = configuration.TargetScore;
             timeMatchSec = configuration.MatchSeconds;
+            PracticeSecondsLeft = timeMatchSec;
             timeInningSec = configuration.TurnSeconds;
             matchBall = (MatchBall)configuration.BallCount;
             matchCushion = (MatchCushion)configuration.CushionCount;
@@ -336,7 +339,22 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
         public void Update(float deltaTime)
         {
             if (Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.OnlineMatch) return;
-            if (!isMatchTimePlay || PoolLogic.gameState.gameIsComplete || _physicsMng.inMove || _shotCtrl.IsShotAnimating) return;
+            if (!isMatchTimePlay || PoolLogic.gameState.gameIsComplete) return;
+            if (isRulePractice)
+            {
+                PracticeSecondsLeft = System.Math.Max(0, PracticeSecondsLeft - deltaTime);
+                if (PracticeTimedOut)
+                {
+                    calculateTime = false;
+                    PoolLogic.gameState.gameIsComplete = true;
+                    ShotCtrl.canControl = false;
+                    _shotCtrl.CuePutAside();
+                    SetMatchInfo("연습 시간 종료");
+                    OnMatchComplite?.Invoke();
+                    return;
+                }
+            }
+            if (_physicsMng.inMove || _shotCtrl.IsShotAnimating) return;
 
             if (calculateTime)
             {
@@ -478,6 +496,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
         // 공의 움직임 모두 멈추었을때(볼뿌리기 포함)
         void PhysicsManager_OnBallAllStop(string data)
         {
+            if (PracticeTimedOut) return;
             Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             // Online results/turns belong to the result protocol, never local practice completion.
             if (Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.OnlineMatch) return;

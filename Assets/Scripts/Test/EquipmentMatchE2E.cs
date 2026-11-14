@@ -144,7 +144,7 @@ public sealed class EquipmentMatchE2E : MonoBehaviour
             await Until(()=>PortraitIs(0,"기본") && PortraitIs(1,"기본"),10,"both equipped neutral portraits"); report.NeutralImages=true; Stage("ready");
             await Until(()=>Peer()?.MatchId==report.MatchId && Peer()?.NeutralImages==true,40,"both clients ready");
             await Screenshot("neutral");
-            Click("PlayerBoxs/PlayerSelf/Avatar"); await Task.Delay(100); Click("EquippedChatMenu/Entry0");
+            Click("PlayerBoxs/PlayerSelf/Avatar"); await Task.Delay(100); Click("EquippedChatMenu/Pack0/Rows/Content/Entry0");
             await Until(()=>report.LocalMessage && report.RemoteMessage,20,"selected messages on both screens"); await Screenshot("messages");
             Stage("shots");
             var deadline=DateTime.UtcNow.AddSeconds(130);

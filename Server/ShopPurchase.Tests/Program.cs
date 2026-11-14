@@ -149,14 +149,16 @@ try
     var snapshot = await frozen.Read(match, b);
     Check(snapshot.Players[0].CueId == 1 && snapshot.Players[0].Power == 20 && snapshot.Players[1].Power == 20, "both players share frozen server cue stats including hidden owned items");
     Check(snapshot.Players[0].CharacterId == 2 && snapshot.Players[0].Emotions.Length == 9, "selected character includes nine frozen images");
-    Check(snapshot.Players[0].Messages.SequenceEqual(new[] { "안녕하세요.", "감사합니다." }) && snapshot.Players[1].Messages.Length == 0, "only selected message packs included in stable order");
+    Check(snapshot.Players[0].Messages.SequenceEqual(new[] { "안녕하세요.", "감사합니다." }) && snapshot.Players[1].Messages.Length == 0, "only owned messages included in stable order");
+    Check(snapshot.Players[0].MessagePacks.Select(p => p.Name).SequenceEqual(new[] { "messages", "second messages" }) &&
+        snapshot.Players[0].MessagePacks.SelectMany(p => p.Indices).SequenceEqual(new[] { 0, 1 }), "pack labels and wire indices match catalog order");
     await equipment.Set(a, new("Cue", 9, true));
     await equipment.Set(a, new("MessagePack", 3, false));
     await Sql("UPDATE shop_cues SET power_pct=-40 WHERE product_id=1; UPDATE shop_messages SET message='changed' WHERE product_id=3");
     var unchanged = await frozen.Freeze(match, a, b);
     Check(unchanged.Players[0].CueId == 1 && unchanged.Players[0].Power == 20 && unchanged.Players[0].Messages[0] == "안녕하세요.", "equipment and admin changes never mutate active match snapshot");
     var nextMatch = await frozen.Freeze(Guid.NewGuid().ToString("N"), a, b);
-    Check(nextMatch.Players[0].CueId == 9 && nextMatch.Players[1].Power == -40 && nextMatch.Players[0].Messages.SequenceEqual(new[] { "감사합니다." }), "next match uses latest equipment and catalog");
+    Check(nextMatch.Players[0].CueId == 9 && nextMatch.Players[1].Power == -40 && nextMatch.Players[0].Messages.SequenceEqual(new[] { "changed", "감사합니다." }), "next match includes owned unequipped pack and current catalog");
     try { await frozen.Read(match, poor); throw new Exception("Expected nonparticipant denial"); }
     catch (ApiFault error) { Check(error.Status == 404, "only match participants read equipment snapshot"); }
     try { await frozen.Freeze(match, b, a); throw new Exception("Expected participant conflict"); }

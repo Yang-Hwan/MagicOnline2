@@ -171,12 +171,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         void OnDisable() => ClearLevelUp();
 
 
-        public void PracticeResultView(string winnerName, int targetHit)
+        public void PracticeResultView(string winnerName, int targetHit, bool timedOut = false)
         {
             BindView();
             rectTransform.anchoredPosition = Vector2.zero;
-            txtResult.text = "승리하였습니다";
-            txtBrief.text = $"{winnerName} · 목표 {targetHit}점 달성";
+            txtResult.text = timedOut ? "연습 종료" : "승리하였습니다";
+            txtBrief.text = timedOut ? "연습 시간이 종료되었습니다" : $"{winnerName} · 목표 {targetHit}점 달성";
             ShowResultArtwork(txtResult.text);
             transform.parent.SetAsLastSibling();
             transform.SetAsLastSibling();
