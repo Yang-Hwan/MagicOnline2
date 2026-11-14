@@ -76,7 +76,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             try
             {
                 var state=NormalizeGuildState(await GameApiClient.Request<GuildState>(GuildApi+"/me"));if(!GuildCurrent(version))return;
-                bool redraw=guildState==null || GuildId!=state.Guild?.Id || guildState.Guild?.MyRole!=state.Guild?.MyRole;
+                bool redraw=guildState==null || GuildId!=state.Guild?.Id || guildState.Guild?.MyRole!=state.Guild?.MyRole || guildState.Guild?.EmblemId!=state.Guild?.EmblemId;
                 if(GuildId!=state.Guild?.Id){guildLeague=null;guildRoot.GetComponent<MatchPlayerInfoWindow>()?.Close();guildMessages.Clear();guildMembers=new GuildMembers();guildMembersHash=null;guildChatDraft="";guildMemberPage=0;}
                 guildState=state;if(state.Guild==null)guildTab=2;
                 if(redraw)DrawGuild();else RefreshGuildSummary();
@@ -126,7 +126,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             var info=guildState.Guild;if(info==null)return;
             var summary=GPanel("GuildIdentity",guildBody,0,0,450,550);
-            var emblem=Node("GuildEmblem",summary,25,20,175,175).gameObject.AddComponent<GuildEmblemGraphic>();emblem.raycastTarget=false;
+            var emblem=Node("GuildEmblem",summary,25,20,175,175).gameObject.AddComponent<GuildEmblemGraphic>();emblem.SetDesign(info.EmblemId);
             Text("Tag",summary,"["+info.Tag+"]",206,25,220,40,28,Color.cyan,TextAlignmentOptions.MidlineLeft);
             Text("GuildName",summary,info.Name,206,70,220,68,38,Color.white,TextAlignmentOptions.MidlineLeft,true);
             Text("Description",summary,info.Description,26,205,398,75,25,Color.white,TextAlignmentOptions.TopLeft,true);
@@ -250,7 +250,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             for(int i=0;i<guildSearch.Rows.Length;i++)
             {
                 var g=guildSearch.Rows[i];var row=GPanel("Guild"+g.Id,content,0,i*127,1514,117);
-                Node("Emblem",row,16,10,96,96).gameObject.AddComponent<GuildEmblemGraphic>().raycastTarget=false;
+                Node("Emblem",row,16,10,96,96).gameObject.AddComponent<GuildEmblemGraphic>().SetDesign(g.EmblemId);
                 Text("Name",row,"["+g.Tag+"] "+g.Name,135,9,610,46,31,Color.white,TextAlignmentOptions.MidlineLeft,true);
                 Text("Description",row,g.Description,135,60,645,40,23,Color.gray,TextAlignmentOptions.MidlineLeft,true);
                 Text("Members",row,g.MemberCount+" / 30명 · 접속 중 "+g.OnlineCount+"명",788,10,400,43,25,Color.white);

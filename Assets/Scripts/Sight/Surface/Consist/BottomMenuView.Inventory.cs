@@ -109,6 +109,12 @@ namespace Assets.Scripts.Sight.Surface.Consist
             try
             {
                 await GameApiClient.Request<object>("/api/me/equipment", "POST", new ShopEquipmentInput { Slot = product.Kind, ProductId = product.Id, Equipped = desired });
+                if (product.Kind == "Character" && this && isActiveAndEnabled && owner == GameApiClient.UserId)
+                {
+                    headerRequest++;
+                    headerOwner = owner;
+                    ShowHeaderCharacter(desired ? product : null);
+                }
                 // Render only a fresh server snapshot, including changes made by another device.
                 var result = await GameApiClient.Request<ShopCatalogData>("/api/me/inventory");
                 if (!InventoryCurrent(request, panel)) return;

@@ -54,6 +54,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             Text("Guild",panel,"["+g.Tag+"] "+g.Name,35,83,1040,48,32,Yellow,TextAlignmentOptions.MidlineLeft,true);
             if(GuildManager)
             {
+                GButton("문장 변경",panel,40,321,490,48,GuildEmblemForm);
                 GButton("공지·소개 수정",panel,40,154,490,62,GuildEditForm);
                 GButton("길드 초대",panel,570,154,490,62,GuildInviteSearch);
                 GButton("가입 신청 "+guildState.Applications.Length+"건",panel,40,247,490,62,GuildApplications);
@@ -64,6 +65,34 @@ namespace Assets.Scripts.Sight.Surface.Consist
             Text("LeaveNote",panel,warning,40,365,1020,95,24,Color.gray,autoSize:true);
             GButton("길드 탈퇴",panel,660,508,400,58,()=>GuildConfirm("길드 탈퇴",g.MemberCount==1?"마지막 길드원입니다. 탈퇴하면 길드가 해산됩니다.\n탈퇴하시겠습니까?":"["+g.Tag+"] "+g.Name+" 길드에서 탈퇴하시겠습니까?",()=>GuildAction(()=>GameApiClient.Request<object>(GuildApi+"/"+g.Id+"/leave","POST"),"길드에서 탈퇴했습니다.")));
         }
+        void GuildEmblemForm()
+        {
+            var guild = guildState.Guild;
+            var panel = GuildForm("길드 문장 선택");
+            string[] names = { "클래식 캐롬", "금빛 별", "번개", "왕관", "에메랄드", "황금 날개" };
+            int selected = guild.EmblemId;
+            var borders = new UnityEngine.UI.Image[GuildEmblems.Count];
+            for (int i = 0; i < borders.Length; i++)
+            {
+                int id = i;
+                float x = 60 + i % 3 * 340, y = 89 + i / 3 * 180;
+                borders[i] = Box("Outline"+i,panel,x,y,310,165,i == selected ? Yellow : Color.gray);
+                Box("Card"+i,panel,x+3,y+3,304,159,GuildInk);
+                Node("Preview"+i,panel,x+99,y+8,112,112).gameObject.AddComponent<GuildEmblemGraphic>().SetDesign(i);
+                Text("Label"+i,panel,names[i],x,y+119,310,42,23,Color.white);
+                Hit("Select"+i,panel,x,y,310,165,() => {
+                    borders[selected].color = Color.gray;
+                    selected = id;
+                    borders[selected].color = Yellow;
+                });
+            }
+            GButton("문장 저장",panel,760,500,310,58,()=>GuildAction(()=>
+                GameApiClient.Request<object>(GuildApi+"/"+guild.Id,"PUT",new GuildEdit {
+                    Revision=guild.Revision, Description=guild.Description, Notice=guild.Notice,
+                    JoinMode=guild.JoinMode, EmblemId=selected
+                }),"길드 문장을 저장했습니다."),true,true);
+        }
+
         void GuildEditForm()
         {
             var g=guildState.Guild;var panel=GuildForm("공지·길드 소개 수정");string mode=g.JoinMode;

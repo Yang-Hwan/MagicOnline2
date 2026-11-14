@@ -9,10 +9,10 @@ public sealed partial class Guilds
             (SELECT count(*) FROM guild_members x JOIN friend_presence p ON p.user_id=x.user_id JOIN users u ON u.id=x.user_id WHERE x.guild_id=g.id AND NOT u.disabled AND p.seen_at>=now()-interval '40 seconds'),
             COALESCE((SELECT u.nickname FROM guild_members x JOIN users u ON u.id=x.user_id WHERE x.guild_id=g.id AND x.role='Leader'),''),
             COALESCE((SELECT role FROM guild_members WHERE guild_id=g.id AND user_id=$1),''),
-            EXISTS(SELECT FROM guild_applications WHERE guild_id=g.id AND user_id=$1 AND state='pending')
+            EXISTS(SELECT FROM guild_applications WHERE guild_id=g.id AND user_id=$1 AND state='pending'), g.emblem_id
         FROM guilds g
         """;
-    static GuildInfo Info(NpgsqlDataReader r)=>new(){Id=r.GetGuid(0).ToString(),Name=r.GetString(1),Tag=r.GetString(2),Description=r.GetString(3),Notice=r.GetString(4),JoinMode=r.GetString(5),Revision=r.GetInt32(6),MemberCount=checked((int)r.GetInt64(7)),OnlineCount=checked((int)r.GetInt64(8)),LeaderName=r.GetString(9),MyRole=r.GetString(10),ApplicationPending=r.GetBoolean(11)};
+    static GuildInfo Info(NpgsqlDataReader r)=>new(){Id=r.GetGuid(0).ToString(),Name=r.GetString(1),Tag=r.GetString(2),Description=r.GetString(3),Notice=r.GetString(4),JoinMode=r.GetString(5),Revision=r.GetInt32(6),MemberCount=checked((int)r.GetInt64(7)),OnlineCount=checked((int)r.GetInt64(8)),LeaderName=r.GetString(9),MyRole=r.GetString(10),ApplicationPending=r.GetBoolean(11),EmblemId=r.GetInt32(12)};
     public async Task<GuildState> Mine(Guid user)
     {
         await using var c=await db.Source.OpenConnectionAsync();var state=new GuildState();

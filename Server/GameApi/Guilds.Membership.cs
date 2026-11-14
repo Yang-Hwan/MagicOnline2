@@ -75,9 +75,10 @@ public sealed partial class Guilds
     }
     public async Task Edit(Guid actor,Guid guild,GuildEdit input)
     {
+        if (input.EmblemId < -1 || input.EmblemId >= GuildEmblems.Count) throw new ApiFault(400,"길드 문장을 확인해 주세요.");
         string description=Clean(input.Description,0,100,"소개"),notice=Clean(input.Notice,0,300,"공지",true);Mode(input.JoinMode);
         await using var c=await db.Source.OpenConnectionAsync();await using var tx=await c.BeginTransactionAsync();await Gate(c,actor);await LockGuild(c,guild);await Member(c,actor,guild,true);
-        await using(var q=Database.Command(c,"UPDATE guilds SET description=$3,notice=$4,join_mode=$5,revision=revision+1 WHERE id=$1 AND revision=$2",guild,input.Revision,description,notice,input.JoinMode))
+        await using(var q=Database.Command(c,"UPDATE guilds SET description=$3,notice=$4,join_mode=$5,emblem_id=CASE WHEN $6=-1 THEN emblem_id ELSE $6 END,revision=revision+1 WHERE id=$1 AND revision=$2",guild,input.Revision,description,notice,input.JoinMode,input.EmblemId))
             if(await q.ExecuteNonQueryAsync()!=1)throw new ApiFault(409,"다른 운영자가 수정했습니다. 새로고침 후 다시 시도해 주세요.");
         await Audit(c,guild,actor,"Edited");await tx.CommitAsync();
     }

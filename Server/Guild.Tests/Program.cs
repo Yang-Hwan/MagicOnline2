@@ -52,6 +52,13 @@ try
     await Fail(()=>g.Edit(b,guild,edit),403,"notice editing requires manager");
     await g.Edit(a,guild,edit);await Fail(()=>g.Edit(a,guild,edit),409,"notice revision prevents lost updates");
     Check((await g.Mine(b)).Guild.Notice==edit.Notice,"multiline notice persisted");
+    edit.Revision=(await g.Mine(a)).Guild.Revision;
+    edit.EmblemId=GuildEmblems.Count;
+    await Fail(()=>g.Edit(a,guild,edit),400,"unknown emblem rejected");
+    edit.EmblemId=5;
+    await Fail(()=>g.Edit(b,guild,edit),403,"member cannot change emblem");
+    await g.Edit(a,guild,edit);
+    Check((await g.Mine(b)).Guild.EmblemId==5 && (await g.Search(c,"승부","",0)).Rows.Single().EmblemId==5,"saved emblem visible to members and search");
     await g.Join(d,guild);Check((await g.Mine(d)).Guild.Id==guild.ToString(),"open mode joins immediately");
     await friends.Poll(a,true);await friends.Poll(b,true);await friends.Poll(c,false);
     var roster=await g.Members(a,guild);

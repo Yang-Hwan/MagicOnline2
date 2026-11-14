@@ -5,7 +5,7 @@ namespace Assets.Scripts.Prack.BackSys.GameData
     [Serializable] public sealed class GuildInfo
     {
         public string Id,Name,Tag,Description,Notice,JoinMode,MyRole,LeaderName;
-        public int MemberCount,OnlineCount,Revision;
+        public int MemberCount,OnlineCount,Revision,EmblemId;
         public bool ApplicationPending;
     }
     [Serializable] public sealed class GuildState
@@ -23,7 +23,8 @@ namespace Assets.Scripts.Prack.BackSys.GameData
     [Serializable] public sealed class GuildChat { public GuildMessage[] Rows=Array.Empty<GuildMessage>(); }
     [Serializable] public sealed class GuildReply { public string Message,GuildId; public bool Joined; }
     [Serializable] public sealed class GuildCreate { public string Name,Tag,Description,JoinMode,RequestId; }
-    [Serializable] public sealed class GuildEdit { public string Description,Notice,JoinMode; public int Revision; }
+    public static class GuildEmblems { public const int Count = 6; }
+    [Serializable] public sealed class GuildEdit { public int EmblemId = -1; public string Description,Notice,JoinMode; public int Revision; }
     [Serializable] public sealed class GuildChoice { public bool Accept; }
     [Serializable] public sealed class GuildInviteInput { public string UserId; }
     [Serializable] public sealed class GuildRoleInput { public string Role; }

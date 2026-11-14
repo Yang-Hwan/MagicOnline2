@@ -29,7 +29,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             if(leagueTab==0)
             {
                 var card=GPanel("LeagueGuild",guildBody,0,108,434,442);
-                Node("Emblem",card,25,16,130,130).gameObject.AddComponent<GuildEmblemGraphic>();
+                Node("Emblem",card,25,16,130,130).gameObject.AddComponent<GuildEmblemGraphic>().SetDesign(guildState.Guild.EmblemId);
                 Text("Guild",card,"["+guildState.Guild.Tag+"]\n"+guildState.Guild.Name,170,22,240,110,30,Color.white,autoSize:true);
                 Text("Tier",card,own.Tier,22,160,390,62,42,Yellow);
                 Text("Points",card,$"{own.Points:N0}점   ·   전체 {own.Rank}위",22,240,390,50,30,Color.white);

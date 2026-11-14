@@ -10,6 +10,8 @@ using Assets.Scripts.Often;
 using Assets.Scripts.Prack.BackSys;
 using Assets.Scripts.Prack.BackSys.ChartData;
 using Assets.Scripts.Sight.Surface.Arise;
+using Assets.Scripts.Sight.Surface.Pavilion;
+using Assets.Scripts.Prack.BackSys.GameData;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -31,6 +33,10 @@ namespace Assets.Scripts.Sight.Surface.Consist
         TMP_FontAsset font;
         Material textMaterial;
         TMP_Text nickname, level, gems, coins;
+        EquipmentPortrait headerPortrait;
+        Sprite headerFallback;
+        string headerOwner;
+        int headerRequest;
         RawImage backplate, navIcon;
         RoomSwipe legacyRooms;
         NetworkEngine subscribedNetwork;
@@ -83,6 +89,15 @@ namespace Assets.Scripts.Sight.Surface.Consist
             // A shared header/footer avoids any generative drift between pages.
             Crop("SharedHeader", design, plates[0], new Rect(0, 0, Width, 127));
             Crop("SharedFooter", design, plates[0], new Rect(0, 837, Width, 104));
+            var avatarArea = new Rect(60, 17, 97, 97);
+            var uv = UV(avatarArea);
+            var plate = plates[0];
+            headerFallback = Sprite.Create(plate, new Rect(uv.x * plate.width, uv.y * plate.height,
+                uv.width * plate.width, uv.height * plate.height), Vector2.one * .5f, 100, 0, SpriteMeshType.FullRect);
+            var frame = Box("AvatarBackground", design, avatarArea.x, avatarArea.y, avatarArea.width, avatarArea.height, new Color(.09f, .1f, .13f));
+            var avatar = Box("EquippedAvatar", frame.transform, 0, 0, avatarArea.width, avatarArea.height, Color.white);
+            avatar.sprite = headerFallback;
+            headerPortrait = avatar.gameObject.AddComponent<EquipmentPortrait>();
             nickname = Text("Nickname", design, "", 187, 15, 430, 52, 39, Color.white, TextAlignmentOptions.MidlineLeft);
             nickname.enableAutoSizing = true; nickname.fontSizeMin = 22; nickname.fontSizeMax = 39;
             Box("ProgressTrack", design, 185, 73, 373, 27, new Color(.05f, .05f, .05f));
@@ -353,6 +368,8 @@ namespace Assets.Scripts.Sight.Surface.Consist
         void RefreshUser()
         {
             if (!initialized) return;
+            if (Application.isPlaying && headerOwner != GameApiClient.UserId)
+                ReadHeaderPortrait(GameApiClient.UserId);
             var data = BackendGame.Instance.UserMainData;
             nickname.text = string.IsNullOrWhiteSpace(UserInfo.DisplayName) ? "플레이어" : UserInfo.DisplayName;
             level.text = "Lv." + data.LvVel;
@@ -360,6 +377,31 @@ namespace Assets.Scripts.Sight.Surface.Consist
             coins.text = data.Coin.ToString("N0", CultureInfo.InvariantCulture);
             int perLevel = BackendChart.commonCodeData.FirstOrDefault(c => c.ComCd == "LvPlayMax" && c.IsUse == "Y")?.ComVal ?? 0;
             progress.sizeDelta = new Vector2(274 * (perLevel > 0 ? Mathf.Clamp01((float)data.LvProc / perLevel) : 0), 14);
+        }
+        async void ReadHeaderPortrait(string owner)
+        {
+            headerOwner = owner;
+            int request = ++headerRequest;
+            ShowHeaderCharacter(null);
+            if (string.IsNullOrEmpty(owner)) return;
+            try
+            {
+                var inventory = await GameApiClient.Request<ShopCatalogData>("/api/me/inventory");
+                if (this && isActiveAndEnabled && request == headerRequest && owner == GameApiClient.UserId)
+                    ShowHeaderCharacter(inventory?.Products?.FirstOrDefault(p => p.Kind == "Character" && p.Equipped));
+            }
+            catch (Exception)
+            {
+                if (this && request == headerRequest) headerOwner = null;
+            }
+        }
+
+        void ShowHeaderCharacter(ShopProductData character)
+        {
+            string asset = character?.Emotions?.FirstOrDefault(e => e.Code == "기본")?.Asset;
+            if (string.IsNullOrWhiteSpace(asset)) asset = character?.Thumbnail;
+            headerPortrait.SetProfile(new MatchEquipmentProfile { Emotions = new[] { new MatchEquipmentEmotion { Code = "기본", Asset = asset } } });
+            headerPortrait.Show("기본", headerFallback);
         }
         void UserDataChanged() { RefreshUser(); if (CurrentPage == 2 || CurrentPage == 3) SelectPage(CurrentPage); }
         void RoomCountsChanged(Dictionary<int, int> counts)
@@ -381,6 +423,8 @@ namespace Assets.Scripts.Sight.Surface.Consist
         void OnEnable() { FriendSocial.Menu=this; if(FriendSocial.Instance){FriendSocial.Instance.FriendsChanged+=RefreshFriends;FriendSocial.Instance.GuildChanged+=RefreshGuild;} if (initialized) { RefreshUser(); Subscribe(); nextWalletRefresh = 0; if (CurrentPage == 2) CheckBustOnMultiplayerEntry(); RefreshWalletFromServer(); } }
         void OnDisable()
         {
+            headerRequest++;
+            headerOwner = null;
             if(FriendSocial.Menu==this)FriendSocial.Menu=null;
             if(FriendSocial.Instance)FriendSocial.Instance.FriendsChanged-=RefreshFriends;
             if(FriendSocial.Instance)FriendSocial.Instance.GuildChanged-=RefreshGuild;
@@ -487,6 +531,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         void OnDestroy()
         {
             ReleaseShopTextures();
+            if (headerFallback) { if (Application.isPlaying) Destroy(headerFallback); else DestroyImmediate(headerFallback); }
             if (textMaterial) { if (Application.isPlaying) Destroy(textMaterial); else DestroyImmediate(textMaterial); }
         }
         public void Resize()
