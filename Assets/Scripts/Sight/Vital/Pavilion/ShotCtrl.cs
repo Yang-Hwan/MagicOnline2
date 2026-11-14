@@ -238,7 +238,11 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void InputOutput_OnMouseState(MouseState mouseState)
         {
-            if (!canControl) return;
+            if (!canControl || MatchPlayerInfoWindow.IsOpen || IsShotAnimating || inMove || physicsManager.inMove || physicsManager.IsResolvingShot)
+            {
+                _targetEquip = TargetEquip.None;
+                return;
+            }
 
             if (PoolLogic.controlFromNetwork)
             {
@@ -579,6 +583,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         // 스트로크 실행
         public async UniTaskVoid WaitAndStartShot(string impulse_str)
         {
+            if (IsShotAnimating || inMove || physicsManager.inMove || physicsManager.IsResolvingShot) return;
             // Remote shots accepted before the timeout barrier must still finish.
             if (string.IsNullOrEmpty(impulse_str) &&
                 Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var net) &&
@@ -587,6 +592,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             physicsManager.moveTime = 0;
             physicsManager.endFromNetwork = false;
 
+            _targetEquip = TargetEquip.None;
             inShot = true;
             IsShotAnimating = true;
             inMove = true;

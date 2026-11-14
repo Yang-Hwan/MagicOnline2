@@ -127,6 +127,7 @@ try:
     summary['PostExitObservationSeconds']=4
     assert a['MatchId']==b['MatchId'] and a['Snapshot']==b['Snapshot']
     assert all(r[k] for r in (a,b) for k in ('NeutralImages','LocalMessage','RemoteMessage','LocalEmotion','RemoteEmotion'))
+    assert all(r[k] for r in (a,b) for k in ('SelfInformation','OtherInformation','TimerMessages'))
     assert all(abs(r['TurnSeconds']-r['ExpectedTurnSeconds'])<.01 and abs(r['TipLimit']-r['ExpectedTipLimit'])<.01 for r in (a,b))
     for seat in (0,1):
         sa=next(s for s in a['Shots'] if s['Seat']==seat); sb=next(s for s in b['Shots'] if s['Seat']==seat)
@@ -137,7 +138,7 @@ try:
         assert all(s['ReactionSeen'] for s in (sa,sb)), 'Automatic character reaction missing'
         assert sa['Emotion']==sb['Emotion'], 'Different automatic reactions for the same shot'
     for role in ('A','B'):
-        for stage in ('neutral','messages','shots'):
+        for stage in ('neutral','messages','shots','self-information','other-information'):
             with Image.open(out/f'{role}-{stage}.png') as picture:
                 assert picture.size==(1280,720) and max(hi-lo for lo,hi in picture.convert('RGB').getextrema())>100, 'Rendered screenshot missing'
     summary.update(Ok=True,MatchId=a['MatchId'],Reports=['A.json','B.json'])

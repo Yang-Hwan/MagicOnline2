@@ -93,7 +93,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async void CheckRematchEntryCoin()
         {
-            if (Friendly) { entryCoinChecked = true; return; }
+            if (Friendly || NetworkManager.TryGetExistingNetwork(out var freeNet) && freeNet is PunNetwork free && free.IsGuildWar) { entryCoinChecked = true; return; }
             var history = Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance;
             string id = history.LastMatchId;
             if (leavingOutcome || checkingEntryCoin || entryCoinChecked ||
@@ -192,12 +192,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 SelfInfo = $"{own?.hitHigh ?? 0}연타",
                 OtherInfo = series != null ? series.ResultDurationText : "--:--",
                 SelfVote = counting ? "재대결 준비 완료" : Vote(own), OtherVote = unavailable ? "상대방이 나갔습니다" : counting ? "재대결 준비 완료" : Vote(other),
-                Status = unavailable ? "상대와 재대결할 수 없습니다." :
+                Status = (series?.IsGuildWar??false)?"공식 길드전 종료 · 새 상대는 길드전에서 찾아주세요.": unavailable ? "상대와 재대결할 수 없습니다." :
                     counting ? (seconds > 0 ? $"{seconds}초 후 재대결을 시작합니다." : "재대결을 준비하고 있습니다.") :
                     requested ? "상대의 재대결 응답을 기다리고 있습니다." :
                     other?.oneMore == OneMore.Req ? "상대가 재대결을 요청했습니다" : "재대결을 선택해 주세요",
                 Settlement = settlementText ? settlementText.text : "",
-                CanRematch = btnPlay.interactable && !requested && !unavailable && !counting,
+                CanRematch = !(series?.IsGuildWar??false) && btnPlay.interactable && !requested && !unavailable && !counting,
                 CanSave = btnSaveMatchReplay.interactable, CanLeave = btnMain.interactable,
                 Waiting = requested && !unavailable && !counting
             };
@@ -433,6 +433,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void btnPlay_Click()
         {
+            if(NetworkManager.TryGetExistingNetwork(out var officialNet) && officialNet is PunNetwork official && official.IsGuildWar)return;
             if (leavingOutcome || !entryCoinChecked ||
                 !Friendly && !Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance.IsSettled(
                     Assets.Scripts.Exert.BackSys.BackendMatchHistory.Instance.LastMatchId)) return;

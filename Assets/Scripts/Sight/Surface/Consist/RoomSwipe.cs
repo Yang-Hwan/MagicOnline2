@@ -172,6 +172,10 @@ namespace Assets.Scripts.Sight.Surface.Consist
             OpenWaitingPanel(hallIdx);
             network.JoinFriendlyRoom(hallIdx, invite, other);
         }
+        public void GotoGuildWarRoom(PunNetwork network,int hall,string match,string other)
+        {
+            OpenWaitingPanel(hall);network.JoinGuildWarRoom(hall,match,other);
+        }
 
         void OpenWaitingPanel(int hallIdx)
         {

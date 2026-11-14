@@ -3,6 +3,19 @@ using System;
 
 namespace Assets.Scripts.Prack.BackSys.GameData
 {
+    [Serializable] public sealed class MatchPlayerInfo
+    {
+        public string UserId = "", Nickname = "", CueName = "", CueDescription = "", CueThumbnail = "";
+        public int Level, TodayStreak;
+        public long TotalPrize;
+        public PlayerRecord Total = new PlayerRecord(), FourBall = new PlayerRecord(), ThreeBall = new PlayerRecord();
+        public MatchEquipmentProfile Equipment = new MatchEquipmentProfile();
+    }
+    [Serializable] public sealed class PlayerRecord
+    {
+        public long Wins, Losses, Draws;
+        public double WinRate => Wins + Losses == 0 ? 0 : 100.0 * Wins / (Wins + Losses);
+    }
     [Serializable] public sealed class MatchEquipmentSnapshot
     {
         public int Version = 1;

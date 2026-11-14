@@ -163,7 +163,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
 
         void Home()
         {
-            string[] labels = { "우편함", "보유장비", "선물함", "출석부", "친구", "기타" };
+            string[] labels = { "우편함", "보유장비", "선물함", "출석부", "친구", "길드" };
             for (int i = 0; i < labels.Length; i++)
             {
                 int action = i; float x = new[] { 705f, 1030, 1360 }[i % 3]; float y = i < 3 ? 160 : 450;
@@ -181,9 +181,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             if (action == 4) { OpenFriends(); return; }
             if (action == 5)
             {
-                var panel = Dialog("기타", "프로필과 게임 설정을 변경할 수 있습니다.");
-                SolidButton("프로필 변경", panel, 120, 230, 280, 60, () => { CloseModal(); OpenPopup(GesPopConsist.Pop.NickCh); });
-                SolidButton("설정", panel, 440, 230, 280, 60, Settings);
+                OpenGuild();
                 return;
             }
             string[] labels = { "우편함", "보유장비", "선물함", "출석부", "친구" };
@@ -305,6 +303,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             var value = (TextMeshProUGUI)Text("Value", viewport, "", 0, 0, 612, 56, 30, Color.white, TextAlignmentOptions.MidlineLeft);
             input.textViewport = viewport; input.textComponent = value; input.fontAsset = font;
             input.characterLimit = 24; input.lineType = TMP_InputField.LineType.SingleLine;
+            input.richText = false;
             input.text = UserInfo.DisplayName ?? ""; input.interactable = !profileSaving;
             var status = Text("ProfileStatus", panel, "", 60, 274, 720, 42, 23, Yellow);
             var save = Hit("SaveProfile", panel, 270, 227, 300, 48, () => SaveProfile(input, status));
@@ -350,7 +349,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             return panel;
         }
 
-        void CloseModal() { if (modal) { modal.gameObject.SetActive(false); Dispose(modal.gameObject); modal = null; } }
+        void CloseModal() { CloseGuildState(); if (modal) { modal.gameObject.SetActive(false); Dispose(modal.gameObject); modal = null; } }
         void RefreshUser()
         {
             if (!initialized) return;
@@ -379,11 +378,13 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 subscribedNetwork = network; network.OnNetworkRoomUpdate += RoomCountsChanged; network.GetRoomsInfo();
             }
         }
-        void OnEnable() { FriendSocial.Menu=this; if(FriendSocial.Instance)FriendSocial.Instance.FriendsChanged+=RefreshFriends; if (initialized) { RefreshUser(); Subscribe(); nextWalletRefresh = 0; if (CurrentPage == 2) CheckBustOnMultiplayerEntry(); RefreshWalletFromServer(); } }
+        void OnEnable() { FriendSocial.Menu=this; if(FriendSocial.Instance){FriendSocial.Instance.FriendsChanged+=RefreshFriends;FriendSocial.Instance.GuildChanged+=RefreshGuild;} if (initialized) { RefreshUser(); Subscribe(); nextWalletRefresh = 0; if (CurrentPage == 2) CheckBustOnMultiplayerEntry(); RefreshWalletFromServer(); } }
         void OnDisable()
         {
             if(FriendSocial.Menu==this)FriendSocial.Menu=null;
             if(FriendSocial.Instance)FriendSocial.Instance.FriendsChanged-=RefreshFriends;
+            if(FriendSocial.Instance)FriendSocial.Instance.GuildChanged-=RefreshGuild;
+            if(guildRoot)CloseModal();
             BackendGame.Instance.onGameDataLoadEvent.RemoveListener(UserDataChanged);
             if (subscribedNetwork != null) subscribedNetwork.OnNetworkRoomUpdate -= RoomCountsChanged;
             subscribedNetwork = null;
@@ -397,6 +398,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         }
         void LateUpdate()
         {
+            TickGuild();
             TickMailbox();
             Resize();
             RefreshWalletFromServer();

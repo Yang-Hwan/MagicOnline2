@@ -25,6 +25,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public void SetProfile(MatchEquipmentProfile value) { profile = value; }
         public void Show(string emotion, Sprite fallback)
         {
+            if (!image) image = GetComponent<Image>();
             CurrentEmotion = emotion;
             string key = profile?.Emotions?.FirstOrDefault(e => e.Code == emotion)?.Asset;
             if (string.IsNullOrWhiteSpace(key)) key = profile?.Emotions?.FirstOrDefault(e => e.Code == "기본")?.Asset;

@@ -49,6 +49,13 @@ public sealed class MatchEquipment(Database db)
         await tx.CommitAsync();
         return result;
     }
+    internal async Task<MatchEquipmentProfile> CurrentProfile(Guid user)
+    {
+        await using var c=await db.Source.OpenConnectionAsync();
+        var profile=await Profile(c,user);
+        profile.Messages=Array.Empty<string>();profile.MessagePacks=Array.Empty<MatchMessagePack>();
+        return profile;
+    }
     static async Task<MatchEquipmentProfile> Profile(NpgsqlConnection c, Guid user)
     {
         await using var cmd = Database.Command(c, ShopCatalog.Query, user, true);

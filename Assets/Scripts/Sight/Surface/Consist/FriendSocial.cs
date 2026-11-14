@@ -8,6 +8,7 @@ using Photon.Pun;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Assets.Scripts.Prack.BackSys.GameData;
 
 namespace Assets.Scripts.Sight.Surface.Consist
 {
@@ -17,7 +18,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         [Serializable] public sealed class Person { public string Id, Name, Status, Relation; public int Avatar, Level; }
         [Serializable] public sealed class People { public Person[] Rows; }
         [Serializable] public sealed class Invite { public string Id, Other, Name, State; public int Hall; public bool Incoming; }
-        [Serializable] sealed class Snapshot { public string From, Name; public Invite Invite; }
+        [Serializable] sealed class Snapshot { public string From, Name; public Invite Invite; public GuildInvitation GuildInvite; }
         [Serializable] sealed class Presence { public bool Available; }
         [Serializable] sealed class Choice { public bool Accept; }
         [Serializable] sealed class RequestReply { public string Message; }
@@ -34,8 +35,9 @@ namespace Assets.Scripts.Sight.Surface.Consist
         bool fetching, answering, lastAvailable;
         float next, toastUntil;
         public event Action FriendsChanged;
+        public event Action GuildChanged;
         bool InMenu => Menu && Menu.isActiveAndEnabled;
-        bool Available => InMenu && PhotonNetwork.IsConnectedAndReady && !PhotonNetwork.InRoom;
+        bool Available => InMenu && !Menu.IsGuildWarSearching && PhotonNetwork.IsConnectedAndReady && !PhotonNetwork.InRoom;
         bool CanNotify => InMenu || (Lounge && Lounge.isActiveAndEnabled);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -108,6 +110,12 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 if(!string.IsNullOrEmpty(state.From))
                     Show(state.From,"친구 요청",$"{state.Name}님의 친구 요청을 수락하시겠습니까?",
                         "수락",()=>Respond(state.From,false,true),"거절",()=>Respond(state.From,false,false));
+                else if(ValidGuildInvitation(state.GuildInvite) && InMenu)
+                {
+                    var guild=state.GuildInvite;
+                    Show("guild:"+guild.Id,"길드 초대",$"{guild.InviterName}님이 [{guild.Tag}] {guild.GuildName} 길드에 초대했습니다.",
+                        "가입",()=>RespondGuild(guild.Id,true),"거절",()=>RespondGuild(guild.Id,false));
+                }
                 else Hide();
             }
             catch(Exception e){if(owner==GameApiClient.UserId)Debug.LogWarning("[Friends] "+e.Message);}
@@ -118,6 +126,25 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             var ticket=await GameApiClient.Request<Ticket>(Api+"/challenge","POST",new ChallengeInput{Other=other,Hall=hall});
             waiting=ticket.Id;next=toastUntil=0;
+        }
+        static bool ValidGuildInvitation(GuildInvitation invite)=>invite!=null &&
+            Guid.TryParse(invite.Id,out var id) && id!=Guid.Empty &&
+            Guid.TryParse(invite.GuildId,out var guild) && guild!=Guid.Empty;
+        async void RespondGuild(string id,bool accept)
+        {
+            // JsonUtility can materialize a null nested DTO as an empty object.
+            // Never turn an absent invitation into a POST to the collection URL.
+            if(!Guid.TryParse(id,out var invitation) || invitation==Guid.Empty){Hide();next=0;return;}
+            if(answering)return;answering=true;
+            string owner=GameApiClient.UserId;
+            try
+            {
+                var reply=await GameApiClient.Request<GuildReply>("/api/guilds/invitations/"+id,"POST",new GuildChoice{Accept=accept});
+                if(!this || owner!=GameApiClient.UserId)return;
+                Hide();GuildChanged?.Invoke();Toast(reply.Message);
+            }
+            catch(Exception e){if(this && owner==GameApiClient.UserId)Toast(e.Message);}
+            finally{answering=false;next=0;}
         }
 
         public async void Add(string other,Button button,TMP_Text actionLabel=null)

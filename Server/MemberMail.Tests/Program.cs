@@ -16,7 +16,7 @@ try
  await using var source=NpgsqlDataSource.Create(cs.ConnectionString);
  void Sql(string sql){using var cmd=source.CreateCommand(sql);cmd.ExecuteNonQuery();}
  long Number(string sql){using var cmd=source.CreateCommand(sql);return Convert.ToInt64(cmd.ExecuteScalar());}
- foreach(var file in new[]{"001_initial.sql","005_attendance_schedule.sql","006_registration_reward.sql","007_post_reward_chart.sql","008_user_post_reward.sql"})
+ foreach(var file in new[]{"001_initial.sql","005_attendance_schedule.sql","006_registration_reward.sql","007_post_reward_chart.sql","008_user_post_reward.sql","012_member_deletion.sql"})
      Sql(File.ReadAllText(Path.Combine("Server","GameApi","Migrations",file)));
  Sql("INSERT INTO charts SELECT * FROM public.charts");
  Sql("""UPDATE charts SET rows=(SELECT jsonb_agg(CASE WHEN e->>'ComCd'='LvPlayMax' THEN jsonb_set(e,'{ComVal}','2') ELSE e END) FROM jsonb_array_elements(rows) e) WHERE name='CommonCode'""");
@@ -58,6 +58,7 @@ try
  var list=await new AdminReadService(db).MemberMail(Guid.Parse(a),1);
  Check(list.Rows.All(r=>r[8]=="미수령") && list.Rows.Count>=4,"admin member tab shows unclaimed mail");
  Sql(File.ReadAllText("Server/GameApi/Migrations/009_friends.sql"));
+ Sql(File.ReadAllText("Server/GameApi/Migrations/017_guilds.sql"));
  await FriendChecks.Run(db,game,Guid.Parse(a),Guid.Parse(b));
  string rollback=Start();service.ConfirmResult(rollback,a,new(2,1,0));
  Sql("CREATE FUNCTION reject_receipt() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'injected'; END $$; CREATE TRIGGER fail_receipt BEFORE INSERT ON settlement_receipts FOR EACH ROW EXECUTE FUNCTION reject_receipt()");

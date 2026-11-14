@@ -9,12 +9,21 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
     public sealed class MatchAvatarReactions : MonoBehaviour
     {
         static readonly Sprite[] neutralBySeat = new Sprite[2];
+        static readonly Sprite[] winnerBySeat = new Sprite[2], loserBySeat = new Sprite[2];
         static string Folder(int seat) => "Gameplay/" + (seat == 0 ? "BandanaAvatar/" : "SilverAvatar/");
 
         public static Sprite NeutralForSeat(int seat)
         {
             if (!neutralBySeat[seat]) neutralBySeat[seat] = Resources.Load<Sprite>(Folder(seat) + "Neutral");
             return neutralBySeat[seat];
+        }
+
+        public static Sprite ResultForSeat(int seat, bool won, bool lost)
+        {
+            if (won == lost) return NeutralForSeat(seat);
+            var faces = won ? winnerBySeat : loserBySeat;
+            if (!faces[seat]) faces[seat] = Resources.Load<Sprite>(Folder(seat) + (won ? "Point" : "MissB"));
+            return faces[seat] ? faces[seat] : NeutralForSeat(seat);
         }
 
         sealed class Faces

@@ -34,6 +34,9 @@ public sealed class Matches(Database db, GameData data, SettlementService settle
             throw new ApiFault(409, "UnsupportedMatchRuntime");
         var settings = JsonSerializer.Deserialize<SkillMatchData>(hall.GetRawText(), Database.Json)!;
         var expected = MatchRulesContract.FromHall(settings, input.Rules.Runtime);
+        bool official;
+        await using(var c=await db.Source.OpenConnectionAsync())official=await GuildLeague.IsOfficial(c,input.RequestId,caller,opponent);
+        if(official){if(input.Rules.Runtime!=MatchRulesContract.Pavilion)throw new ApiFault(409,"UnsupportedMatchRuntime");expected.CoinPolicy=1;expected.EntryCoin=expected.MaxCoin=0;}
         if (!expected.SameAs(input.Rules)) throw new ApiFault(409, "MatchRulesMismatch");
         if (expected.MatchSeconds < 1 || expected.TargetScore < 1 || expected.Cushions < 0 || expected.Cushions > 3 ||
             (expected.Ball == 4 && expected.Cushions != 0) || (expected.Runtime == MatchRulesContract.Practice && expected.FinishMission != 0))
@@ -41,7 +44,7 @@ public sealed class Matches(Database db, GameData data, SettlementService settle
         var a = await data.Profile(caller); var b = await data.Profile(opponent);
         await new MatchEquipment(db).Freeze(input.RequestId, caller, opponent);
         settlement.Register(new VerifiedRegistration(input.RequestId, caller.ToString(), opponent.ToString(), a.NickName, b.NickName,
-            hall.GetProperty("MatchBall").GetInt32(), input.HallId, hall.GetProperty("PrizeCoin").GetInt64(), (CoinPolicy)expected.CoinPolicy, hall.GetRawText(), expected));
+            hall.GetProperty("MatchBall").GetInt32(), input.HallId, expected.EntryCoin, (CoinPolicy)expected.CoinPolicy, hall.GetRawText(), expected));
         return input.RequestId;
     }
     static void RequireProtocol(MatchRulesContract? rules)

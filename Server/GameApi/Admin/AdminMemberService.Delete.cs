@@ -69,6 +69,7 @@ public sealed partial class AdminMemberService
         await using (var revoke = Database.Command(c, "UPDATE auth_sessions SET revoked=true WHERE user_id=ANY($1)", currentIds)) await revoke.ExecuteNonQueryAsync();
         await using (var challenges = Database.Command(c, "UPDATE friend_challenges SET state='closed' WHERE (sender=ANY($1) OR recipient=ANY($1)) AND state IN ('pending','accepted')", currentIds)) await challenges.ExecuteNonQueryAsync();
         await using (var presence = Database.Command(c, "DELETE FROM friend_presence WHERE user_id=ANY($1)", currentIds)) await presence.ExecuteNonQueryAsync();
+        await Guilds.RemoveDeletedMembers(c,currentIds);
         foreach (var member in current)
         {
             await using var audit = Database.Command(c, "INSERT INTO admin_audit_logs(admin_id,action,target,request_id,before_value,after_value,reason) VALUES($1,'MemberDeleted',$2,$3,$4::jsonb,$5::jsonb,$6)",

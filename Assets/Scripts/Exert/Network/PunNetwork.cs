@@ -125,7 +125,7 @@ namespace Assets.Scripts.Exert.Network
         {
             base.Update();
             TickLegacyHistory();
-            if (IsFriendly && PhotonNetwork.InRoom && historyOffer == null && PhotonNetwork.CurrentRoom.PlayerCount == 1 &&
+            if (friendlyRoom!=null && PhotonNetwork.InRoom && historyOffer == null && PhotonNetwork.CurrentRoom.PlayerCount == 1 &&
                 Time.realtimeSinceStartup >= matchRequestDeadline)
             {
                 LeaveMatch();
@@ -247,17 +247,25 @@ namespace Assets.Scripts.Exert.Network
 
 
         string friendlyRoom, friendlyOpponent;
-        public bool IsFriendly => friendlyRoom != null;
-
-        public void JoinFriendlyRoom(int hall, string invite, string other)
+        public bool IsFriendly => friendlyRoom != null && !IsGuildWar;
+        string guildWarMatchId;
+        public bool IsGuildWar=>!string.IsNullOrEmpty(guildWarMatchId);
+        public void JoinGuildWarRoom(int hall,string match,string other)
         {
+            JoinFriendlyRoom(hall,match,other,true);
+            if(!matchRequestPending)guildWarMatchId=null;
+        }
+
+        public void JoinFriendlyRoom(int hall, string invite, string other,bool official=false)
+        {
+            guildWarMatchId=official?invite:null;
             if (matchRequestPending || !PhotonNetwork.IsConnectedAndReady || PhotonNetwork.InRoom ||
                 !Guid.TryParse(invite, out var ticket) || !Guid.TryParse(other, out _) ||
                 Assets.Scripts.Often.PracticeMatchTestRoute.Enabled)
             { CallNetworkState(NetworkState.JoinRoomFailed); return; }
             ResetLegacyHistory();
             NetworkManager.hallIdx = hall;
-            friendlyRoom = "friend-" + ticket.ToString("N") + ";" + hall;
+            friendlyRoom = (IsGuildWar?"guild-":"friend-") + ticket.ToString("N") + ";" + hall;
             friendlyOpponent = other;
             matchRequestCancelled = false;
             matchRequestPending = true;
@@ -295,6 +303,7 @@ namespace Assets.Scripts.Exert.Network
             { CallNetworkState(NetworkState.JoinRoomFailed); return; }
             ResetLegacyHistory();
             friendlyRoom = friendlyOpponent = null;
+            guildWarMatchId=null;
             var properties = new ExitGames.Client.Photon.Hashtable {
                 { "hall", hall_idx }, { "rules", rules },
                 { "protocol", Assets.Scripts.Often.PracticeMatchTestRoute.RoomProtocol }
@@ -647,10 +656,10 @@ namespace Assets.Scripts.Exert.Network
             matchRequestPending = false;
             if (matchRequestCancelled) { PhotonNetwork.LeaveRoom(); return; }
             if (!Assets.Scripts.Often.PracticeMatchTestRoute.Enabled) ResetLegacyHistory();
-            if (IsFriendly && (PhotonNetwork.CurrentRoom.Name != friendlyRoom ||
+            if (friendlyRoom!=null && (PhotonNetwork.CurrentRoom.Name != friendlyRoom ||
                 PhotonNetwork.PlayerListOthers.Any(p => p.UserId != friendlyOpponent)))
             { PhotonNetwork.LeaveRoom(); return; }
-            if (IsFriendly) matchRequestDeadline = Time.realtimeSinceStartup + 45f;
+            if (friendlyRoom!=null) matchRequestDeadline = Time.realtimeSinceStartup + 45f;
             LogMatchContext("JoinedRoom");
             OtherDisconnect = 0;
             CallNetworkState(NetworkState.JoinedToRoom);
@@ -689,7 +698,7 @@ namespace Assets.Scripts.Exert.Network
             if (IgnoreCancelledTestMatchCallback) return;
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             // Debug.Log("OnPlayerEnteredRoom 방장만 받음.. 손님이 조인시 방장에게 알림 IsMasterClient : " + newPlayer.IsMasterClient);
-            if (IsFriendly && newPlayer.UserId != friendlyOpponent)
+            if (friendlyRoom!=null && newPlayer.UserId != friendlyOpponent)
             { PhotonNetwork.LeaveRoom(); return; }
             opponentPlayer = newPlayer;
             RoomPlayerUpdate();

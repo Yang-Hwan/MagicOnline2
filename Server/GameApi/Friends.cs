@@ -12,9 +12,9 @@ public sealed class Friends(Database db, GameData data)
     public sealed record SearchList(List<SearchPlayer> Rows);
     public sealed record Invite(Guid Id,Guid Other,string Name,int Hall,string State,bool Incoming);
     public sealed record FriendList(IEnumerable<Player> Rows);
-    public sealed record Inbox(Guid? From,string? Name,Invite? Invite);
+    public sealed record Inbox(Guid? From,string? Name,Invite? Invite,Assets.Scripts.Prack.BackSys.GameData.GuildInvitation? GuildInvite=null);
     public sealed record Ticket(Guid Id);
-    static readonly string StatusSql = "CASE WHEN p.seen_at IS NULL OR p.seen_at < now()-interval '40 seconds' THEN 'offline' WHEN NOT p.available OR EXISTS(SELECT 1 FROM match_players m WHERE m.user_id=u.id AND m.active) THEN 'busy' ELSE 'online' END";
+    internal static readonly string StatusSql = "CASE WHEN p.seen_at IS NULL OR p.seen_at < now()-interval '40 seconds' THEN 'offline' WHEN NOT p.available OR EXISTS(SELECT 1 FROM match_players m WHERE m.user_id=u.id AND m.active) THEN 'busy' ELSE 'online' END";
     const string Pair = "least(sender,recipient)=least($1::uuid,$2::uuid) AND greatest(sender,recipient)=greatest($1::uuid,$2::uuid)";
 
     public static void Map(WebApplication app)
@@ -115,9 +115,9 @@ public sealed class Friends(Database db, GameData data)
         using(var q=Database.Command(c,"SELECT u.id,u.nickname FROM friend_links f JOIN users u ON u.id=f.sender WHERE f.recipient=$1 AND NOT f.accepted AND NOT u.disabled ORDER BY u.id LIMIT 1",user))
         using(var r=await q.ExecuteReaderAsync())if(await r.ReadAsync()){from=r.GetGuid(0);name=r.GetString(1);}
         using var query=Database.Command(c,"SELECT ch.id,u.id,u.nickname,ch.hall_id,ch.state,ch.recipient=$1 FROM friend_challenges ch JOIN users u ON u.id=CASE WHEN ch.sender=$1 THEN ch.recipient ELSE ch.sender END WHERE (ch.sender=$1 OR ch.recipient=$1) AND ch.expires_at>now() AND ch.state <> 'closed' AND NOT u.disabled ORDER BY ch.expires_at DESC LIMIT 1",user);
-        using var row=await query.ExecuteReaderAsync();
-        Invite? invite=await row.ReadAsync()?new(row.GetGuid(0),row.GetGuid(1),row.GetString(2),row.GetInt32(3),row.GetString(4),row.GetBoolean(5)):null;
-        return new(from,name,invite);
+        Invite? invite;
+        using(var row=await query.ExecuteReaderAsync()) invite=await row.ReadAsync()?new(row.GetGuid(0),row.GetGuid(1),row.GetString(2),row.GetInt32(3),row.GetString(4),row.GetBoolean(5)):null;
+        return new(from,name,invite,(await Guilds.Invitations(c,user)).FirstOrDefault());
     }
 
     static async Task CheckAvailable(NpgsqlConnection c,Guid user,Guid other)
@@ -141,12 +141,18 @@ public sealed class Friends(Database db, GameData data)
         await CheckAvailable(c,user,input.Other);
         using(var expired=Database.Command(c,"DELETE FROM friend_challenges WHERE (sender=$1 OR recipient=$1) AND expires_at<=now()",user))
             await expired.ExecuteNonQueryAsync();
-        using(var q=Database.Command(c,"SELECT 1 FROM friend_links WHERE accepted AND "+Pair+" FOR SHARE",user,input.Other))
-            if(await q.ExecuteScalarAsync()==null)throw new ApiFault(403,"친구에게만 도전할 수 있습니다.");
+        Guid? guild=null;bool friends;
+        using(var q=Database.Command(c,"SELECT 1 FROM friend_links WHERE accepted AND "+Pair+" FOR SHARE",user,input.Other))friends=await q.ExecuteScalarAsync()!=null;
+        if(!friends)
+        {
+            using var q=Database.Command(c,"SELECT g.id FROM guild_members a JOIN guild_members b ON b.guild_id=a.guild_id JOIN guilds g ON g.id=a.guild_id WHERE a.user_id=$1 AND b.user_id=$2 AND g.deleted_at IS NULL FOR SHARE OF g",user,input.Other);
+            if(await q.ExecuteScalarAsync() is Guid same)guild=same;
+            else throw new ApiFault(403,"친구 또는 같은 길드원에게만 도전할 수 있습니다.");
+        }
         using(var q=Database.Command(c,"SELECT 1 FROM friend_challenges WHERE expires_at>now() AND state <> 'closed' AND (sender IN ($1,$2) OR recipient IN ($1,$2))",user,input.Other))
             if(await q.ExecuteScalarAsync()!=null)throw new ApiFault(409,"이미 진행 중인 도전 요청이 있습니다.");
         var id=Guid.NewGuid();
-        using(var q=Database.Command(c,"INSERT INTO friend_challenges VALUES($1,$2,$3,$4,'pending',now()+interval '45 seconds')",id,user,input.Other,input.Hall))
+        using(var q=Database.Command(c,"INSERT INTO friend_challenges(id,sender,recipient,hall_id,state,expires_at,guild_id) VALUES($1,$2,$3,$4,'pending',now()+interval '45 seconds',$5)",id,user,input.Other,input.Hall,(object?)guild??DBNull.Value))
             await q.ExecuteNonQueryAsync();
         await tx.CommitAsync();return new(id);
     }
@@ -156,9 +162,20 @@ public sealed class Friends(Database db, GameData data)
         await using var c=await db.Source.OpenConnectionAsync();await using var tx=await c.BeginTransactionAsync();
         if(accept)
         {
-            using var q=Database.Command(c,"SELECT sender FROM friend_challenges WHERE id=$1 AND recipient=$2",id,user);
-            if(await q.ExecuteScalarAsync() is not Guid sender)throw new ApiFault(404,"도전 요청이 없습니다.");
+            Guid sender;Guid? guild;
+            using(var q=Database.Command(c,"SELECT sender,guild_id FROM friend_challenges WHERE id=$1 AND recipient=$2",id,user))
+            using(var r=await q.ExecuteReaderAsync()) {if(!await r.ReadAsync())throw new ApiFault(404,"도전 요청이 없습니다.");sender=r.GetGuid(0);guild=r.IsDBNull(1)?null:r.GetGuid(1);}
             await CheckAvailable(c,user,sender);
+            if(guild.HasValue)
+            {
+                using var q=Database.Command(c,"SELECT g.id FROM guilds g JOIN guild_members a ON a.guild_id=g.id JOIN guild_members b ON b.guild_id=g.id WHERE g.id=$1 AND g.deleted_at IS NULL AND a.user_id=$2 AND b.user_id=$3 FOR SHARE OF g",guild.Value,user,sender);
+                if(await q.ExecuteScalarAsync()==null)throw new ApiFault(409,"같은 길드원이 아니어서 요청이 종료되었습니다.");
+            }
+            else
+            {
+                using var q=Database.Command(c,"SELECT 1 FROM friend_links WHERE accepted AND "+Pair+" FOR SHARE",user,sender);
+                if(await q.ExecuteScalarAsync()==null)throw new ApiFault(409,"친구 관계가 변경되어 요청이 종료되었습니다.");
+            }
         }
         string where=accept?"recipient=$2":"(recipient=$2 OR sender=$2)";
         using var update=Database.Command(c,$"UPDATE friend_challenges SET state=$3,expires_at=now()+interval '45 seconds' WHERE id=$1 AND {where} AND state='pending' AND expires_at>now()",id,user,accept?"accepted":"closed");

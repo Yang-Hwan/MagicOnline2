@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Exert.Match;
@@ -15,6 +16,26 @@ namespace Assets.Scripts.Exert.Network
         public event Action<int, string> EquippedMessageReceived;
         float nextEquipmentSend;
         readonly float[] nextEquipmentReceive = new float[2];
+
+        // Cosmetic waiting-room preview only; gameplay still uses the server match snapshot.
+        const string LoungePortraitKey = "equippedNeutralPortrait";
+        public void SetLoungePortrait(string asset)
+        {
+            asset = asset ?? "";
+            var player = PhotonNetwork.LocalPlayer;
+            if (player == null || player.CustomProperties[LoungePortraitKey] as string == asset) return;
+            player.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { [LoungePortraitKey] = asset });
+        }
+        public string LoungeOpponentPortrait
+        {
+            get
+            {
+                if (!PhotonNetwork.InRoom) return "";
+                var opponent = PhotonNetwork.PlayerList.FirstOrDefault(p => !p.IsLocal && !p.IsInactive);
+                var asset = opponent?.CustomProperties[LoungePortraitKey] as string;
+                return asset != null && asset.Length <= 2048 ? asset : "";
+            }
+        }
 
         async Task LoadMatchEquipment(string id, bool create = false)
         {

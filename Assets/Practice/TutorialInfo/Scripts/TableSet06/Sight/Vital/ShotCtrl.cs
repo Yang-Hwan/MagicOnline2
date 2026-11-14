@@ -197,9 +197,13 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 _targetEquip = TargetEquip.None;
                 return;
             }
-            if (!canControl || IsShotAnimating ||
+            if (!canControl || IsShotAnimating || physicsManager.inMove ||
                 (PoolCoach.Instance.Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.OnlineMatch &&
-                (physicsManager.OnlineAdapter == null || !physicsManager.OnlineAdapter.CanSubmit))) return;
+                (physicsManager.OnlineAdapter == null || !physicsManager.OnlineAdapter.CanSubmit)))
+            {
+                _targetEquip = TargetEquip.None;
+                return;
+            }
 
             if (mouseState == MouseState.Down)
             {
@@ -561,6 +565,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         {
             if (IsShotAnimating || physicsManager.inMove) return;
             if (physicsManager.OnlineAdapter != null && !physicsManager.OnlineAdapter.CanSubmit) return;
+            _targetEquip = TargetEquip.None;
             physicsManager.BeginReplayCueStroke();
             IsShotAnimating = true;
             try

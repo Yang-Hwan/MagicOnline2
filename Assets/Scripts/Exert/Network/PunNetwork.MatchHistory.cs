@@ -346,6 +346,7 @@ namespace Assets.Scripts.Exert.Network
 
         [PunRPC] async void HistoryStartRequestRPC(string requestId, PhotonMessageInfo info)
         {
+            if(IsGuildWar && historyOffer!=null)return; // A new official match requires a new server queue ticket.
             if (!LegacyHistoryEnabled || !PhotonNetwork.IsMasterClient || info.Sender != opponentPlayer ||
                 PhotonNetwork.PlayerList.Length != 2 || !Guid.TryParseExact(requestId, "N", out _) ||
                 historyOffer?.requestId == requestId || (historyOffer != null && !historyEnded)) return;
@@ -360,7 +361,7 @@ namespace Assets.Scripts.Exert.Network
                     requestId = requestId, actor0 = PhotonNetwork.LocalPlayer.ActorNumber, actor1 = info.Sender.ActorNumber,
                     name0 = self.nickName, name1 = other.nickName, rulesKey = MatchmakingCompatibility.RulesKey(hall),
                     match = new MatchHistoryData {
-                        MatchId = Guid.NewGuid().ToString("N"), MatchBall = hall.MatchBall, HallIdx = hall.HallIdx,
+                        MatchId = IsGuildWar?guildWarMatchId:Guid.NewGuid().ToString("N"), MatchBall = hall.MatchBall, HallIdx = hall.HallIdx,
                         PlayerAUserId = self.uuid, PlayerBUserId = other.uuid,
                         Rules = MatchRulesContract.FromHall(hall, MatchRulesContract.Pavilion),
                         RulesSnapshot = JsonUtility.ToJson(new MatchRulesSnapshot {
@@ -376,6 +377,11 @@ namespace Assets.Scripts.Exert.Network
                     offer.match.Rules.CoinPolicy = 0;
                     offer.match.Rules.EntryCoin = offer.match.Rules.MaxCoin = 0;
                     if (other.uuid != friendlyOpponent) throw new InvalidOperationException("친구 경기 상대가 일치하지 않습니다.");
+                }
+                if(IsGuildWar)
+                {
+                    offer.match.MatchMode="GuildWar";offer.match.Rules=GuildWarRules(hall);
+                    if(other.uuid!=friendlyOpponent)throw new InvalidOperationException("길드전 상대가 일치하지 않습니다.");
                 }
                 bool rematch = IsSameSeriesRematch(offer);
                 // Only the master draws; the offer carries the decision to both clients.
@@ -451,11 +457,12 @@ namespace Assets.Scripts.Exert.Network
                     offer.rulesKey != MatchmakingCompatibility.RulesKey(hall)) return;
                 if (IsFriendly && (offer.match.MatchMode != "Friendly" || offer.match.PlayerAUserId != friendlyOpponent ||
                     offer.match.Rules == null || offer.match.Rules.CoinPolicy != 0 || offer.match.Rules.EntryCoin != 0)) return;
+                if(IsGuildWar && (offer.match.MatchId!=guildWarMatchId || offer.match.MatchMode!="GuildWar" || offer.match.PlayerAUserId!=friendlyOpponent || !GuildWarRules(hall).SameAs(offer.match.Rules)))return;
                 if (historyOffer != null && !historyEnded) return;
                 InstallHistoryOffer(offer, 1);
                 await LoadMatchEquipment(offer.match.MatchId);
                 // Readiness claims come from our own runtime/chart, never the peer's contract.
-                if (!IsFriendly) await BackendMatchHistory.Instance.ReadyAsync(offer.match.MatchId, MatchRulesContract.FromHall(hall, MatchRulesContract.Pavilion));
+                if (!IsFriendly) await BackendMatchHistory.Instance.ReadyAsync(offer.match.MatchId, IsGuildWar?GuildWarRules(hall):MatchRulesContract.FromHall(hall, MatchRulesContract.Pavilion));
                 if (historyEnded || historyOffer != offer || !HistoryPeerPresent) return;
                 view.RPC(nameof(HistoryReadyRPC), info.Sender, offer.match.MatchId, offer.requestId);
             }

@@ -28,6 +28,7 @@ public sealed class PostgresSettlementStore(Database db) : ISettlementStore
         using (var users = Database.Command(c, "SELECT id FROM users WHERE id IN ($1,$2) AND NOT disabled ORDER BY id FOR SHARE", Guid.Parse(r.UserA), Guid.Parse(r.UserB)))
         using (var rows = users.ExecuteReader())
         { int count = 0; while (rows.Read()) count++; if (count != 2) throw new ApiFault(409, "UnavailableMatchParticipant"); }
+        GuildLeague.Bind(c,r);
         using (var add = Database.Command(c, "INSERT INTO matches(id,user_a,user_b,state) VALUES($1,$2,$3,$4::jsonb)", r.MatchId, Guid.Parse(r.UserA), Guid.Parse(r.UserB), Serialize(match))) add.ExecuteNonQuery();
         // Reserve only the caller's slot. An unaccepted invitation cannot block its recipient.
         foreach (var id in new[] { r.UserA, r.UserB }.Order(StringComparer.Ordinal))
@@ -110,6 +111,7 @@ public sealed class PostgresSettlementStore(Database db) : ISettlementStore
         if (!hadReceipt && context.Receipt != null)
         {
             var receipt = context.Receipt;
+            GuildLeague.Apply(c,receipt);
             if (receipt.ResultA is "Win" or "Lose" or "Draw" && receipt.ResultB is "Win" or "Lose" or "Draw")
             {
                 var rewards=MemberRewards.Load(c);
@@ -138,6 +140,7 @@ public sealed class PostgresSettlementStore(Database db) : ISettlementStore
         // no longer a live game. Retries/heartbeats must never reserve these players again.
         if (match.Disputed)
         {
+            GuildLeague.VoidDispute(c,matchId);
             using var release = Database.Command(c, "UPDATE match_players SET active=false WHERE match_id=$1 AND active", matchId);
             release.ExecuteNonQuery();
         }

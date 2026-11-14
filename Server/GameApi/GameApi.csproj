@@ -7,6 +7,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Assets/Scripts/Prack/BackSys/GameData/MatchEquipmentSnapshot.cs" Link="Contracts/MatchEquipmentSnapshot.cs" />
+    <Compile Include="../../Assets/Scripts/Prack/BackSys/GameData/GuildData.cs" Link="Contracts/GuildData.cs" />
+    <Compile Include="../../Assets/Scripts/Prack/BackSys/GameData/GuildLeagueData.cs" Link="Contracts/GuildLeagueData.cs" />
     <PackageReference Include="Npgsql" Version="8.0.8" />
     <ProjectReference Include="../MatchSettlement/MatchSettlement.csproj" />
     <Content Include="Migrations/*.sql" CopyToOutputDirectory="PreserveNewest" />

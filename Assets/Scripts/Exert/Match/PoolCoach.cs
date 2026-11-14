@@ -166,7 +166,7 @@ namespace Assets.Scripts.Exert.Match
 
 
             playType = PlayType.Online;                         // 같이 하기(인간,인간)
-            hitReward = NetworkManager.TryGetExistingNetwork(out var gameNet) && gameNet is PunNetwork friend && friend.IsFriendly ? 0 : 200;            
+            hitReward = NetworkManager.TryGetExistingNetwork(out var gameNet) && gameNet is PunNetwork friend && (friend.IsFriendly || friend.IsGuildWar) ? 0 : 200;
             timeInningSec = 30;                                 // 
 
             targetHit = hall.TargetHit; // 경기장 차트의 목표 개수 사용

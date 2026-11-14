@@ -1052,7 +1052,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 else
                     HitOther(cnt).Forget();
 
-                if(!(NetworkManager.TryGetExistingNetwork(out var coinNetwork) && coinNetwork is PunNetwork coinPun && (coinPun.HasScoreCoins || coinPun.IsFriendly)))
+                if(!(NetworkManager.TryGetExistingNetwork(out var coinNetwork) && coinNetwork is PunNetwork coinPun && (coinPun.HasScoreCoins || coinPun.IsFriendly || coinPun.IsGuildWar)))
                     shotAchieveAni.AniAchieve(turnId, - 1, reward, runPath);
             }
 

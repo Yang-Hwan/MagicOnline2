@@ -20,7 +20,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         float selfUntil, otherUntil;
         int page;
         Coroutine selection;
-        Button avatarButton;
+        Button avatarButton, opponentButton, ownTimeButton, otherTimeButton;
+        MatchPlayerInfoWindow playerInfo;
         string displayedMatch;
         RectTransform Panel => (RectTransform)transform;
 
@@ -32,11 +33,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             rounded = CreateRoundedSprite();
             ownAvatar = (RectTransform)transform.Find("PlayerBoxs/PlayerSelf/Avatar");
             opponentAvatar = (RectTransform)transform.Find("PlayerBoxs/PlayerOther/Avatar");
-            var avatar = ownAvatar.GetComponent<Image>();
-            avatar.raycastTarget = true;
-            avatarButton = avatar.GetComponent<Button>() ?? avatar.gameObject.AddComponent<Button>();
-            avatarButton.targetGraphic = avatar;
-            avatarButton.onClick.AddListener(Toggle);
+            playerInfo=gameObject.AddComponent<MatchPlayerInfoWindow>(); playerInfo.Initialize(network);
+            avatarButton=Bind(ownAvatar,ShowSelfInformation);
+            opponentButton=Bind(opponentAvatar,ShowOtherInformation);
+            // Bind the fixed track, not the shrinking fill, so it stays clickable near timeout.
+            ownTimeButton=Bind((RectTransform)transform.Find("PlayerBoxs/PlayerSelf/TimeInning"),Toggle);
+            otherTimeButton=Bind((RectTransform)transform.Find("PlayerBoxs/PlayerOther/TimeInning"),Toggle);
             selfMessage = Bubble("SelfChat", true);
             otherMessage = Bubble("OtherChat", false);
             network.EquippedMessageReceived += Receive;
@@ -44,8 +46,20 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void Toggle()
         {
+            playerInfo.Close();
             if (popup) Close();
             else { page = 0; Open(); }
+        }
+        void ShowSelfInformation() { Close(); playerInfo.Open(network.LegacyLocalSeat); }
+        void ShowOtherInformation() { Close(); playerInfo.Open(1-network.LegacyLocalSeat); }
+        static Button Bind(RectTransform rect,UnityEngine.Events.UnityAction action)
+        {
+            var image=rect.GetComponent<Image>();
+            if(!image) { image=rect.gameObject.AddComponent<Image>(); image.color=Color.clear; }
+            image.raycastTarget=true;
+            var button=rect.GetComponent<Button>() ?? rect.gameObject.AddComponent<Button>();
+            button.targetGraphic=image; button.transition=Selectable.Transition.None; button.onClick.AddListener(action);
+            return button;
         }
 
         // Use avatar geometry in the HUD's local space, including Canvas scaling.
@@ -196,6 +210,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         void Clear()
         {
             Close();
+            if(playerInfo) playerInfo.Close();
             if (selfMessage) selfMessage.transform.parent.gameObject.SetActive(false);
             if (otherMessage) otherMessage.transform.parent.gameObject.SetActive(false);
         }
@@ -246,7 +261,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         void OnDestroy()
         {
-            if (avatarButton) avatarButton.onClick.RemoveListener(Toggle);
+            if (avatarButton) avatarButton.onClick.RemoveListener(ShowSelfInformation);
+            if (opponentButton) opponentButton.onClick.RemoveListener(ShowOtherInformation);
+            if (ownTimeButton) ownTimeButton.onClick.RemoveListener(Toggle);
+            if (otherTimeButton) otherTimeButton.onClick.RemoveListener(Toggle);
             if (network) network.EquippedMessageReceived -= Receive;
             if (rounded) { Destroy(rounded.texture); Destroy(rounded); }
         }

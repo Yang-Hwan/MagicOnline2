@@ -37,6 +37,7 @@ public sealed class EquipmentMatchE2E : MonoBehaviour
         public string Role, Stage, UserId, MatchId, Error, Settlement;
         public int Seat;
         public bool Ok, LoginForm, NeutralImages, LocalMessage, RemoteMessage, LocalEmotion, RemoteEmotion;
+        public bool SelfInformation, OtherInformation, TimerMessages;
         public float TurnSeconds, ExpectedTurnSeconds, TipLimit, ExpectedTipLimit;
         public MatchEquipmentSnapshot Snapshot;
         public List<ShotEvidence> Shots = new List<ShotEvidence>();
@@ -117,6 +118,24 @@ public sealed class EquipmentMatchE2E : MonoBehaviour
         ScreenCapture.CaptureScreenshot(file); await Until(()=>File.Exists(file),10,"screenshot "+suffix);
     }
     void Click(string name) => panel.transform.Find(name).GetComponent<Button>().onClick.Invoke();
+    async Task CheckInformation(int seat)
+    {
+        var expected=await GameApiClient.Request<MatchPlayerInfo>("/api/matches/"+report.MatchId+"/players/"+seat);
+        bool self=seat==report.Seat;
+        Click(self?"PlayerBoxs/PlayerSelf/Avatar":"PlayerBoxs/PlayerOther/Avatar");
+        const string root="PlayerInformation/PlayerInfoCard/";
+        await Until(()=>panel.transform.Find(root+"Nickname")!=null,20,"live player information window");
+        string Text(string path)=>panel.transform.Find(root+path).GetComponent<TMP_Text>().text;
+        if(Text("Nickname")!=expected.Nickname || Text("Level")!="Lv."+expected.Level || Text("CueName")!=expected.CueName ||
+            Text("TotalPrize/Amount")!=expected.TotalPrize.ToString("N0",System.Globalization.CultureInfo.InvariantCulture)+" 코인" ||
+            Text("TotalRecord/WinRate")!=expected.Total.WinRate.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)+"%" ||
+            (panel.transform.Find(root+"TodayStreak")!=null)!=(expected.TodayStreak>=2))
+            throw new Exception("live player information does not match server response");
+        await Screenshot(self?"self-information":"other-information");
+        Click(root+"Close");
+        if(MatchPlayerInfoWindow.IsOpen)throw new Exception("player information did not close");
+        if(self)report.SelfInformation=true;else report.OtherInformation=true;Save();
+    }
     async void Start()
     {
         output=Arg("-equipment-output"); if (string.IsNullOrEmpty(output)) return;
@@ -144,7 +163,13 @@ public sealed class EquipmentMatchE2E : MonoBehaviour
             await Until(()=>PortraitIs(0,"기본") && PortraitIs(1,"기본"),10,"both equipped neutral portraits"); report.NeutralImages=true; Stage("ready");
             await Until(()=>Peer()?.MatchId==report.MatchId && Peer()?.NeutralImages==true,40,"both clients ready");
             await Screenshot("neutral");
-            Click("PlayerBoxs/PlayerSelf/Avatar"); await Task.Delay(100); Click("EquippedChatMenu/Pack0/Rows/Content/Entry0");
+            await CheckInformation(report.Seat); await CheckInformation(1-report.Seat);
+            Click("PlayerBoxs/PlayerOther/TimeInning"); await Task.Delay(100);
+            if(!panel.transform.Find("EquippedChatMenu"))throw new Exception("opponent timer did not open own message packs");
+            Click("PlayerBoxs/PlayerOther/TimeInning");
+            Click("PlayerBoxs/PlayerSelf/TimeInning"); await Task.Delay(100);
+            report.TimerMessages=panel.transform.Find("EquippedChatMenu")!=null;Save();
+            Click("EquippedChatMenu/Pack0/Rows/Content/Entry0");
             await Until(()=>report.LocalMessage && report.RemoteMessage,20,"selected messages on both screens"); await Screenshot("messages");
             Stage("shots");
             var deadline=DateTime.UtcNow.AddSeconds(130);

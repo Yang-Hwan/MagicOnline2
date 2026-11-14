@@ -171,6 +171,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             var value=(TextMeshProUGUI)Text("Value",viewport,"",0,0,631,58,26,Color.white,TextAlignmentOptions.MidlineLeft);
             input.targetGraphic=field;input.textViewport=viewport;input.textComponent=value;input.fontAsset=font;
             input.characterLimit=24;input.lineType=TMP_InputField.LineType.SingleLine;
+            input.richText=false;
             var results=Node("SearchResults",panel,27,216,1066,500);
             void Submit()=>SearchFriends(results,input.text.Trim());
             SolidButton("검색",panel,868,137,179,58,Submit,true);

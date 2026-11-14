@@ -1,9 +1,11 @@
+using System;
 using System.Globalization;
 using System.Linq;
 using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Prack.BackSys;
 using Assets.Scripts.Prack.BackSys.ChartData;
+using Assets.Scripts.Prack.BackSys.GameData;
 using Assets.Scripts.Sight.Surface.Pavilion;
 using TMPro;
 using UnityEngine;
@@ -24,6 +26,11 @@ namespace Assets.Scripts.Sight.Surface.Consist
         Button cancel, sourceCancel;
         WaitingLights waitingLights;
         Image selfPortrait, otherPortrait;
+        EquipmentPortrait selfEquipment, otherEquipment;
+        Sprite selfFallback, otherFallback;
+        string otherAsset;
+        int portraitRequest;
+        string portraitOwner;
         GameObject otherPortraitCard;
 
         public static LobbyLoungeView Install(Transform host, TMP_Text title, TMP_Text status, TMP_Text self, TMP_Text other, Button back)
@@ -61,7 +68,9 @@ namespace Assets.Scripts.Sight.Surface.Consist
             var selfCard = Panel("SelfPortraitCard", 513, 376, 175, 175, new Color(.32f,.25f,.12f));
             var otherCard = Panel("OtherPortraitCard", 992, 376, 176, 185, new Color(.15f,.23f,.31f));
             selfPortrait = Portrait(selfCard.rectTransform);
+            selfEquipment = selfPortrait.gameObject.AddComponent<EquipmentPortrait>();
             otherPortrait = Portrait(otherCard.rectTransform);
+            otherEquipment = otherPortrait.gameObject.AddComponent<EquipmentPortrait>();
             otherPortraitCard = otherCard.gameObject;
             waitingLights = Node("WaitingLights", design, 771, 708, 132, 40).gameObject.AddComponent<WaitingLights>();
             title = Label("ArenaTitle", 645, 66, 390, 104, 65, Color.white);
@@ -89,6 +98,52 @@ namespace Assets.Scripts.Sight.Surface.Consist
             Refresh();
         }
 
+        void OnEnable() { if (selfPortrait) ReadSelfCharacter(); }
+        void OnDisable() { portraitRequest++; }
+
+        async void ReadSelfCharacter()
+        {
+            int request = ++portraitRequest;
+            portraitOwner = GameApiClient.UserId;
+            ApplySelfCharacter(null);
+            if (!Application.isPlaying || string.IsNullOrEmpty(portraitOwner)) return;
+            try
+            {
+                var inventory = await GameApiClient.Request<ShopCatalogData>("/api/me/inventory");
+                if (!this || !isActiveAndEnabled || request != portraitRequest || portraitOwner != GameApiClient.UserId) return;
+                ApplySelfCharacter(inventory?.Products?.FirstOrDefault(p => p.Kind == "Character" && p.Equipped));
+            }
+            catch (Exception)
+            {
+                // Keep the built-in portrait if equipment or its image cannot be loaded.
+                if (this && isActiveAndEnabled && request == portraitRequest)
+                    Debug.LogWarning("대기실 장착 캐릭터를 불러오지 못했습니다.");
+            }
+        }
+
+        void ApplySelfCharacter(ShopProductData character)
+        {
+            var emotions = character?.Emotions?.Select(e => new MatchEquipmentEmotion { Code = e.Code, Asset = e.Asset }).ToArray()
+                ?? Array.Empty<MatchEquipmentEmotion>();
+            if (!emotions.Any(e => e.Code == "기본" && !string.IsNullOrWhiteSpace(e.Asset)) && !string.IsNullOrWhiteSpace(character?.Thumbnail))
+                emotions = new[] { new MatchEquipmentEmotion { Code = "기본", Asset = character.Thumbnail } };
+            selfEquipment.SetProfile(new MatchEquipmentProfile { CharacterId = character?.Id ?? 0, Emotions = emotions });
+            selfEquipment.Show("기본", selfFallback);
+            if (Application.isPlaying && NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork room)
+                room.SetLoungePortrait(emotions.FirstOrDefault(e => e.Code == "기본")?.Asset);
+        }
+
+        void ApplyOtherPortrait(string asset, Sprite fallback)
+        {
+            otherPortrait.sprite = fallback;
+            if (otherAsset == asset && otherFallback == fallback) return;
+            otherAsset = asset; otherFallback = fallback;
+            otherEquipment.SetProfile(new MatchEquipmentProfile {
+                Emotions = new[] { new MatchEquipmentEmotion { Code = "기본", Asset = asset ?? "" } }
+            });
+            otherEquipment.Show("기본", fallback);
+        }
+
         public void Refresh(SkillMatchData previewHall = null)
         {
             if (!design) return;
@@ -98,15 +153,19 @@ namespace Assets.Scripts.Sight.Surface.Consist
             var hall = previewHall ?? BackendChart.skillMatchData?.FirstOrDefault(h => h.HallIdx == NetworkManager.hallIdx);
             title.text = hall?.HallName ?? sourceTitle.text;
             ball.text = hall == null ? "—" : hall.MatchBall + "구";
-            fee.text = NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork friend && friend.IsFriendly ? "친선 · 입장 무료" : hall == null ? "—" : "입장 " + hall.PrizeCoin.ToString("N0", CultureInfo.InvariantCulture) + " 코인";
+            fee.text = NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork friend && (friend.IsFriendly || friend.IsGuildWar) ? (friend.IsGuildWar?"공식 길드전 · 입장 무료":"친선 · 입장 무료") : hall == null ? "—" : "입장 " + hall.PrizeCoin.ToString("N0", CultureInfo.InvariantCulture) + " 코인";
             target.text = hall == null ? "—" : "목표 " + hall.TargetHit + "점";
             duration.text = hall == null ? "—" : "제한시간 " + hall.MatchTotMin + "분";
             selfName.text = sourceSelf.text;
             level.text = "Lv." + BackendGame.Instance.UserMainData.LvVel;
             bool opponent = !string.IsNullOrWhiteSpace(sourceOther.text);
             int localSeat = net is PunNetwork room ? room.LoungeLocalSeat : 0;
-            selfPortrait.sprite = MatchAvatarReactions.NeutralForSeat(localSeat);
-            otherPortrait.sprite = MatchAvatarReactions.NeutralForSeat(1 - localSeat);
+            var fallback = MatchAvatarReactions.NeutralForSeat(localSeat);
+            selfPortrait.sprite = fallback;
+            if (selfFallback != fallback) { selfFallback = fallback; selfEquipment.Show("기본", fallback); }
+            if (Application.isPlaying && portraitOwner != GameApiClient.UserId) ReadSelfCharacter();
+            string opponentAsset = opponent && net is PunNetwork opponentRoom ? opponentRoom.LoungeOpponentPortrait : "";
+            ApplyOtherPortrait(opponentAsset, MatchAvatarReactions.NeutralForSeat(1 - localSeat));
             if (otherPortraitCard.activeSelf != opponent) otherPortraitCard.SetActive(opponent);
             otherName.text = opponent ? sourceOther.text : "상대 대기 중";
             otherState.text = opponent ? "입장 완료" : "빈 자리";

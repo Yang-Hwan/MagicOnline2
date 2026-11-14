@@ -98,7 +98,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             prizeAmount.colorGradient = new VertexGradient(prizeTop, prizeTop, prizeBottom, prizeBottom);
             prizeAmount.fontSizeMin = 18;
             selfAvatar = Portrait("SelfAvatar", 317, new Color(1,.86f,.08f));
-            otherAvatar = Portrait("OtherAvatar", 1055, new Color(.15f,.8f,1));
+            otherAvatar = Portrait("OtherAvatar", 1055, new Color(.15f,.8f,1), true);
             selfWinner = WinnerBadge("SelfWinner", 367);
             otherWinner = WinnerBadge("OtherWinner", 1105);
             selfWinnerSparkles = WinnerSparkles(selfWinner);
@@ -159,13 +159,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             otherWinner.gameObject.SetActive(lost && !won && otherWinner.texture);
             AnimateWinnerBadge(selfWinner, selfWinnerSparkles);
             AnimateWinnerBadge(otherWinner, otherWinnerSparkles);
-            selfAvatar.sprite = MatchAvatarReactions.NeutralForSeat(s.LocalAvatarSeat);
-            otherAvatar.sprite = MatchAvatarReactions.NeutralForSeat(1 - s.LocalAvatarSeat);
+            string selfEmotion = won != lost ? (won ? "환희" : "좌절") : "기본";
+            string otherEmotion = won != lost ? (won ? "좌절" : "환희") : "기본";
+            selfAvatar.sprite = MatchAvatarReactions.ResultForSeat(s.LocalAvatarSeat, won, lost);
+            otherAvatar.sprite = MatchAvatarReactions.ResultForSeat(1 - s.LocalAvatarSeat, lost, won);
             var selfEquipment = selfAvatar.GetComponent<EquipmentPortrait>() ?? selfAvatar.gameObject.AddComponent<EquipmentPortrait>();
             var otherEquipment = otherAvatar.GetComponent<EquipmentPortrait>() ?? otherAvatar.gameObject.AddComponent<EquipmentPortrait>();
             selfEquipment.SetProfile(Assets.Scripts.Exert.Network.MatchEquipmentRuntime.ForSeat(s.LocalAvatarSeat));
             otherEquipment.SetProfile(Assets.Scripts.Exert.Network.MatchEquipmentRuntime.ForSeat(1 - s.LocalAvatarSeat));
-            selfEquipment.Show("기본", selfAvatar.sprite); otherEquipment.Show("기본", otherAvatar.sprite);
+            selfEquipment.Show(selfEmotion, selfAvatar.sprite); otherEquipment.Show(otherEmotion, otherAvatar.sprite);
             if (Application.isPlaying && isActiveAndEnabled && s.PrizeCoin > 0 && won != lost &&
                 !prizeFlightPlayed && Time.unscaledTimeAsDouble - prizeCountStarted >= PrizeCountDuration)
                 StartPrizeFlight(won ? selfAvatar : otherAvatar, Time.unscaledTimeAsDouble);
@@ -324,9 +326,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 stars[i].rectTransform.localRotation=Quaternion.Euler(0,0,i*18+phase*20);
             }
         }
-        Image Portrait(string name, float x, Color accent)
+        Image Portrait(string name, float x, Color accent, bool mirrorHorizontally = false)
         {
-            return RematchAvatarShape.CreatePortrait(Node(name+"Frame", design, x-20, 240, 340, 380), accent);
+            return RematchAvatarShape.CreatePortrait(Node(name+"Frame", design, x-20, 240, 340, 380), accent, mirrorHorizontally);
         }
         static void StyleStatus(LoungeActionGraphic panel,TMP_Text label)
         {
