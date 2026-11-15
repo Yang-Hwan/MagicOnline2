@@ -81,6 +81,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 string asset = p.Thumbnail;
                 if (string.IsNullOrWhiteSpace(asset)) asset = p.Kind == "Cue" ? p.Visual : p.Emotions?.FirstOrDefault(e => e.Code == "기본")?.Asset;
                 StartCoroutine(LoadShopImage(asset, image, placeholder));
+                if(p.Kind=="Cue")Assets.Scripts.Often.PremiumCuePreview.Attach(image,p.Visual);
                 Text("OwnedName", inventoryCards, p.Name, x + 12, 327, 346, 55, 29, Color.white, autoSize: true);
                 string detail = p.Kind == "Cue" ? $"파워 {p.Power:+0;-0;0}% · 팔로스루 {p.FollowThrough:+0;-0;0}%\n당점 {p.Tip:+0;-0;0}% · 준비시간 {p.ShotSeconds:+0;-0;0}초" :
                     p.Kind == "Character" ? "감정 " + (p.Emotions?.Length ?? 0) + "종\n" + string.Join(", ", (p.Emotions ?? Array.Empty<ShopEmotionData>()).Select(e => e.Code)) :

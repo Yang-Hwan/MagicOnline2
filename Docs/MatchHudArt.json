@@ -1,0 +1,33 @@
+{
+  "tool": "built-in image_gen",
+  "asset": "Assets/Resources/Gameplay/MatchHud/BlackGoldShell.png",
+  "reference": "exec-6d16ec3e-79a4-42b5-96e9-7aa1192e0186.png",
+  "processing": "Trim transparent padding using alpha > 16 bounds with a 4 pixel margin; preserve RGBA and all artwork inside the crop.",
+  "originalConceptReuse": {
+    "asset": "Assets/Resources/Gameplay/MatchHud/ReferenceArtwork.png",
+    "sourcePixels": [2172,724],
+    "mode": "Unmodified original concept sheet, sampled through Unity UV viewports. A UI shader removes the dark sheet backdrop and antialiases the washer silhouette.",
+    "vsViewportTopLeft": [1028,89,128,88],
+    "vsDrawSize": [85,59.5],
+    "portraitContentOffsetX": 5,
+    "silverRingViewportTopLeft": [316,226,22,57],
+    "redRingViewportTopLeft": [399,226,24,57],
+    "ringDesignSize": [13.6,37],
+    "ringSpacing": 14.4,
+    "nicknameOutlineWidth": 0.22,
+    "opponentLighting": "Independent right-hand path matching the painted slanted edge; no mirrored lower corner."
+  },
+  "prompt": "Use case: ui-mockup. Production Unity game asset, NOT a presentation. Reference image is style reference only. Create ONE ultra-wide horizontal EMPTY luxury billiards game HUD frame on true transparent background, centered in canvas, occupying middle horizontal band. Match reference's first-row refined black brushed metal and warm beveled polished gold thin border. Two symmetric wings joined to an empty central hourglass neck, left and right outer avatar silhouette areas slanted parallelograms integrated into the wings. Each half is a continuous blank dark brushed metal panel with gracefully rounded outer corners, very shallow depth and fine golden double edging. Center is narrow black hourglass section for later VS/clock overlays. Straight-on orthographic 2D game UI sprite, extremely wide 8:1 frame proportions; image canvas can be 3:1 with transparent space above and below the thin frame. Gold frame top at same height both sides, wings concave next to central neck. No colored cyan/purple glow; all dynamic glow will be added by Unity. NO text whatsoever, no VS, no numbers, no avatars, no green gauges, no score rings, no coins, no icons, no grid, no labels, no extra panels. Just the immaculate finished metallic black/gold HUD shell, clean empty dark interior. Very high quality AAA mobile billiards asset. Preserve genuine alpha around entire outside silhouette.",
+  "runtime": {
+    "designSize": [1560,178],
+    "scoreRingMaximum": 15,
+    "redRingOrdinals": [6,7,8,9,10],
+    "moveSeconds": 0.72,
+    "afterglowSeconds": 0.48,
+    "urgentStartsAtSeconds": 6,
+    "fullRedAtSeconds": 2,
+    "artworkContainsDynamicLighting": false,
+    "validationRequest": "Logs/MatchHud/validate.request",
+    "validationMenu": "Tools/Magic Online/Validate Match HUD"
+  }
+}

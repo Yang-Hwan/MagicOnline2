@@ -20,6 +20,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
     {
         public static PnlMatch Instance { get; private set; }
         MatchAvatarReactions avatars;
+        MatchHudView matchHud;
         void ConfigureMatchAvatars()
         {
             if (NetworkManager.TryGetExistingNetwork(out var net) && net is PunNetwork pun && pun.HasLegacyMatch)
@@ -212,6 +213,11 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         private void Start()
         {
             if (!NetworkManager.initialized) return;
+            matchHud = MatchHudView.Install(transform);
+            matchHud.ResetScores(PoolCoach.Instance.targetHit);
+            matchHud.SetScore(0, PoolPlayer.mainPlayer?.DisplayedHitCount ?? 0, false);
+            matchHud.SetScore(1, PoolPlayer.otherPlayer?.DisplayedHitCount ?? 0, false);
+            matchHud.SetTurn(PoolPlayer.turnId == (PoolPlayer.mainPlayer?.playerId ?? 0) ? 0 : 1);
             if (NetworkManager.TryGetExistingNetwork(out var equipmentNet) && equipmentNet is PunNetwork equipmentPun)
                 gameObject.AddComponent<MatchEquipmentChat>().Initialize(equipmentPun);
             var table = GameObject.Find("Table");
@@ -251,6 +257,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             PoolCoach.Instance.OnEndShot += PoolCoach_OnEndShot;
             PoolCoach.Instance.OnUpdateTime += PoolCoach_OnUpdateTime;                  // 타격전 실시간시간
             PoolCoach.Instance.OnEndTime += PoolCoach_OnEndTime;
+            PoolCoach.Instance.OnStopTime += StopHudTimer;
             PoolCoach.Instance.OnSetGameInfo += PoolCoach_OnSetGameInfo;
             PoolCoach.Instance.OnScoreChanged += PoolCoach_OnScoreChanged;
             PoolCoach.Instance.OnMatchComplite += PoolCoach_OnMatchComplite;
@@ -284,6 +291,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             PoolCoach.Instance.OnEndShot -= PoolCoach_OnEndShot;
             PoolCoach.Instance.OnUpdateTime -= PoolCoach_OnUpdateTime;                  // 타격전 실시간시간
             PoolCoach.Instance.OnEndTime -= PoolCoach_OnEndTime;
+            PoolCoach.Instance.OnStopTime -= StopHudTimer;
             PoolCoach.Instance.OnSetGameInfo -= PoolCoach_OnSetGameInfo;
             PoolCoach.Instance.OnScoreChanged -= PoolCoach_OnScoreChanged;
             PoolCoach.Instance.OnMatchComplite -= PoolCoach_OnMatchComplite;
@@ -661,6 +669,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void PoolCoach_OnSetActivePlayer(int playerId)
         {
+            if (matchHud) matchHud.SetTurn(playerId == PoolPlayer.mainPlayer.playerId ? 0 : 1);
             //Debug.Log($"PoolCoach_OnSetActivePlayer playerId : {playerId}, myTurn : {PoolPlayer.mainPlayer.myTurn}");
             //PoolCoach_OnSetGameInfo($"PoolCoach_OnSetActivePlayer playerId : {playerId}, myTurn : {PoolPlayer.mainPlayer.myTurn}");
 
@@ -996,8 +1005,11 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             }
         }
 
+        void StopHudTimer() { if (matchHud) matchHud.StopTimer(); }
+
         void PoolCoach_OnUpdateTime(float timeProc)
         {
+            if (matchHud) matchHud.SetTime(timeProc, PoolCoach.Instance.maxPlayTime, PoolCoach.Instance.calculateTime);
             float ing = Mathf.Lerp(inningWidthMax, 0, timeProc);
             RectTransform bar = PoolLogic.controlInNetwork ? rectInningBarSelf : rectInningBarOther;
             bar.sizeDelta = new Vector2(ing, inningHeightMax);
@@ -1062,6 +1074,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         void EggBoxReset()
         {
             hitTarget = PoolCoach.Instance.targetHit;
+            if (matchHud)
+            {
+                matchHud.ResetScores(hitTarget);
+                hitCntSelf = hitCntOther = 0;
+                return;
+            }
             for (int i = 0; i < eggBoxSelf.childCount; i++)
             {
                 if (i < hitTarget)
@@ -1088,6 +1106,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async UniTaskVoid HitSelf(int cnt = 1)
         {
+            if (matchHud)
+            {
+                hitCntSelf = Mathf.Clamp(hitCntSelf + cnt, 0, hitTarget);
+                matchHud.SetScore(0, hitCntSelf);
+                return;
+            }
             var token = matchViewLifetime.Token;
             if (await UniTask.Delay(1500, cancellationToken: token).SuppressCancellationThrow()) return;
 
@@ -1133,6 +1157,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async UniTaskVoid HitSelfMinus()
         {
+            if (matchHud)
+            {
+                hitCntSelf = PoolPlayer.mainPlayer.DisplayedHitCount;
+                matchHud.SetScore(0, hitCntSelf);
+                return;
+            }
             var token = matchViewLifetime.Token;
             if (hitCntSelf <= PoolPlayer.mainPlayer.DisplayedHitCount) return;
             if (hitCntSelf <= 0) return;
@@ -1156,6 +1186,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async UniTaskVoid HitOther(int cnt = 1)
         {
+            if (matchHud)
+            {
+                hitCntOther = Mathf.Clamp(hitCntOther + cnt, 0, hitTarget);
+                matchHud.SetScore(1, hitCntOther);
+                return;
+            }
             var token = matchViewLifetime.Token;
             if (await UniTask.Delay(1500, cancellationToken: token).SuppressCancellationThrow()) return;
 
@@ -1201,6 +1237,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         async UniTaskVoid HitOtherMinus()
         {
+            if (matchHud)
+            {
+                hitCntOther = PoolPlayer.otherPlayer.DisplayedHitCount;
+                matchHud.SetScore(1, hitCntOther);
+                return;
+            }
             var token = matchViewLifetime.Token;
             if (hitCntOther <= PoolPlayer.otherPlayer.DisplayedHitCount) return;
 
@@ -1263,6 +1305,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void PoolCoach_OnMatchComplite()
         {
+            StopHudTimer();
             Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             CloseCuePointPopup();
             if (shotController) { shotController.HideOverlapPreview(); shotController.HideGaugeValueLabels(); }

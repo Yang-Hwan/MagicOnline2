@@ -51,6 +51,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         public Transform cueDisplacement;
         public Transform cueSlider;
         private DoubleTapCue doubleTap;
+        private PremiumCueWorld premiumCue;
         private string displayedCue;
         private MeshRenderer standardCue;
         private Material standardFinish;
@@ -61,10 +62,15 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             string key = MatchEquipmentRuntime.Shooter.CueVisual ?? "";
             if (key == displayedCue || !standardCue) return;
             displayedCue = key;
+            if(premiumCue){premiumCue.Remove();premiumCue=null;}
             doubleTap?.Remove();
             doubleTap = null;
             standardCue.enabled = true;
             standardCue.sharedMaterial = standardFinish;
+            if(PremiumCueDesign.Style(key)!=PremiumCueStyle.None)
+            {
+                premiumCue=PremiumCueWorld.Equip(cueSlider,key);return;
+            }
             if (key == "Gameplay/DoubleTap/DoubleTap")
             {
                 doubleTap = DoubleTapCue.Equip(cueSlider);
@@ -326,6 +332,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         public void CuePutAside()
         {
             doubleTap?.SetCharge(0);
+            premiumCue?.SetCharge(0);
             cueVertical.parent = cuePivotAfterShotPosition;
             cueVertical.localPosition = Vector3.zero;
             cueVertical.localRotation = Quaternion.identity;
@@ -545,6 +552,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 Vector3 disZ = new Vector3(0, 0, cueSliderDisplacementY * forceSliderToCueRate);
                 cueSlider.localPosition = disZ;
                 doubleTap?.SetCharge(force);
+                premiumCue?.SetCharge(force);
                 float gage_height = Mathf.Lerp(1f, 6.5f, force);
                 forceGage.size = new Vector2(0.75f, gage_height);
 
@@ -648,6 +656,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
             physicsManager.StartShot(cueBall, impulse, "");
             doubleTap?.Strike();
+            premiumCue?.Strike();
 
             /////////////////////////////////////////////////////////////////////////////
             //WaitAndStartShotStart();
@@ -1098,6 +1107,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             this.cueSliderLocalPositionZ = cueSliderLocalPositionZ;
             this.force = force;
             doubleTap?.SetCharge(force);
+            premiumCue?.SetCharge(force);
             this.pullBarHandleLocalPositionY = pullBarHandleLocalPositionY;
             //this.cueSliderDisplacementZ = Mathf.Lerp(0, -cueSlidingMaxDisplacement, force);
         }
@@ -1141,6 +1151,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         public void SetCueBall()
         {
             doubleTap?.SetCharge(0);
+            premiumCue?.SetCharge(0);
             cueBall?.SetCueBall(false);
 
             //Debug.Log($"ShotCtrl.SetCueBall");
