@@ -24,7 +24,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         public void BeginReplayCueStroke()
         {
-            if (!IsLocalPractice || IsPracticeReplay || IsBallPlacement || replayLoadMode ||
+            if (IsStage || !IsLocalPractice || IsPracticeReplay || IsBallPlacement || replayLoadMode ||
                 inMove || scatterPending || recordingShot) return;
             // A committed forward stroke replaces any abandoned attempt, never the last saved shot.
             ClearCuePreparation();

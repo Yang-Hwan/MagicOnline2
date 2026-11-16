@@ -20,9 +20,24 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         MatchEquipmentProfile profile;
         Image image;
         string wanted;
+        bool lounge;
         public string CurrentEmotion { get; private set; }
         void Awake() { image = GetComponent<Image>(); image.preserveAspect = true; }
         public void SetProfile(MatchEquipmentProfile value) { profile = value; }
+        public void ShowLounge(string emotion, Sprite defaultPortrait)
+        {
+            lounge = true;
+            Show(emotion, defaultPortrait);
+        }
+        void Display(Sprite sprite)
+        {
+            if (lounge)
+            {
+                image.sprite = sprite;
+                image.enabled = sprite != null;
+            }
+            image.overrideSprite = sprite;
+        }
         public void Show(string emotion, Sprite fallback)
         {
             if (!image) image = GetComponent<Image>();
@@ -30,9 +45,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             string key = profile?.Emotions?.FirstOrDefault(e => e.Code == emotion)?.Asset;
             if (string.IsNullOrWhiteSpace(key)) key = profile?.Emotions?.FirstOrDefault(e => e.Code == "기본")?.Asset;
             wanted = key;
-            if (string.IsNullOrWhiteSpace(key)) { image.overrideSprite = fallback; return; }
-            if (cache.TryGetValue(key, out var cached)) { image.overrideSprite = cached ? cached : fallback; return; }
-            image.overrideSprite = fallback;
+            if (string.IsNullOrWhiteSpace(key)) { Display(fallback); return; }
+            if (lounge) fallback = null;
+            if (cache.TryGetValue(key, out var cached)) { Display(cached ? cached : fallback); return; }
+            Display(fallback);
             if (!Uri.TryCreate(key, UriKind.Absolute, out var uri))
             {
                 var sprite = Resources.Load<Sprite>(key);
@@ -42,7 +58,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                     if (texture) { sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * .5f); ownedSprites.Add(sprite); }
                 }
                 cache[key] = sprite;
-                if (sprite) image.overrideSprite = sprite;
+                if (sprite) Display(sprite);
             }
             else if ((uri.Scheme == "https" || uri.Scheme == "http" && uri.IsLoopback) && loading.Add(key))
                 StartCoroutine(Download(key));
@@ -58,7 +74,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 var texture = DownloadHandlerTexture.GetContent(request);
                 var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * .5f);
                 ownedSprites.Add(sprite); ownedTextures.Add(texture); cache[key] = sprite;
-                if (wanted == key) image.overrideSprite = sprite;
+                if (wanted == key) Display(sprite);
             }
         }
         void OnDisable() { loading.Clear(); } // Unity stops coroutines when the object is deactivated.

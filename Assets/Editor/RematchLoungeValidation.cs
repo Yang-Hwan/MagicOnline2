@@ -39,9 +39,12 @@ public static class RematchLoungeValidation
             var portraits=view.GetComponentsInChildren<Image>().Where(i=>i.name=="NeutralAvatar").ToArray();
             if(portraits.Length!=2 || !portraits[0].sprite || !portraits[1].sprite || portraits[0].sprite==portraits[1].sprite)
                 throw new Exception("Missing neutral result portraits");
-            var hostPortrait=portraits[0].sprite;
             state.LocalAvatarSeat=1;view.Refresh();
-            if(portraits[1].sprite!=hostPortrait || portraits[0].sprite==hostPortrait)throw new Exception("Guest seat mapping failed");
+            if(portraits[0].sprite!=MatchAvatarReactions.ResultForSeat(1,true,false) ||
+               portraits[1].sprite!=MatchAvatarReactions.ResultForSeat(0,false,true))throw new Exception("Guest seat mapping failed");
+            state.AwaitEquipment=true;view.Refresh();
+            if(portraits.Any(p=>p.enabled || p.sprite))throw new Exception("Pending equipment displayed a placeholder portrait");
+            state.AwaitEquipment=false;
             state.LocalAvatarSeat=0;view.Refresh();
             Button Find(string name)=>view.GetComponentsInChildren<Button>().Single(b=>b.name==name);
             Find("Rematch").onClick.Invoke();Find("SaveReplay").onClick.Invoke();Find("Leave").onClick.Invoke();

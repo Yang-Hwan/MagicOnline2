@@ -15,6 +15,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
     public sealed class MatchHudView : MonoBehaviour
     {
         public const float DesignWidth=1560, DesignHeight=178;
+        internal const float GaugeTop=58;
         public const float RingDuration=.72f;
         public sealed class Counter
         {
@@ -26,6 +27,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public readonly Counter[] Counters={new Counter(),new Counter()};
         readonly TMP_Text[] names=new TMP_Text[2],coins=new TMP_Text[2],series=new TMP_Text[2],levels=new TMP_Text[2];
         readonly Image[] sourceFaces=new Image[2],faces=new Image[2];
+        readonly MatchHudPortraitGlow[] portraitGlows = new MatchHudPortraitGlow[2];
+        readonly Image[] portraitShadows = new Image[2];
         readonly RectTransform[] sources=new RectTransform[2];
         RectTransform root;
         MatchHudGraphic graphic;
@@ -86,13 +89,20 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 sources[side]=(RectTransform)p.Find("Avatar");Place(sources[side],ax,9,aw,150);
                 sourceFaces[side]=sources[side].GetComponent<Image>();sourceFaces[side].enabled=true;sourceFaces[side].color=Color.clear;sourceFaces[side].raycastTarget=true;
                 var maskRect=Node("EquippedPortraitMask",p,ax,9,aw,150);maskRect.SetAsFirstSibling();var shape=maskRect.gameObject.AddComponent<MatchHudPortraitMask>();shape.raycastTarget=false;maskRect.gameObject.AddComponent<Mask>().showMaskGraphic=true;
+                portraitGlows[side]=Node("TurnGlow",maskRect,0,0,aw,150).gameObject.AddComponent<MatchHudPortraitGlow>();
+                portraitGlows[side].raycastTarget=false;
                 var faceRect=Node("EquippedPortrait",maskRect,5,-3,aw+14,165);faces[side]=faceRect.gameObject.AddComponent<Image>();faces[side].raycastTarget=false;faces[side].preserveAspect=true;
-                names[side]=Existing(p,"TxtName",gx+16,42,438,43,31,Color.white,self?TextAlignmentOptions.MidlineLeft:TextAlignmentOptions.MidlineRight);names[side].transform.SetAsLastSibling();
+                portraitShadows[side]=Node("WaitingShadow",maskRect,0,0,aw,150).gameObject.AddComponent<Image>();
+                portraitShadows[side].color=new Color32(19,16,40,132);
+                portraitShadows[side].raycastTarget=false;
+                var playerAlignment=self?TextAlignmentOptions.MidlineLeft:TextAlignmentOptions.MidlineRight;
+                Existing(p,"TxtCoin",gx+(self?32:16),16,426,36,28,Gold,playerAlignment);
+                names[side]=Existing(p,"TxtName",gx+16,GaugeTop,438,42,31,Color.white,playerAlignment);names[side].transform.SetAsLastSibling();
                 nicknameMaterials[side]=new Material(names[side].fontSharedMaterial);
                 nicknameMaterials[side].EnableKeyword("OUTLINE_ON");nicknameMaterials[side].SetColor("_OutlineColor",new Color(0,0,0,1));
                 nicknameMaterials[side].SetFloat("_OutlineWidth",.22f);nicknameMaterials[side].SetFloat("_OutlineSoftness",.02f);
                 names[side].fontSharedMaterial=nicknameMaterials[side];names[side].extraPadding=true;names[side].UpdateMeshPadding();
-                var timer=(RectTransform)p.Find("TimeInning");Place(timer,gx,43,474,42);var hit=timer.GetComponent<Image>();if(!hit)hit=timer.gameObject.AddComponent<Image>();hit.enabled=true;hit.color=Color.clear;hit.raycastTarget=true;
+                var timer=(RectTransform)p.Find("TimeInning");Place(timer,gx,GaugeTop,474,42);var hit=timer.GetComponent<Image>();if(!hit)hit=timer.gameObject.AddComponent<Image>();hit.enabled=true;hit.color=Color.clear;hit.raycastTarget=true;
                 coins[side]=Existing(p,"TxtMatchCoin",self?542:881,110,137,35,25,Gold,self?TextAlignmentOptions.MidlineRight:TextAlignmentOptions.MidlineLeft);
                 p.Find("HitCountBox/HitCnt").gameObject.SetActive(false);
                 series[side]=Existing(p,"TxtScore",self?669:835,15,56,43,26,Gold,TextAlignmentOptions.Center);
@@ -112,7 +122,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             var menu=(RectTransform)transform.Find("BtnMatchEnd");menu.anchorMin=menu.anchorMax=new Vector2(0,1);menu.pivot=Vector2.one*.5f;menu.anchoredPosition=new Vector2(86,-75);
             var cuePoint=transform.Find("PointSmall") as RectTransform;
             if(cuePoint){cuePoint.anchorMin=cuePoint.anchorMax=new Vector2(1,1);cuePoint.pivot=Vector2.one*.5f;cuePoint.anchoredPosition=new Vector2(-100,-75);}
-            ResetScores(8);RefreshLayout();SyncPortraits();
+            UpdatePortraitTurn();ResetScores(8);RefreshLayout();SyncPortraits();
         }
         public void SetPlayerName(int side,string name){if(side>=0&&side<2&&names[side])names[side].text=name??"";}
         public void SetLevel(int side,int level){if(levels[side])levels[side].text=level>0?"Lv."+level:"";}
@@ -134,7 +144,16 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             if(n.Desired==n.Displayed)return;
             n.FromScore=n.Displayed;n.ToScore=n.Displayed+Math.Sign(n.Desired-n.Displayed);n.Moving=n.Target-Math.Max(n.FromScore,n.ToScore);n.Started=VisualTime;
         }
-        public void SetTurn(int side){ActiveSide=Mathf.Clamp(side,0,1);RemainingRatio=1;RemainingSeconds=30;TimerRunning=true;graphic.SetVerticesDirty();}
+        void UpdatePortraitTurn()
+        {
+            for (int side=0; side<2; side++)
+            {
+                portraitGlows[side].enabled=side==ActiveSide;
+                portraitShadows[side].enabled=side!=ActiveSide;
+            }
+            portraitGlows[ActiveSide].SetTime(VisualTime);
+        }
+        public void SetTurn(int side){ActiveSide=Mathf.Clamp(side,0,1);UpdatePortraitTurn();RemainingRatio=1;RemainingSeconds=30;TimerRunning=true;graphic.SetVerticesDirty();}
         public void SetTime(float progress,float duration,bool running=true)
         {
             RemainingRatio=1-Mathf.Clamp01(progress);RemainingSeconds=RemainingRatio*Mathf.Max(1,duration);TimerRunning=running;
@@ -143,6 +162,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public void AdvanceVisual(float time,float delta)
         {
             VisualTime=time;TurnBlend=Mathf.Lerp(TurnBlend,ActiveSide==0?1:0,1-Mathf.Exp(-Mathf.Max(0,delta)*4));
+            portraitGlows[ActiveSide].SetTime(time);
             foreach(var n in Counters)if(n.Moving>=0 && time-n.Started>=RingDuration+.48f){n.Displayed=n.ToScore;n.Moving=-1;BeginRing(n);}
             if(graphic)graphic.SetVerticesDirty();
             if(referenceArt)referenceArt.SetVerticesDirty();
@@ -181,6 +201,86 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         void OnDestroy()
         {
             foreach(var mat in nicknameMaterials)if(mat){if(Application.isPlaying)Destroy(mat);else DestroyImmediate(mat);}
+        }
+    }
+
+    [RequireComponent(typeof(CanvasRenderer))]
+    public sealed class MatchHudPortraitGlow : MaskableGraphic
+    {
+        // The backdrop is static. Cache its sampled gradient and animate just the motes.
+        readonly System.Collections.Generic.List<UIVertex> backdrop = new System.Collections.Generic.List<UIVertex>();
+        readonly System.Collections.Generic.List<int> indices = new System.Collections.Generic.List<int>();
+        Rect backdropRect;
+        float time;
+        public void SetTime(float value)
+        {
+            time=value;
+            SetVerticesDirty();
+        }
+
+        // A softly fading diamond; unequal upper/lower radii give rising sparks a short tail.
+        static void Glow(VertexHelper mesh, Vector2 center, float width, float above, float below, Color light)
+        {
+            int start=mesh.currentVertCount;
+            Color edge=new Color(light.r,light.g,light.b,0);
+            mesh.AddVert(center,light,Vector2.zero);
+            mesh.AddVert(center+Vector2.left*width,edge,Vector2.zero);
+            mesh.AddVert(center+Vector2.up*above,edge,Vector2.zero);
+            mesh.AddVert(center+Vector2.right*width,edge,Vector2.zero);
+            mesh.AddVert(center+Vector2.down*below,edge,Vector2.zero);
+            for (int i=0;i<4;i++) mesh.AddTriangle(start,start+1+i,start+1+(i+1)%4);
+        }
+
+        void BuildBackdrop(Rect rect)
+        {
+            backdropRect=rect;
+            backdrop.Clear();
+            indices.Clear();
+            const int columns=28, rows=20;
+            for (int row=0;row<=rows;row++)
+            {
+                float height=row/(float)rows;
+                for (int col=0;col<=columns;col++)
+                {
+                    float x=col/(float)columns;
+                    // Light wells sit beside the shoulders and follow the slanted opening.
+                    float lane=x-height*.22f;
+                    float left=(lane-.14f)/.19f, right=(lane-.72f)/.17f;
+                    float spread=Mathf.Exp(-left*left)+Mathf.Exp(-right*right);
+                    float haze=spread*Mathf.Exp(-height*height*6f);
+                    float basePool=Mathf.Exp(-height*height*75f);
+                    var color=Color.Lerp(new Color(.012f,.068f,.066f),new Color(.055f,.62f,.36f),haze);
+                    color=Color.Lerp(color,new Color(.68f,1f,.83f),basePool*spread);
+                    var vertex=UIVertex.simpleVert;
+                    vertex.position=new Vector2(rect.xMin+rect.width*x,rect.yMin+rect.height*height);
+                    vertex.color=color;
+                    backdrop.Add(vertex);
+                    if(row==0 || col==0) continue;
+                    int top=backdrop.Count-1, bottom=top-columns-1;
+                    indices.Add(bottom-1);indices.Add(top-1);indices.Add(top);
+                    indices.Add(bottom-1);indices.Add(top);indices.Add(bottom);
+                }
+            }
+        }
+
+        protected override void OnPopulateMesh(VertexHelper mesh)
+        {
+            mesh.Clear();
+            var rect=rectTransform.rect;
+            if(backdrop.Count==0 || backdropRect!=rect) BuildBackdrop(rect);
+            mesh.AddUIVertexStream(backdrop,indices);
+            for (int i=0;i<14;i++)
+            {
+                float rise=Mathf.Repeat(time*(.105f+.014f*(i%5))+i*.618034f,1);
+                float lane=(i%2==0?.10f:.63f)+.13f*Mathf.Repeat(i*.414214f,1);
+                float x=rect.xMin+rect.width*(lane+rise*.22f)+1.2f*Mathf.Sin(i+rise*5);
+                var point=new Vector2(x,rect.yMin+rect.height*rise);
+                Color spark=i%4==0 ? new Color(1,.82f,.37f) : new Color(.63f,1,.82f);
+                spark.a=Mathf.Clamp01(Mathf.Min(rise,1-rise)*8)*(.82f+.18f*Mathf.Sin(i+time*3));
+                Glow(mesh,point,3.8f,4,4,new Color(spark.r,spark.g,spark.b,spark.a*.42f));
+                Glow(mesh,point,.85f,1,12+i%4*2,new Color(spark.r,spark.g,spark.b,spark.a*.62f));
+                Glow(mesh,point,1.65f,1.8f,1.8f,spark);
+            }
         }
     }
 

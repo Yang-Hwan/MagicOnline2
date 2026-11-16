@@ -115,7 +115,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         void Gauge(int side)
         {
-            float x=side==0?205:880,y=43,w=474,h=42;
+            float x=side==0?205:880,y=MatchHudView.GaugeTop,w=474,h=42;
             Capsule(x-1.4f,y-1.4f,w+2.8f,h+2.8f,new Color(.65f,.71f,.63f),new Color(.16f,.23f,.18f),new Color(.38f,.5f,.36f));
             Capsule(x,y,w,h,new Color(.03f,.07f,.045f),new Color(.07f,.15f,.08f),new Color(.01f,.035f,.02f));
             bool active=side==view.ActiveSide;float ratio=active?view.RemainingRatio:0,heat=active&&view.TimerRunning?Mathf.SmoothStep(0,1,Mathf.Clamp01((6-view.RemainingSeconds)/4)):0;
@@ -173,7 +173,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         void Ring(Vector2 p,float width,bool red,float light)
         {
-            // Chrome/red body is sampled from the approved art by MatchHudArtGraphic.
+            // MatchHudArtGraphic draws the opaque bead over this travel glow.
             if(light>0)Aura(p,11,22,Alpha(new Color(1,.78f,.32f),light*.18f));
         }
         void ScoreRail(int side)
@@ -221,6 +221,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             Gauge(0);Gauge(1);ScoreRail(0);ScoreRail(1);
             Badge(101,141,65,29);Badge(1370,141,65,29);
             Coin(530,123);Coin(1031,123);
+            Coin(221,31);Coin(1338,31);
             if(view.IsSeries){Badge(674,15,46,43);Badge(840,15,46,43);}
         }
     }

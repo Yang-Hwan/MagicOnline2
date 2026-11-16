@@ -1,5 +1,6 @@
 using System;
 using Assets.Scripts.Sight.Surface.Consist;
+using Assets.Scripts.Prack.BackSys.GameData;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +15,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             public string Arena, Result, Score, SelfName, OtherName, SelfInfo, OtherInfo;
             public string SelfVote, OtherVote, Status, Settlement;
             public int LocalAvatarSeat;
+            public MatchEquipmentSnapshot Equipment;
+            public bool AwaitEquipment;
             public long? PrizeCoin;
             public bool CanRematch, CanSave, CanLeave = true, Waiting, Friendly;
         }
@@ -37,6 +40,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         string friendTarget;
         RawImage background, selfWinner, otherWinner;
         Image selfAvatar, otherAvatar;
+        EquipmentPortrait selfEquipment, otherEquipment;
         RawImage[] selfWinnerSparkles, otherWinnerSparkles;
         double winnerShineStarted;
         LoungeActionGraphic selfStatus, otherStatus;
@@ -99,6 +103,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             prizeAmount.fontSizeMin = 18;
             selfAvatar = Portrait("SelfAvatar", 317, new Color(1,.86f,.08f));
             otherAvatar = Portrait("OtherAvatar", 1055, new Color(.15f,.8f,1), true);
+            selfEquipment = selfAvatar.gameObject.AddComponent<EquipmentPortrait>();
+            otherEquipment = otherAvatar.gameObject.AddComponent<EquipmentPortrait>();
             selfWinner = WinnerBadge("SelfWinner", 367);
             otherWinner = WinnerBadge("OtherWinner", 1105);
             selfWinnerSparkles = WinnerSparkles(selfWinner);
@@ -161,13 +167,11 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             AnimateWinnerBadge(otherWinner, otherWinnerSparkles);
             string selfEmotion = won != lost ? (won ? "환희" : "좌절") : "기본";
             string otherEmotion = won != lost ? (won ? "좌절" : "환희") : "기본";
-            selfAvatar.sprite = MatchAvatarReactions.ResultForSeat(s.LocalAvatarSeat, won, lost);
-            otherAvatar.sprite = MatchAvatarReactions.ResultForSeat(1 - s.LocalAvatarSeat, lost, won);
-            var selfEquipment = selfAvatar.GetComponent<EquipmentPortrait>() ?? selfAvatar.gameObject.AddComponent<EquipmentPortrait>();
-            var otherEquipment = otherAvatar.GetComponent<EquipmentPortrait>() ?? otherAvatar.gameObject.AddComponent<EquipmentPortrait>();
-            selfEquipment.SetProfile(Assets.Scripts.Exert.Network.MatchEquipmentRuntime.ForSeat(s.LocalAvatarSeat));
-            otherEquipment.SetProfile(Assets.Scripts.Exert.Network.MatchEquipmentRuntime.ForSeat(1 - s.LocalAvatarSeat));
-            selfEquipment.Show(selfEmotion, selfAvatar.sprite); otherEquipment.Show(otherEmotion, otherAvatar.sprite);
+            selfEquipment.SetProfile(s.Equipment?.Players[s.LocalAvatarSeat]);
+            otherEquipment.SetProfile(s.Equipment?.Players[1-s.LocalAvatarSeat]);
+            bool waitingForSnapshot = s.AwaitEquipment && s.Equipment == null;
+            selfEquipment.ShowLounge(selfEmotion, waitingForSnapshot ? null : MatchAvatarReactions.ResultForSeat(s.LocalAvatarSeat, won, lost));
+            otherEquipment.ShowLounge(otherEmotion, waitingForSnapshot ? null : MatchAvatarReactions.ResultForSeat(1-s.LocalAvatarSeat, lost, won));
             if (Application.isPlaying && isActiveAndEnabled && s.PrizeCoin > 0 && won != lost &&
                 !prizeFlightPlayed && Time.unscaledTimeAsDouble - prizeCountStarted >= PrizeCountDuration)
                 StartPrizeFlight(won ? selfAvatar : otherAvatar, Time.unscaledTimeAsDouble);

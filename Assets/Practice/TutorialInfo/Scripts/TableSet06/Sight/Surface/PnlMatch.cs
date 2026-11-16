@@ -297,7 +297,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             EggBoxReset();                              // 점수초기화
             RefreshPracticeScoreboard();
             if (PoolCoach.Instance.Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.OnlineMatch) return;
-            if (Assets.Scripts.Often.PracticeSceneFlow.SelectedMode == Assets.Scripts.Often.PracticeSceneFlow.Mode.Replay ||
+            if (physicsManager.IsStage) physicsManager.OpenStage().Forget();
+            else if (Assets.Scripts.Often.PracticeSceneFlow.SelectedMode == Assets.Scripts.Often.PracticeSceneFlow.Mode.Replay ||
                 Assets.Scripts.Often.PracticeSceneFlow.SelectedMode == Assets.Scripts.Often.PracticeSceneFlow.Mode.MatchReplay)
                 physicsManager.OpenReplayBrowser().Forget();
             else physicsManager.StartBallScatter();

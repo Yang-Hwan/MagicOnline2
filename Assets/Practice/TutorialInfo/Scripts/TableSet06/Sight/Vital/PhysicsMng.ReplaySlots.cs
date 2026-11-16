@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
@@ -323,62 +323,66 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             return v;
         }
         static Vector3 ReadReplayVector(BinaryReader reader) => new Vector3(ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader));
+        void ReadReplay(BinaryReader reader, List<ReplayFrame> frames, out int cue, out float step, out ReplayStroke stroke)
+        {
+            stroke = default;
+            if (reader.ReadInt32() != 0x4D525031) throw new InvalidDataException();
+            int version = reader.ReadInt32();
+            if (version < 1 || version > 3) throw new InvalidDataException();
+            int recordedBalls = reader.ReadInt32();
+            if (recordedBalls != ballcs.Length && !(recordedBalls == 3 && ballcs.Length == 4)) throw new InvalidDataException();
+            cue = reader.ReadInt32(); step = ReadReplayFloat(reader); int count = reader.ReadInt32();
+            if (version >= 2 && reader.ReadBoolean())
+            {
+                stroke.available = true;
+                stroke.power = ReadReplayFloat(reader); stroke.follow = ReadReplayFloat(reader);
+                stroke.point = new Vector2(ReadReplayFloat(reader), ReadReplayFloat(reader));
+                stroke.cueRotation = new Quaternion(ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader));
+                var q = stroke.cueRotation;
+                float norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
+                if (stroke.power < 0 || stroke.power > 1 || stroke.follow < 0 || stroke.follow > 1 ||
+                    stroke.point.sqrMagnitude > 371f * 371f || norm < .9f || norm > 1.1f) throw new InvalidDataException();
+            }
+            if (cue < 0 || cue >= recordedBalls || step <= 0 || step > 1 || count < 2 || count > MaxReplayFrames ||
+                reader.BaseStream.Length != reader.BaseStream.Position + count * (4L + 52L * recordedBalls + (version >= 3 ? 54L : 0))) throw new InvalidDataException();
+            for (int f = 0; f < count; f++)
+            {
+                var frame = new ReplayFrame { time = ReadReplayFloat(reader), positions = new Vector3[recordedBalls],
+                    rotations = new Quaternion[recordedBalls], velocities = new Vector3[recordedBalls], spins = new Vector3[recordedBalls] };
+                if (Mathf.Abs(frame.time - f * step) > .01f) throw new InvalidDataException();
+                for (int i = 0; i < recordedBalls; i++)
+                {
+                    frame.positions[i] = ReadReplayVector(reader);
+                    var q = new Quaternion(ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader));
+                    float norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
+                    if (norm < .9f || norm > 1.1f || frame.positions[i].sqrMagnitude > 1000000f) throw new InvalidDataException();
+                    frame.rotations[i] = q;
+                    frame.velocities[i] = ReadReplayVector(reader); frame.spins[i] = ReadReplayVector(reader);
+                }
+                if (version >= 3)
+                {
+                    frame.cueRecorded = reader.ReadBoolean(); frame.cueVisible = reader.ReadBoolean();
+                    frame.cuePosition = ReadReplayVector(reader);
+                    frame.cueRotation = new Quaternion(ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader));
+                    frame.cueContact = ReadReplayVector(reader); frame.cueSlide = ReadReplayVector(reader);
+                    var q = frame.cueRotation;
+                    float norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
+                    if (frame.cueRecorded && (norm < .9f || norm > 1.1f || frame.cuePosition.sqrMagnitude > 1000000f ||
+                        frame.cueContact.sqrMagnitude > 1000000f || frame.cueSlide.sqrMagnitude > 1000000f)) throw new InvalidDataException();
+                }
+                frames.Add(frame);
+            }
+        }
+
         public bool LoadReplaySlot(int slot)
         {
             if (slot < 0 || slot >= ReplaySlotCount || !replayLoadMode || !ReplaySlotReady) return false;
             try
             {
-                var frames = new List<ReplayFrame>(); int cue; float step;
-                ReplayStroke stroke = default;
+                var frames = new List<ReplayFrame>();
+                int cue; float step; ReplayStroke stroke;
                 using (var reader = new BinaryReader(File.OpenRead(ReplaySlotPath(slot))))
-                {
-                    if (reader.ReadInt32() != 0x4D525031) throw new InvalidDataException();
-                    int version = reader.ReadInt32();
-                    if (version < 1 || version > 3) throw new InvalidDataException();
-                    int recordedBalls = reader.ReadInt32();
-                    if (recordedBalls != ballcs.Length && !(recordedBalls == 3 && ballcs.Length == 4)) throw new InvalidDataException();
-                    cue = reader.ReadInt32(); step = ReadReplayFloat(reader); int count = reader.ReadInt32();
-                    if (version >= 2 && reader.ReadBoolean())
-                    {
-                        stroke.available = true;
-                        stroke.power = ReadReplayFloat(reader); stroke.follow = ReadReplayFloat(reader);
-                        stroke.point = new Vector2(ReadReplayFloat(reader), ReadReplayFloat(reader));
-                        stroke.cueRotation = new Quaternion(ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader));
-                        var q = stroke.cueRotation;
-                        float norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
-                        if (stroke.power < 0 || stroke.power > 1 || stroke.follow < 0 || stroke.follow > 1 ||
-                            stroke.point.sqrMagnitude > 371f * 371f || norm < .9f || norm > 1.1f) throw new InvalidDataException();
-                    }
-                    if (cue < 0 || cue >= recordedBalls || step <= 0 || step > 1 || count < 2 || count > MaxReplayFrames ||
-                        reader.BaseStream.Length != reader.BaseStream.Position + count * (4L + 52L * recordedBalls + (version >= 3 ? 54L : 0))) throw new InvalidDataException();
-                    for (int f = 0; f < count; f++)
-                    {
-                        var frame = new ReplayFrame { time = ReadReplayFloat(reader), positions = new Vector3[recordedBalls],
-                            rotations = new Quaternion[recordedBalls], velocities = new Vector3[recordedBalls], spins = new Vector3[recordedBalls] };
-                        if (Mathf.Abs(frame.time - f * step) > .01f) throw new InvalidDataException();
-                        for (int i = 0; i < recordedBalls; i++)
-                        {
-                            frame.positions[i] = ReadReplayVector(reader);
-                            var q = new Quaternion(ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader));
-                            float norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
-                            if (norm < .9f || norm > 1.1f || frame.positions[i].sqrMagnitude > 1000000f) throw new InvalidDataException();
-                            frame.rotations[i] = q;
-                            frame.velocities[i] = ReadReplayVector(reader); frame.spins[i] = ReadReplayVector(reader);
-                        }
-                        if (version >= 3)
-                        {
-                            frame.cueRecorded = reader.ReadBoolean(); frame.cueVisible = reader.ReadBoolean();
-                            frame.cuePosition = ReadReplayVector(reader);
-                            frame.cueRotation = new Quaternion(ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader));
-                            frame.cueContact = ReadReplayVector(reader); frame.cueSlide = ReadReplayVector(reader);
-                            var q = frame.cueRotation;
-                            float norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
-                            if (frame.cueRecorded && (norm < .9f || norm > 1.1f || frame.cuePosition.sqrMagnitude > 1000000f ||
-                                frame.cueContact.sqrMagnitude > 1000000f || frame.cueSlide.sqrMagnitude > 1000000f)) throw new InvalidDataException();
-                        }
-                        frames.Add(frame);
-                    }
-                }
+                    ReadReplay(reader, frames, out cue, out step, out stroke);
                 StopReplayView(); replayFrames.Clear(); replayFrames.AddRange(frames);
                 replayStroke = stroke;
                 replayCueId = cue; replayStep = step; selectedReplaySlot = slot; replaySlotMessage = "";

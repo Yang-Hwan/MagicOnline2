@@ -265,7 +265,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         async UniTaskVoid Start()
         {
             InitializeClothPhysics();
-            if (IsLocalPractice && !IsReplayBrowser) PrepareRecordingBuffer();
+            if (IsLocalPractice && !IsReplayBrowser && !IsStage) PrepareRecordingBuffer();
             while (true)
             {
                 await UniTask.WaitForFixedUpdate(cancellationToken: this.GetCancellationTokenOnDestroy());
@@ -397,6 +397,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             //StuffSpray(ballcs[0].transform.position);
             FadeLinePath().Forget();
 
+            if (IsStage) { FinishStageShot(); return; }
             //Debug.Log($"PhysicsMng   StopMove");
             FinishShotRecording();
             OnBallAllStop?.Invoke("");
@@ -499,7 +500,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         async UniTask StartShotCore(Impulse impulse, float angle)
         {
             if (IsPracticeReplay || IsBallPlacement || PoolLogic.gameState.gameIsComplete) return;
-            if (impulse.impulse != Vector3.zero) { CaptureUndoState(); BeginShotRecording(); }
+            if (IsStage)
+            {
+                if (impulse.impulse == Vector3.zero || !BeginStageShot()) return;
+            }
+            else if (impulse.impulse != Vector3.zero) { CaptureUndoState(); BeginShotRecording(); }
             simulationVersion++;
             settledTime = 0;
             line.positionCount = 0;

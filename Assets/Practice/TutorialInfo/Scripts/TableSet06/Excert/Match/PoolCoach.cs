@@ -338,6 +338,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
 
         public void Update(float deltaTime)
         {
+            if (_physicsMng && _physicsMng.IsStage) return;
             if (Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.OnlineMatch) return;
             if (!isMatchTimePlay || PoolLogic.gameState.gameIsComplete) return;
             if (isRulePractice)

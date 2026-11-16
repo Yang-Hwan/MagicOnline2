@@ -7,6 +7,19 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
     public sealed class RematchAvatarShape : MaskableGraphic
     {
         public bool MirrorHorizontally { get; private set; }
+        public static void AddGraffiti(RectTransform parent, bool opponent)
+        {
+            var layer = new GameObject("GraffitiBackdrop", typeof(RectTransform), typeof(RawImage));
+            var art = layer.GetComponent<RawImage>();
+            var rect = art.rectTransform;
+            rect.SetParent(parent, false);
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            art.texture = Resources.Load<Texture2D>("Menu/lounge-portrait-graffiti");
+            art.uvRect = opponent ? new Rect(1, 0, -1, 1) : new Rect(0, 0, 1, 1);
+            art.color = opponent ? new Color32(134, 201, 214, 255) : new Color32(223, 184, 119, 255);
+            art.raycastTarget = false;
+        }
         public static Image CreatePortrait(RectTransform frame, Color accent, bool mirrorHorizontally = false)
         {
             RectTransform Layer(string label, Transform parent, Vector2 min, Vector2 max)
@@ -24,8 +37,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             shape.color = Color.Lerp(new Color(.065f,.085f,.13f), accent, .42f);
             shape.raycastTarget = false;
             backing.gameObject.AddComponent<Mask>().showMaskGraphic = true;
+            AddGraffiti(backing, mirrorHorizontally);
             var face = Layer("NeutralAvatar", backing, new Vector2(.09f,.08f), new Vector2(.91f,.89f)).gameObject.AddComponent<Image>();
-            face.raycastTarget = false; face.preserveAspect = true;
+            face.raycastTarget = false; face.preserveAspect = true; face.enabled = false;
             var rim = Layer("PaintedFrame", frame, Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
             rim.texture = Resources.Load<Texture2D>("Menu/rematch-frame-portrait");
             if (mirrorHorizontally) rim.uvRect = new Rect(1, 0, -1, 1);

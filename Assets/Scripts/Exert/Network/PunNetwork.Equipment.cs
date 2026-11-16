@@ -21,7 +21,6 @@ namespace Assets.Scripts.Exert.Network
         const string LoungePortraitKey = "equippedNeutralPortrait";
         public void SetLoungePortrait(string asset)
         {
-            asset = asset ?? "";
             var player = PhotonNetwork.LocalPlayer;
             if (player == null || player.CustomProperties[LoungePortraitKey] as string == asset) return;
             player.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { [LoungePortraitKey] = asset });
@@ -30,10 +29,10 @@ namespace Assets.Scripts.Exert.Network
         {
             get
             {
-                if (!PhotonNetwork.InRoom) return "";
+                if (!PhotonNetwork.InRoom) return null;
                 var opponent = PhotonNetwork.PlayerList.FirstOrDefault(p => !p.IsLocal && !p.IsInactive);
                 var asset = opponent?.CustomProperties[LoungePortraitKey] as string;
-                return asset != null && asset.Length <= 2048 ? asset : "";
+                return asset != null && asset.Length <= 2048 ? asset : null;
             }
         }
 

@@ -197,6 +197,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             int layer = 1 << collision.collider.gameObject.layer;
             if(isCueball && !physicsManager.IsPracticeReplay)
             {
+                if (physicsManager.IsStage && layer == boardLayer)
+                    physicsManager.RecordStageRail(id,collision.collider.name);
                 var trace=physicsManager.TechniqueTrace;
                 if(layer==LayerLib.NameToInt(LayerKind.Board))
                     trace.Hit(-1,trace.RailAt(body.position,collision.contactCount>0?collision.GetContact(0).normal:Vector3.zero),body.position,impactIncomingVelocity,body.linearVelocity,impactIncomingSpin.y);

@@ -152,6 +152,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         public bool IsPointerOverUndoButton() => IsPointerOverUndoButton(Input.mousePosition);
         bool IsPointerOverUndoButton(Vector2 screenPosition) =>
+            (stageBar && RectTransformUtility.RectangleContainsScreenPoint(stageBar,screenPosition)) ||
             (optionsRect && optionsRect.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(optionsRect, screenPosition)) ||
             undoButton && undoButton.gameObject.activeInHierarchy &&
             (RectTransformUtility.RectangleContainsScreenPoint(undoButtonRect, screenPosition) ||
@@ -160,6 +161,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 (replayPanel && replayPanel.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(replayPanel, screenPosition)));
         void LateUpdate()
         {
+            if (IsStage) { UpdateStage(); return; }
             UpdatePracticeOptions();
             if (!undoButton) return;
             undoButton.gameObject.SetActive(!externalItemSession && !IsReplayBrowser);

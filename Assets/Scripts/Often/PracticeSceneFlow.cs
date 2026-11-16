@@ -6,7 +6,7 @@ namespace Assets.Scripts.Often
 {
     public static class PracticeSceneFlow
     {
-        public enum Mode { ThreeBall, FourBall, Replay, MatchReplay }
+        public enum Mode { ThreeBall, FourBall, Replay, MatchReplay, Stage }
         public static Mode SelectedMode { get; private set; } = Mode.FourBall;
         public static MatchConfiguration Configuration { get; private set; } = MatchConfiguration.Practice(4);
         public static MatchStartSession OnlineSession { get; private set; }
@@ -25,7 +25,8 @@ namespace Assets.Scripts.Often
             returnInProgress = false;
             OnlineSession = null;
             bool replay = mode == Mode.Replay || mode == Mode.MatchReplay;
-            Configuration = MatchConfiguration.Practice(mode == Mode.ThreeBall ? 3 : 4, replay);
+            int balls = mode == Mode.Stage ? StageMissions.Get(StageMissions.Current).balls : mode == Mode.ThreeBall ? 3 : 4;
+            Configuration = MatchConfiguration.Practice(balls, replay);
             ReturnToPracticeMenu = false;
             SceneManager.LoadScene(ScenePath);
         }
@@ -67,7 +68,7 @@ namespace Assets.Scripts.Often
                 return;
             }
             ReturnToPracticeMenu = true;
-            if (BackendDuty.Instance != null) BackendDuty.Instance.ConsistPage(1);
+            if (BackendDuty.Instance != null) BackendDuty.Instance.ConsistPage(SelectedMode == Mode.MatchReplay ? 0 : 1);
             SceneManager.LoadScene("Consist");
         }
     }

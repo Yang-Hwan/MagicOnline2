@@ -139,8 +139,9 @@ namespace Assets.Scripts.Sight.Surface.Consist
             }
             initialized = true;
             RefreshUser(); Resize(); Subscribe();
-            int initial = PracticeSceneFlow.ReturnToPracticeMenu ? 1 : (BackendDuty.Instance != null ? BackendDuty.Instance.mainP : 0);
+            int initial = PracticeSceneFlow.ReturnToPracticeMenu ? (PracticeSceneFlow.SelectedMode == PracticeSceneFlow.Mode.MatchReplay ? 0 : 1) : (BackendDuty.Instance != null ? BackendDuty.Instance.mainP : 0);
             SelectPage(Mathf.Clamp(initial, 0, 4));
+            if (PracticeSceneFlow.ReturnToPracticeMenu && PracticeSceneFlow.SelectedMode == PracticeSceneFlow.Mode.Stage) OpenStages();
             if (Application.isPlaying) PracticeSceneFlow.ConsumeMenuReturn();
         }
 
@@ -178,10 +179,11 @@ namespace Assets.Scripts.Sight.Surface.Consist
 
         void Home()
         {
-            string[] labels = { "우편함", "보유장비", "선물함", "출석부", "친구", "길드" };
+            string[] labels = { "우편함", "보유장비", "시합 리플레이", "출석부", "친구", "길드" };
             for (int i = 0; i < labels.Length; i++)
             {
                 int action = i; float x = new[] { 705f, 1030, 1360 }[i % 3]; float y = i < 3 ? 160 : 450;
+                if (i == 2) Art("MatchReplayArt",body,plates[1],x,y,280,195).uvRect=UV(new Rect(912,538,458,226));
                 Hit("HomeAction" + i, body, x, y, 280, 255, () => HomeAction(action));
                 Text("ActionLabel" + i, body, labels[i], x + 16, y + 191, 248, 69, 40, Color.white);
             }
@@ -192,6 +194,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             if (action == 0) { OpenMailbox(); return; }
             if (action == 1) { OpenInventory(); return; }
+            if (action == 2) { PracticeSceneFlow.Enter(PracticeSceneFlow.Mode.MatchReplay); return; }
             if (action == 3) { OpenPopup(GesPopConsist.Pop.Attendance); return; }
             if (action == 4) { OpenFriends(); return; }
             if (action == 5)
@@ -199,19 +202,24 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 OpenGuild();
                 return;
             }
-            string[] labels = { "우편함", "보유장비", "선물함", "출석부", "친구" };
-            Dialog(labels[action], "서비스 준비 중입니다.");
         }
 
         void Single()
         {
-            string[] labels = { "3구 연습", "4구 연습", "개별 리플레이", "시합 리플레이" };
-            string[] subtitles = { "자유롭게 배치하고 연습", "기본기부터 차근차근", "저장한 연습 다시 보기", "멀티플레이 경기 다시 보기" };
-            var modes = new[] { PracticeSceneFlow.Mode.ThreeBall, PracticeSceneFlow.Mode.FourBall, PracticeSceneFlow.Mode.Replay, PracticeSceneFlow.Mode.MatchReplay };
+            string[] labels = { "3구 연습", "4구 연습", "개별 리플레이", "스테이지" };
+            string[] subtitles = { "자유롭게 배치하고 연습", "기본기부터 차근차근", "저장한 연습 다시 보기", "시범을 보고 100단계 도전" };
+            var modes = new[] { PracticeSceneFlow.Mode.ThreeBall, PracticeSceneFlow.Mode.FourBall, PracticeSceneFlow.Mode.Replay, PracticeSceneFlow.Mode.Stage };
             for (int i = 0; i < 4; i++)
             {
                 var mode = modes[i]; float x = i % 2 == 0 ? 420 : 920; float y = i < 2 ? 275 : 540;
-                Hit("Practice" + i, body, x, y, 430, 255, () => PracticeSceneFlow.Enter(mode));
+                if (mode == PracticeSceneFlow.Mode.Stage)
+                {
+                    StageSlice("StageIconBacking",body,new Rect(x+27,y+15,374,122),new Rect(750,86,370,114));
+                    for(int j=0;j<3;j++)
+                        StageSlice("StageIcon"+j,body,new Rect(x+100+j*76,y+16,70,120),
+                            new Rect(21+318*j,211,305,552));
+                }
+                Hit("Practice" + i, body, x, y, 430, 255, () => { if(mode==PracticeSceneFlow.Mode.Stage) OpenStages(); else PracticeSceneFlow.Enter(mode); });
                 Text("PracticeLabel" + i, body, labels[i], x + 20, y + (i < 2 ? 130 : 150), 390, 55, 43, Color.black);
                 Text("PracticeDescription" + i, body, subtitles[i], x + 10, y + (i < 2 ? 193 : 201), 410, 42, 25, Color.white);
             }

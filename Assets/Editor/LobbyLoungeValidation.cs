@@ -46,7 +46,7 @@ public static class LobbyLoungeValidation
             var portraits=view.GetComponentsInChildren<Image>(true).Where(i=>i.name=="NeutralAvatar").ToArray();
             if(view.GetComponentInChildren<Assets.Scripts.Sight.Surface.Pavilion.RematchAvatarShape>(true))
                 throw new Exception("Waiting portraits must use the lounge artwork's rectangular frames");
-            if(portraits.Length!=2 || !portraits[0].sprite || portraits[1].gameObject.activeInHierarchy)
+            if(portraits.Length!=2 || !portraits[0].sprite || portraits[1].enabled || !portraits[1].transform.parent.gameObject.activeInHierarchy)
                 throw new Exception("Expected own portrait and one empty waiting seat");
             var lights=view.GetComponentInChildren<WaitingLights>();
             if(!lights.Running || lights.raycastTarget)throw new Exception("Waiting lights state/input interception");

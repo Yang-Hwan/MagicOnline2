@@ -60,6 +60,8 @@ public static class MatchHudValidation
             typeof(MatchHudView).GetMethod("SyncPortraits",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(hud,null);
             panel.transform.Find("PlayerBoxs/PlayerSelf/TxtMatchCoin").GetComponent<TMP_Text>().text="+300,000";
             panel.transform.Find("PlayerBoxs/PlayerOther/TxtMatchCoin").GetComponent<TMP_Text>().text="+120,000";
+            panel.transform.Find("PlayerBoxs/PlayerSelf/TxtCoin").GetComponent<TMP_Text>().text="12,345,678";
+            panel.transform.Find("PlayerBoxs/PlayerOther/TxtCoin").GetComponent<TMP_Text>().text="987,654,321";
             panel.transform.Find("TopCenter/TxtTime").GetComponent<TMP_Text>().text="08:42";
             Check(Resources.Load<Texture2D>("Gameplay/MatchHud/BlackGoldShell").width>=2000,"full quality painted shell loads");
             Check(MatchHudGraphic.IsRedRing(5)&&MatchHudGraphic.IsRedRing(9)&&!MatchHudGraphic.IsRedRing(4)&&!MatchHudGraphic.IsRedRing(10),"exact red range is 6 through 10");
@@ -86,6 +88,21 @@ public static class MatchHudValidation
             hud.SetScore(0,4);hud.AdvanceVisual(54.5f,1.3f);Check(hud.Counters[0].Displayed==4,"foul returns one ring");
             hud.ResetScores(5);hud.SetScore(0,4,false);hud.SetTurn(0);hud.SetTime(.7f,30);hud.AdvanceVisual(55,1);Render("mobile-five-self",879);
             hud.SetTurn(1);hud.SetTime(.3f,30);hud.AdvanceVisual(56,1);Render("mobile-five-opponent",879);
+            foreach (int active in new[]{0,1})
+            {
+                hud.SetTurn(active);
+                for (int side=0; side<2; side++)
+                {
+                    var player=side==0?"PlayerSelf":"PlayerOther";
+                    var mask=panel.transform.Find("PlayerBoxs/"+player+"/EquippedPortraitMask");
+                    var glow=mask.Find("TurnGlow").GetComponent<Graphic>();
+                    var shadow=mask.Find("WaitingShadow").GetComponent<Graphic>();
+                    var face=mask.Find("EquippedPortrait");
+                    Check(glow.enabled==(side==active) && shadow.enabled==(side!=active)
+                        && glow.transform.GetSiblingIndex()<face.GetSiblingIndex() && shadow.transform.GetSiblingIndex()>face.GetSiblingIndex(),
+                        "portrait lighting and shadow follow turn "+active+" for "+player);
+                }
+            }
             hud.ResetScores(12);hud.SetScore(0,4,false);hud.SetScore(1,3,false);
             float selfStart=MatchHudGraphic.RingX(0,7,4,12,0,290,9.4f),selfEnd=MatchHudGraphic.RingX(0,7,5,12,0,290,9.4f);
             Check(selfEnd>selfStart&&MatchHudGraphic.RingX(1,7,5,12,0,290,9.4f)<MatchHudGraphic.RingX(1,7,4,12,0,290,9.4f),"opponent direction mirrors self");
@@ -97,6 +114,8 @@ public static class MatchHudValidation
             foreach(var name in new[]{"PlayerSelf","PlayerOther"})
             {
                 var track=(RectTransform)panel.transform.Find("PlayerBoxs/"+name+"/TimeInning");
+                var balance=track.parent.Find("TxtCoin").GetComponent<TMP_Text>();
+                Check(balance.isActiveAndEnabled && balance.rectTransform.anchoredPosition.y-balance.rectTransform.rect.height>track.anchoredPosition.y,"coin balance visible above timer "+name);
                 var bind=typeof(MatchEquipmentChat).GetMethod("Bind",BindingFlags.NonPublic|BindingFlags.Static);int taps=0;
                 var button=(Button)bind.Invoke(null,new object[]{track,new UnityEngine.Events.UnityAction(()=>taps++)});button.onClick.Invoke();
                 Check(taps==1&&track.rect.width==474&&track.GetComponent<Image>().raycastTarget,"full timer remains clickable "+name);

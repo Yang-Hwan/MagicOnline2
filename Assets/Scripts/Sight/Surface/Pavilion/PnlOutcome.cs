@@ -32,6 +32,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         Button btnSaveMatchReplay;
         bool opponentUnavailable;
         int localAvatarSeat;
+        Assets.Scripts.Prack.BackSys.GameData.MatchEquipmentSnapshot resultEquipment;
+        string resultMatchId;
         PnlMatch matchReplayPanel;
         GameObject matchReplaySavePanel;
         TMP_InputField matchReplayTitle;
@@ -145,9 +147,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
             opponentUnavailable = !PhotonNetwork.InRoom || PhotonNetwork.PlayerList.Length < 2 ||
                 PhotonNetwork.PlayerList.Any(p => p.IsInactive);
+            resultMatchId = null;
+            resultEquipment = null;
             if (NetworkManager.TryGetExistingNetwork(out var resultNetwork) && resultNetwork is PunNetwork pun)
             {
                 localAvatarSeat = pun.LoungeLocalSeat;
+                resultMatchId = pun.LegacyMatchId;
                 pun.RecordDisplayedLegacyOutcome();
             }
             //NetworkManager.network.OnNetwork += NetworkManager_network_OnNetwork;
@@ -182,12 +187,16 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             bool requested = own != null && own.oneMore == OneMore.Req;
             NetworkManager.TryGetExistingNetwork(out var resultNet);
             var series = resultNet as PunNetwork;
+            if (resultEquipment == null && resultMatchId != null && series?.MatchEquipment?.MatchId == resultMatchId)
+                resultEquipment = series.MatchEquipment;
             return new RematchLoungeView.State {
                 Friendly = Friendly,
                 Arena = hall?.HallName ?? "경기 결과", Result = txtResult.text.StartsWith("Master :") ? "경기 준비 중" : txtResult.text,
                 Score = series != null ? series.ResultSeriesScore : "0 : 0",
                 PrizeCoin = series?.ResultPrizeCoin,
                 LocalAvatarSeat = localAvatarSeat,
+                Equipment = resultEquipment,
+                AwaitEquipment = series != null && !PracticeMatchTestRoute.Enabled,
                 SelfName = own?.name ?? "플레이어", OtherName = other?.name ?? "상대 플레이어",
                 SelfInfo = $"{own?.hitHigh ?? 0}연타",
                 OtherInfo = series != null ? series.ResultDurationText : "--:--",
