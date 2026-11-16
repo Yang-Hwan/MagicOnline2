@@ -57,6 +57,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         CancellationToken lifetimeToken;
 
         public Ball cuball { get; set; }
+        public readonly ThreeCushionShotTrace TechniqueTrace = new ThreeCushionShotTrace();
         public Ball[] balls;
         //private RandForce4 randForce4 { get; set; }
 
@@ -482,6 +483,17 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 return;
             }
 
+            TechniqueTrace.Clear();
+            if (PoolCoach.Instance.isMatchTimePlay && PoolCoach.Instance.matchBall == MatchBall.ThreeBall &&
+                PoolPlayer.currentPlayer.checkCushion == 3 && PoolLogic.controlInNetwork && clothSpace)
+            {
+                // Bottom is an oversized safety floor. ClothSpace is the authored playable rectangle.
+                var areaObject = GameObject.Find("Table/ClothSpace");
+                var area = areaObject ? areaObject.transform : clothSpace;
+                var surface = area.GetComponent<Collider>();
+                var bounds = surface ? surface.bounds : new Bounds(area.position, area.lossyScale);
+                TechniqueTrace.Begin(cueBall.id, cueBall.body.position, bounds);
+            }
             line.positionCount = 0;
             inMove = true;
             moveTime = 0.0f;

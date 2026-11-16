@@ -506,6 +506,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         void PoolCoach_OnScoreChanged(int playerId, bool isHit, int coin, RunPath runPath)
         {
+            if(isHit && (int)PoolCoach.Instance.matchBall==3 && PoolCoach.Instance.Configuration.CushionCount==3 &&
+                physicsManager && physicsManager.OnlineAdapter==null && !physicsManager.IsPracticeReplay)
+                Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Show(physicsManager.TechniqueTrace.Classify(true));
             if (isHit) ShowScoreFloat(Mathf.Max(1, PoolPlayer.players[playerId].hitInning));
             else if (PoolLogic.gameState.hitKinds.Contains(HitKind.Ball_Foul)) ShowScoreFloat(-1);
             if (PoolCoach.Instance.isRulePractice)

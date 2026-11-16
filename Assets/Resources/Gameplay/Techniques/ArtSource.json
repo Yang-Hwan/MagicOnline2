@@ -1,0 +1,20 @@
+{
+  "tool": "Built-in image_gen",
+  "background": "transparent alpha",
+  "Back.png": {
+    "source": "Approved moving preview; original lettering preserved unchanged",
+    "prompt": "Exact Korean word 뒤돌리기. Bold forward-leaning angular Korean brush/block lettering; ivory-to-warm-gold textured faces, bright beveled edges, charcoal outline, deep red extrusion, thin gold brush swoosh and tiny sparks. No scene or background plate. Transparent alpha."
+  },
+  "Brush.png": {
+    "prompt": "Single broad horizontal dry-brush slash sweeping left to right slightly rising. Charcoal-black core, deep oxblood crimson ragged bristles, restrained thin warm-gold edge scratches, split tips, irregular paint flecks and transparent dry gaps. No text or rectangular banner. Transparent alpha."
+  },
+  "Titles.png": {
+    "styleReference": "Back.png",
+    "prompt": "Eight separated horizontal rows of gold brush lettering matching the reference: 옆돌리기, 앞돌리기, 리버스, 대회전, 투뱅크, 쓰리뱅크, 되돌아오기, 바운딩샷. Consistent ivory/gold faces, charcoal outline, deep red extrusion, forward slant and narrow gold accents. Exact Korean text, no row labels, generous transparent guard gaps."
+  },
+  "ExtraTitles.png": {
+    "styleReference": "Back.png",
+    "prompt": "Six separated horizontal rows of matching gold brush lettering: 비껴치기, 횡단샷, 종단샷, 더블쿠션, 넣어치기, 걸어치기. Same typography, palette, bevel, extrusion and slant. Exact Korean, no row labels. Transparent alpha.",
+    "finalEditPrompt": "Remove only the gold/brown smoky backdrop and glows. Preserve all six Korean titles, gold/ivory faces, black/red outlines and extrusion, sharp gold scratches, position and size. Fully transparent gaps and background; keep only sharply defined sparks."
+  }
+}

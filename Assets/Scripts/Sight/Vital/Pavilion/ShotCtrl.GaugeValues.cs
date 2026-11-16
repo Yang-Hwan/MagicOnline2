@@ -21,6 +21,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             TMP_FontAsset font=panel ? panel.transform.Find("PlayerBoxs/PlayerSelf/TxtName").GetComponent<TMP_Text>().font : TMP_Settings.defaultFontAsset;
             Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Install(gaugeValueCanvas,font,panel);
             Assets.Scripts.Sight.Surface.Pavilion.ScoreFloatMotion.Install(gaugeValueCanvas,panel);
+            ThreeCushionTechniqueMotion.Install(gaugeValueCanvas,panel,FindAnyObjectByType<PhysicsMng>()?.clothSpace);
             powerValueLabel=CreateGaugeValueLabel("Power",font,new Color(.65f,.92f,1));
             followValueLabel=CreateGaugeValueLabel("Follow",font,new Color(1,.87f,.52f));
             UpdateGaugeValueLabels();

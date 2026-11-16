@@ -119,6 +119,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                     body.linearVelocity = velocity; body.angularVelocity = spin;
                     ball.impactIncomingVelocity = velocity; ball.impactIncomingSpin = spin;
                 }
+                foreach(var ball in balls) if(ball.isCueBall) TechniqueTrace.Sample(ball.body.position);
                 Physics.Simulate(dt);
             }
         }

@@ -125,6 +125,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void OnShot(MatchShotCommand command)
         {
+            Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Hide();
             if (avatars) avatars.BeginShot(command.shotId, command.seat);
             Trace($"event=ShotCommitted shot={command.shotId} seat={command.seat}");
             pending = false; frame = 0; target = null;
@@ -190,6 +191,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void SendResult(MatchResultMessage result)
         {
+            if(result.kind==MatchResultKind.Shot && result.outcome==MatchShotOutcome.Point &&
+                session.Configuration.BallCount==3 && session.Configuration.CushionCount==3)
+                result.technique=physics.TechniqueTrace.Classify(true);
             if (!publishResult(result)) session.Abort("경기 판정 동기화에 실패했습니다.");
         }
 
@@ -205,6 +209,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void OnResult(MatchResultMessage result)
         {
+            if(result.kind==MatchResultKind.Shot && result.outcome==MatchShotOutcome.Point)
+                Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Show(result.technique);
             if (avatars && result.kind == MatchResultKind.Shot) avatars.Resolve(result.outcome);
             Trace($"event=Result sequence={results.Sequence} kind={result.kind} shot={shots.ShotId} score={results.Score0}:{results.Score1} turn={shots.TurnSeat} finished={results.Finished}");
             pending = false;

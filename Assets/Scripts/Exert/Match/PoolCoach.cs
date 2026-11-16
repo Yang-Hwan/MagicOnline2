@@ -234,6 +234,7 @@ namespace Assets.Scripts.Exert.Match
 
         void PhysicsManager_OnStartShot(string info)
         {
+            Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Hide();
             shotContacts.Clear(); remoteShotContacts = null;
             for (int i = 0; i < (int)matchBall; i++)
             {

@@ -195,6 +195,18 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             if (!PoolCoach.Instance.isMatchTimePlay && !online) return;
 
             int layer = 1 << collision.collider.gameObject.layer;
+            if(isCueball && !physicsManager.IsPracticeReplay)
+            {
+                var trace=physicsManager.TechniqueTrace;
+                if(layer==LayerLib.NameToInt(LayerKind.Board))
+                    trace.Hit(-1,trace.RailAt(body.position,collision.contactCount>0?collision.GetContact(0).normal:Vector3.zero),body.position,impactIncomingVelocity,body.linearVelocity,impactIncomingSpin.y);
+                else
+                {
+                    var target=collision.collider.GetComponent<BallC>();
+                    if(target)trace.Hit(target.id,-1,body.position,impactIncomingVelocity,body.linearVelocity,impactIncomingSpin.y,
+                        target.body.position,GetComponent<SphereCollider>().radius*Mathf.Abs(transform.lossyScale.x));
+                }
+            }
             if (isCueball && strokeSpinPersistence >= 0 && physicsManager.FollowThroughProfileActive &&
                 !physicsManager.IsPracticeReplay && layer == boardLayer)
                 FollowThroughProfile.ApplySecondRailEnglish(ref strokeRailHits, body, collision,

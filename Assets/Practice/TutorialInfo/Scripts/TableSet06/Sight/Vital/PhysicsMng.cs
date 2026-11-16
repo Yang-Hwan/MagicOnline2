@@ -92,6 +92,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
 
         public Rigidbody cuball;
+        public readonly Assets.Scripts.Often.ThreeCushionShotTrace TechniqueTrace = new Assets.Scripts.Often.ThreeCushionShotTrace();
         public Vector3[] resetPos;
         public Vector3[] resetPosPre;
         public Quaternion[] resetQuatPre;
@@ -473,6 +474,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 for (int i = 0; i < steps; i++)
                 {
                     if (useCalibratedPhysics) StepClothPhysics(dt);
+                    if(cuball)TechniqueTrace.Sample(cuball.position);
                     Physics.Simulate(dt);
                 }
                 RecordShotFrame();
@@ -514,6 +516,19 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
             if (impulse.impulse != Vector3.zero)
             {
+                TechniqueTrace.Clear();
+                Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Hide();
+                if((int)PoolCoach.Instance.matchBall==3 && PoolCoach.Instance.Configuration.CushionCount==3 && !IsPracticeReplay)
+                {
+                    var surface=GameObject.Find("Table/ClothSpace");
+                    if(!surface)surface=GameObject.Find("Table/Collider/Bottom");
+                    if(surface)
+                    {
+                        var shape=surface.GetComponent<Collider>();
+                        TechniqueTrace.Begin(ballcs.First(b=>b.body==cuball).id,cuball.position,
+                            shape?shape.bounds:new Bounds(surface.transform.position,surface.transform.lossyScale));
+                    }
+                }
                 impulsePre = impulse;
                 foreach(var ball in ballcs) {
                     ball.strokeRailHits = 0;

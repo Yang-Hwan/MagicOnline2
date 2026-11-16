@@ -280,6 +280,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         private void OnDisable()
         {
+            ThreeCushionTechniqueMotion.Hide();
             coinGainInitialized=false;coinGainVersion++;
             matchViewLifetime?.Cancel();
             Assets.Scripts.Sight.Surface.Pavilion.ScoreFloatMotion.Hide();
@@ -1060,6 +1061,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 shotController.cueBall.transform.position, camera, value);
         }
 
+        public void ShowTechnique(ThreeCushionTechnique kind)
+        {
+            if (PoolCoach.Instance.matchBall == MatchBall.ThreeBall && PoolCoach.Instance.matchCushion == MatchCushion.ThreeCusion)
+                ThreeCushionTechniqueMotion.Show(kind);
+        }
+
         void PoolCoach_OnScoreChanged(int playerId, int cnt, int reward, RunPath runPath)
         {
             var scoringPlayer = PoolPlayer.player(playerId);
@@ -1076,8 +1083,13 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 if (PoolCoach.Instance.matchBall == MatchBall.ThreeBall &&
                     NetworkManager.TryGetExistingNetwork(out var scoreNetwork) &&
                     scoreNetwork is PunNetwork scorePun && scorePun.HasLegacyMatch)
-                    scorePun.PresentThreeBallScore(streak);
-                else ShowScoreFloat(streak);
+                    scorePun.PresentThreeBallScore(streak, physicsManager.TechniqueTrace.Classify(true));
+                else
+                {
+                    ShowScoreFloat(streak);
+                    if (PoolCoach.Instance.matchBall == MatchBall.ThreeBall && PoolPlayer.currentPlayer.checkCushion == 3)
+                        ShowTechnique(physicsManager.TechniqueTrace.Classify(true));
+                }
                 if (playerId == 0)
                     HitSelf(cnt).Forget(); // 점수
                 else

@@ -101,6 +101,7 @@ namespace Assets.Scripts.Exert.Network
         public int LoungeLocalSeat => historyPlayer?.SeatNo ?? (PhotonNetwork.InRoom && !PhotonNetwork.IsMasterClient ? 1 : 0);
         public int BeginLegacyShot()
         {
+            Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Hide();
             legacyShotSerial++;
             sentimentMask=0;
             sentimentShotAuthority=PoolLogic.controlInNetwork;
@@ -112,6 +113,7 @@ namespace Assets.Scripts.Exert.Network
         }
 
         int scoreMotionSerial = -1;
+        int techniqueMotionSerial = -1;
 
         public void PublishSentiment(int category,Vector3 shotPosition)
         {
@@ -144,30 +146,38 @@ namespace Assets.Scripts.Exert.Network
         }
 
         // Presentation only. Remote scoring still uses the authoritative end-of-shot contacts.
-        public void PresentThreeBallScore(int streak)
+        public void PresentThreeBallScore(int streak, ThreeCushionTechnique technique = ThreeCushionTechnique.None)
         {
             if (!HasLegacyMatch || historyEnded || historyOffer.match.MatchBall != 3 || streak < 1 ||
                 scoreMotionSerial == legacyShotSerial) return;
-            ApplyThreeBallScore(streak);
+            // The shooter alone has the physical trajectory. Peers never reclassify snapshot interpolation.
+            if (!PoolLogic.controlInNetwork) technique = ThreeCushionTechnique.None;
+            ApplyThreeBallScore(streak, technique);
             if (PoolLogic.controlInNetwork)
-                view.RPC(nameof(ThreeBallScoreMotionRPC), RpcTarget.Others, LegacyMatchId, legacyShotSerial, streak);
+                view.RPC(nameof(ThreeBallScoreMotionRPC), RpcTarget.Others, LegacyMatchId, legacyShotSerial, streak, (int)technique);
         }
 
-        void ApplyThreeBallScore(int streak)
+        void ApplyThreeBallScore(int streak, ThreeCushionTechnique technique)
         {
-            if (scoreMotionSerial == legacyShotSerial) return;
             var panel = Assets.Scripts.Sight.Surface.Pavilion.PnlMatch.Instance;
             if (!panel || !panel.isActiveAndEnabled) return;
+            // A delayed title can arrive after the peer's terminal contact replay presented the score.
+            if(technique!=ThreeCushionTechnique.None && techniqueMotionSerial!=legacyShotSerial)
+            {
+                panel.ShowTechnique(technique);
+                techniqueMotionSerial=legacyShotSerial;
+            }
+            if (scoreMotionSerial == legacyShotSerial) return;
             // Capture the displayed cue ball's position now; the label will not follow it.
             panel.ShowScoreFloat(streak);
             panel.ShowPointAvatar();
             scoreMotionSerial = legacyShotSerial;
         }
 
-        [PunRPC] async void ThreeBallScoreMotionRPC(string id, int serial, int streak, PhotonMessageInfo info)
+        [PunRPC] async void ThreeBallScoreMotionRPC(string id, int serial, int streak, int technique, PhotonMessageInfo info)
         {
             if (!HasLegacyMatch || historyEnded || id != LegacyMatchId || historyOffer.match.MatchBall != 3 ||
-                streak < 1 || streak > 4096 ||
+                streak < 1 || streak > 4096 || technique < 0 || technique > (int)ThreeCushionTechnique.Kick ||
                 info.Sender.ActorNumber != (historyPlayer.SeatNo == 0 ? historyOffer.actor1 : historyOffer.actor0) ||
                 serial < legacyShotSerial || serial > legacyShotSerial + 1) return;
             float deadline = Time.realtimeSinceStartup + 5;
@@ -188,7 +198,7 @@ namespace Assets.Scripts.Exert.Network
                     previewScoreCoins.Add(serial, 1 - historyPlayer.SeatNo, scorer.hitInning + 1, points);
                 } catch (ArgumentException) { previewScoreCoins = null; }
             }
-            ApplyThreeBallScore(streak);
+            ApplyThreeBallScore(streak, (ThreeCushionTechnique)technique);
         }
 
         public void PublishCushionMotion(int count)
@@ -451,6 +461,7 @@ namespace Assets.Scripts.Exert.Network
             scoreCoins = previewScoreCoins = null;
             legacyShotSerial = receivedShotSerial = 0;
             scoreMotionSerial = -1;
+            techniqueMotionSerial = -1;
             matchDeadline = 0;
             timeoutPreparing = timeoutReady = peerTimeoutReady = timeoutCommitted = false;
             ConfirmedResultText = null;

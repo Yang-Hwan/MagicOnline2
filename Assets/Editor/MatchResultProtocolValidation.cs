@@ -70,7 +70,17 @@ public static class MatchResultProtocolValidation
             Require(results[0].Due(161) == null, "match clock ended a moving shot");
             state.shotId = shot.shotId; state.frame = 0;
             foreach (var replica in shots) Require(replica.ApplySnapshot(11, state), "final state rejected");
+            message.technique=(ThreeCushionTechnique)999;
+            Require(!results[0].Apply(11,message),"invalid technique accepted");
+            message.technique=ThreeCushionTechnique.Back;
+            if(ballCount!=3 || outcome!=MatchShotOutcome.Point)
+                Require(!results[0].Apply(11,message),"non-three-cushion point showed technique");
+            message.technique=ballCount==3 && outcome==MatchShotOutcome.Point?ThreeCushionTechnique.Back:ThreeCushionTechnique.None;
+            ThreeCushionTechnique applied=ThreeCushionTechnique.None;
+            Action<MatchResultMessage> capture=m=>applied=m.technique;results[1].Applied+=capture;
             ApplyBoth(message);
+            results[1].Applied-=capture;
+            Require(applied==message.technique,"technique lost between replicas");
         }
         Shot(MatchShotOutcome.Point, 121);
         Require(results[0].Score0 == 1 && shots[0].TurnSeat == 0, "point did not retain turn");

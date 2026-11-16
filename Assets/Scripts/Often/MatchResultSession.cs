@@ -12,6 +12,7 @@ namespace Assets.Scripts.Often
         public MatchResultKind kind;
         public MatchShotOutcome outcome;
         public double time;
+        public ThreeCushionTechnique technique;
     }
 
     // Collision facts only. Scoring is deferred until the authoritative terminal snapshot.
@@ -98,7 +99,10 @@ namespace Assets.Scripts.Often
         {
             if (start.Phase != MatchStartPhase.Started || sender != start.AuthorityActor || message == null ||
                 message.matchId != start.MatchId || message.sequence != Sequence + 1 || message.shotId != shots.ShotId ||
-                !Finite(message.time) || message.time < lastTime || Finished) return false;
+                !Finite(message.time) || message.time < lastTime || Finished ||
+                !Enum.IsDefined(typeof(ThreeCushionTechnique),message.technique)) return false;
+            if(message.technique!=ThreeCushionTechnique.None && (message.kind!=MatchResultKind.Shot ||
+                message.outcome!=MatchShotOutcome.Point || start.Configuration.BallCount!=3 || start.Configuration.CushionCount!=3))return false;
             if (message.kind == MatchResultKind.Begin)
             {
                 if (Initialized || shots.Phase != MatchShotPhase.Ready || shots.ShotId != 0 ||
@@ -138,7 +142,7 @@ namespace Assets.Scripts.Often
             }
             Sequence = message.sequence; lastTime = message.time;
             Applied?.Invoke(new MatchResultMessage { matchId = message.matchId, sequence = message.sequence,
-                shotId = message.shotId, kind = message.kind, outcome = message.outcome, time = message.time });
+                shotId = message.shotId, kind = message.kind, outcome = message.outcome, time = message.time, technique=message.technique });
             return true;
         }
     }

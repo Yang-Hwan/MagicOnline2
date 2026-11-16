@@ -1,0 +1,167 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Assets.Scripts.Often
+{
+    // Presentation classification, independent of score/coin/turn rules. Values are sent on the wire.
+    public enum ThreeCushionTechnique { None, Side, Back, Front, Reverse, Grand, TwoBank, ThreeBank, Return, Bounding,
+        Cut, Cross, Lengthwise, DoubleCushion, Ticky, Kick }
+
+    public sealed class ThreeCushionShotTrace
+    {
+        public struct Contact
+        {
+            public int ball, rail; // rail: 0/1 = x ends, 2/3 = z ends; -1 for ball
+            public Vector2 position, incoming, outgoing;
+            public float spin;
+            public Vector2 target;
+            public float radius;
+        }
+        readonly List<Contact> contacts = new List<Contact>(24);
+        readonly List<Vector2> path = new List<Vector2>(512);
+        Bounds cloth;
+        int cue, first = -1;
+        bool active, complete, earlySecond, overflow;
+        float length;
+        Vector2 start, last;
+        public IReadOnlyList<Contact> Contacts => contacts;
+        public IReadOnlyList<Vector2> Path => path;
+        public float TravelLength => length;
+        public bool Complete => complete;
+        public void Clear() { active=false;complete=false;contacts.Clear();path.Clear(); }
+
+        public static Vector2 Plane(Vector3 v) => new Vector2(v.x, v.z);
+        public void Begin(int cueId, Vector3 origin, Bounds bounds)
+        {
+            cue = cueId; cloth = bounds; first = -1; complete = earlySecond = overflow = false;
+            active = true; contacts.Clear(); path.Clear(); length = 0; start = last = Plane(origin); path.Add(start);
+        }
+        public void Sample(Vector3 position)
+        {
+            if (!active || complete) return;
+            var p = Plane(position);
+            if ((p-last).sqrMagnitude < .000025f) return;
+            length += Vector2.Distance(last,p); last=p;
+            // Keep the full travelled distance even when a very long shot exceeds the visual path budget.
+            if (path.Count < 4096) path.Add(p);
+        }
+        public int RailAt(Vector3 position)
+        {
+            var p=position-cloth.center;
+            return Mathf.Abs(p.x/Mathf.Max(.001f,cloth.extents.x)) > Mathf.Abs(p.z/Mathf.Max(.001f,cloth.extents.z))
+                ? (p.x<0?0:1) : (p.z<0?2:3);
+        }
+        public int RailAt(Vector3 position,Vector3 contactNormal)
+        {
+            if(Mathf.Abs(contactNormal.x)+Mathf.Abs(contactNormal.z)<.01f)return RailAt(position);
+            return Mathf.Abs(contactNormal.x)>Mathf.Abs(contactNormal.z)
+                ? (position.x<cloth.center.x?0:1) : (position.z<cloth.center.z?2:3);
+        }
+        public void Hit(int ballId, int rail, Vector3 position, Vector3 incoming, Vector3 outgoing, float spin,
+            Vector3 targetPosition = default, float radius = 0)
+        {
+            if (!active || complete || ballId==cue && rail<0) return;
+            Sample(position);
+            if (contacts.Count>=128) {overflow=true;return;}
+            contacts.Add(new Contact {ball=ballId,rail=rail,position=Plane(position),incoming=Plane(incoming),outgoing=Plane(outgoing),spin=spin,
+                target=Plane(targetPosition),radius=radius});
+            if (rail>=0) return;
+            if (first<0) first=ballId;
+            else if (ballId!=first)
+            {
+                complete=true;
+                int cushions=0;foreach(var c in contacts)if(c.rail>=0)cushions++;
+                earlySecond=cushions<3;
+            }
+        }
+        public ThreeCushionTechnique Classify(bool confirmedPoint)
+        {
+            if (!confirmedPoint || !complete || earlySecond || overflow || cloth.size.x<=0 || cloth.size.z<=0) return ThreeCushionTechnique.None;
+            var rails=new List<Contact>();int leading=0,firstIndex=-1;
+            for(int i=0;i<contacts.Count;i++)
+            {
+                var c=contacts[i];
+                if(c.rail>=0){rails.Add(c);if(firstIndex<0)leading++;}
+                else if(firstIndex<0)firstIndex=i;
+                else if(i!=contacts.Count-1)return ThreeCushionTechnique.None; // kiss/extra object contact: ambiguous
+            }
+            if(leading==2)return ThreeCushionTechnique.TwoBank;
+            if(leading>=3)return ThreeCushionTechnique.ThreeBank;
+            if(firstIndex<0 || rails.Count<3)return ThreeCushionTechnique.None;
+            var objectContact=contacts[firstIndex];
+            if(leading==1)return ThreeCushionTechnique.Kick;
+            if(leading!=0)return ThreeCushionTechnique.None;
+            var a=rails[0];var b=rails[1];var d=rails[2];
+            float diagonal=new Vector2(cloth.size.x,cloth.size.z).magnitude;
+            float gapToRail=Mathf.Min(objectContact.target.x-cloth.min.x,cloth.max.x-objectContact.target.x,
+                objectContact.target.y-cloth.min.z,cloth.max.z-objectContact.target.y);
+            float toFirstRail=Vector2.Distance(objectContact.position,a.position);
+            if(objectContact.radius>0 && gapToRail<objectContact.radius*3.5f && toFirstRail<objectContact.radius*6)
+            {
+                Vector2 inward=a.rail==0?Vector2.right:a.rail==1?Vector2.left:a.rail==2?Vector2.up:Vector2.down;
+                if(Vector2.Dot(objectContact.position-objectContact.target,inward)<-objectContact.radius*.25f)
+                    return ThreeCushionTechnique.Ticky;
+            }
+            // Bounding hits the same cushion again after curving back, without an intervening cushion.
+            for(int i=1;i<rails.Count;i++)
+                if(rails[i-1].rail==rails[i].rail && Mathf.Abs(rails[i-1].spin)>.5f &&
+                    Vector2.Dot(rails[i-1].outgoing.normalized,rails[i].incoming.normalized)<-.15f)
+                    return ThreeCushionTechnique.Bounding;
+            bool adjacent=(a.rail/2)!=(b.rail/2);
+            var firstBall=contacts[firstIndex];var finish=contacts[contacts.Count-1].position;
+            // Return: revisit first cushion and actually return toward the first-contact region.
+            if(a.rail==d.rail && adjacent && rails.Count==3 &&
+                Vector2.Dot((b.position-a.position).normalized,(finish-d.position).normalized)<-.15f &&
+                Vector2.Distance(finish,firstBall.position)<diagonal*.38f)
+                return ThreeCushionTechnique.Return;
+            // Reverse English must oppose the incoming tangent, not merely be a side-spin shot.
+            Vector2 normal=a.rail==0?Vector2.right:a.rail==1?Vector2.left:a.rail==2?Vector2.up:Vector2.down;
+            Vector2 tangent=new Vector2(-normal.y,normal.x);
+            float along=Vector2.Dot(a.incoming,tangent),after=Vector2.Dot(a.outgoing,tangent);
+            bool reverse=Mathf.Abs(a.spin)>.5f && a.spin*along<0 && Mathf.Abs(along)>.03f &&
+                (along*after<0 || Mathf.Abs(after)<Mathf.Abs(along)*.55f);
+            if(reverse && !adjacent && a.rail!=b.rail)return ThreeCushionTechnique.Reverse;
+            if(!adjacent && a.rail!=b.rail)
+            {
+                if(b.rail/2==d.rail/2 && b.rail!=d.rail)
+                    return (cloth.size.x>=cloth.size.z ? a.rail>=2 : a.rail<2)
+                        ? ThreeCushionTechnique.Cross : ThreeCushionTechnique.Lengthwise;
+                if(b.rail/2!=d.rail/2)return ThreeCushionTechnique.DoubleCushion;
+            }
+            // A grand tour visits four successive adjacent, distinct cushions and has genuine table-scale travel.
+            if(rails.Count>=4 && length>diagonal*1.6f)
+            {
+                bool tour=true;for(int i=1;i<4;i++)if(rails[i].rail/2==rails[i-1].rail/2)tour=false;
+                if(tour && a.rail!=d.rail && b.rail!=rails[3].rail)return ThreeCushionTechnique.Grand;
+            }
+            if(!adjacent || a.rail==d.rail)return ThreeCushionTechnique.None;
+            if(objectContact.radius>0 && toFirstRail<Mathf.Min(cloth.size.x,cloth.size.z)*.18f &&
+                Mathf.Abs(Vector2.Dot(objectContact.incoming.normalized,(objectContact.target-objectContact.position).normalized))<.6f)
+                return ThreeCushionTechnique.Cut;
+            // Front: adjacent first two cushions then the opposite parallel end (long-short-short pattern).
+            bool firstLong = cloth.size.x>=cloth.size.z ? a.rail>=2 : a.rail<2;
+            if(firstLong && b.rail/2==d.rail/2 && b.rail!=d.rail)return ThreeCushionTechnique.Front;
+            if(a.rail/2!=d.rail/2)return ThreeCushionTechnique.None;
+            // Distinguish a draw/behind route from a side route using the actual object-ball approach,
+            // outgoing heading and the side of the original approach line containing the first cushion.
+            var approach=firstBall.incoming.normalized;
+            float forward=Vector2.Dot((a.position-firstBall.position).normalized,approach);
+            float behind=Vector2.Dot(a.position-firstBall.position,approach);
+            if(forward<-.15f || behind<-diagonal*.04f)return ThreeCushionTechnique.Back;
+            if(firstLong && Mathf.Abs(Vector2.Dot(approach,cloth.size.x>=cloth.size.z?Vector2.right:Vector2.up))>.65f)
+                return ThreeCushionTechnique.Back;
+            return ThreeCushionTechnique.Side;
+        }
+        public static string Label(ThreeCushionTechnique kind)
+        {
+            switch(kind){case ThreeCushionTechnique.Side:return "옆돌리기";case ThreeCushionTechnique.Back:return "뒤돌리기";
+                case ThreeCushionTechnique.Front:return "앞돌리기";case ThreeCushionTechnique.Reverse:return "리버스";
+                case ThreeCushionTechnique.Grand:return "대회전";case ThreeCushionTechnique.TwoBank:return "투뱅크";
+                case ThreeCushionTechnique.ThreeBank:return "쓰리뱅크";case ThreeCushionTechnique.Return:return "되돌아오기";
+                case ThreeCushionTechnique.Bounding:return "바운딩샷";case ThreeCushionTechnique.Cut:return "비껴치기";
+                case ThreeCushionTechnique.Cross:return "횡단샷";case ThreeCushionTechnique.Lengthwise:return "종단샷";
+                case ThreeCushionTechnique.DoubleCushion:return "더블쿠션";case ThreeCushionTechnique.Ticky:return "넣어치기";
+                case ThreeCushionTechnique.Kick:return "걸어치기";default:return "";}
+        }
+    }
+}

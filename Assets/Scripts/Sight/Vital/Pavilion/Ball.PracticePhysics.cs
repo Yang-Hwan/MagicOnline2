@@ -14,6 +14,17 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         void OnCollisionEnter(Collision collision)
         {
             if (!isCueBall || !physicsMng.inMove || PoolLogic.controlFromNetwork) return;
+            int contactLayer = collision.collider.gameObject.layer;
+            if (contactLayer == LayerMask.NameToLayer("Board"))
+                physicsMng.TechniqueTrace.Hit(-1, physicsMng.TechniqueTrace.RailAt(body.position,collision.contactCount>0?collision.GetContact(0).normal:Vector3.zero), body.position,
+                    impactIncomingVelocity, body.linearVelocity, impactIncomingSpin.y);
+            else
+            {
+                var target = collision.collider.GetComponent<Ball>();
+                if(target) physicsMng.TechniqueTrace.Hit(target.id,-1,body.position,
+                    impactIncomingVelocity,body.linearVelocity,impactIncomingSpin.y,target.body.position,
+                    GetComponent<SphereCollider>().radius*Mathf.Abs(transform.lossyScale.x));
+            }
             if (strokeSpinPersistence >= 0 && (1 << collision.collider.gameObject.layer) == boardLayer)
             {
                 FollowThroughProfile.ApplySecondRailEnglish(ref strokeRailHits, body, collision,
