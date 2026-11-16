@@ -24,10 +24,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             public float Progress(float time)=>Mathf.Clamp01((time-Started)/RingDuration);
         }
         public readonly Counter[] Counters={new Counter(),new Counter()};
-        readonly TMP_Text[] names=new TMP_Text[2],coins=new TMP_Text[2],series=new TMP_Text[2],levels=new TMP_Text[2],scores=new TMP_Text[2];
+        readonly TMP_Text[] names=new TMP_Text[2],coins=new TMP_Text[2],series=new TMP_Text[2],levels=new TMP_Text[2];
         readonly Image[] sourceFaces=new Image[2],faces=new Image[2];
         readonly RectTransform[] sources=new RectTransform[2];
-        readonly int[] scoreValues={-1,-1},scoreTargets={-1,-1};
         RectTransform root;
         MatchHudGraphic graphic;
         MatchHudArtGraphic referenceArt;
@@ -95,16 +94,16 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 names[side].fontSharedMaterial=nicknameMaterials[side];names[side].extraPadding=true;names[side].UpdateMeshPadding();
                 var timer=(RectTransform)p.Find("TimeInning");Place(timer,gx,43,474,42);var hit=timer.GetComponent<Image>();if(!hit)hit=timer.gameObject.AddComponent<Image>();hit.enabled=true;hit.color=Color.clear;hit.raycastTarget=true;
                 coins[side]=Existing(p,"TxtMatchCoin",self?542:881,110,137,35,25,Gold,self?TextAlignmentOptions.MidlineRight:TextAlignmentOptions.MidlineLeft);
-                scores[side]=Existing(p,"HitCountBox/HitCnt/Txt",0,0,100,25,19,new Color(.8f,.82f,.78f),self?TextAlignmentOptions.MidlineRight:TextAlignmentOptions.MidlineLeft);
-                // This label used to live under a moving score box. Keep its identity, but
-                // anchor it in the player root so legacy box coordinates cannot move it.
-                scores[side].rectTransform.SetParent(p,false);Place(scores[side].rectTransform,self?408:1051,146,100,24);
-                series[side]=Existing(p,"TxtScore",self?681:823,7,56,43,26,Gold,TextAlignmentOptions.Center);
+                p.Find("HitCountBox/HitCnt").gameObject.SetActive(false);
+                series[side]=Existing(p,"TxtScore",self?669:835,15,56,43,26,Gold,TextAlignmentOptions.Center);
                 Node("LevelBacking",p,self?101:1370,141,65,29).gameObject.AddComponent<MatchHudBadgeGraphic>();
                 levels[side]=Label("Level",Node("Level",p,self?101:1370,141,65,29),"",20,Gold,TextAlignmentOptions.Center);
                 p.Find("HitCountBox/EggBox").gameObject.SetActive(false);
-                // Finish mission overlays remain managed by PnlMatch, below the score rail.
-                var finish=(RectTransform)p.Find("HitCountBox/Finish");var finishSlot=Node("FinishSlot",p,self?205:1065,145,285,28);finish.SetParent(finishSlot,false);Place(finish,0,800,285,28);
+                // Completed beads collect at the inner end of each score rail.
+                var finish=(RectTransform)p.Find("HitCountBox/Finish");
+                var finishSlot=Node("FinishSlot",p,self?344:1055,106,160,40);
+                finish.SetParent(finishSlot,false);
+                Place(finish,0,-800,160,40);
                 foreach(var g in finish.GetComponentsInChildren<Graphic>(true))g.enabled=true;
             }
             var center=(RectTransform)transform.Find("TopCenter");foreach(var g in center.GetComponentsInChildren<Graphic>(true))g.enabled=false;
@@ -120,15 +119,14 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public void SetSeries(string self,string other){series[0].text=self??"";series[1].text=other??"";graphic.SetVerticesDirty();}
         public void ResetScores(int target)
         {
-            scoreValues[0]=scoreValues[1]=scoreTargets[0]=scoreTargets[1]=-1;
-            foreach(var counter in Counters){counter.Target=Mathf.Max(1,target);counter.Desired=counter.Displayed=0;counter.Moving=-1;}UpdateScoreLabels();if(graphic)graphic.SetVerticesDirty();
+            foreach(var counter in Counters){counter.Target=Mathf.Max(1,target);counter.Desired=counter.Displayed=0;counter.Moving=-1;}if(graphic)graphic.SetVerticesDirty();
         }
         public void SetScore(int side,int score,bool animate=true)
         {
             var counter=Counters[side];counter.Desired=Mathf.Clamp(score,0,counter.Target);
             if(!animate){counter.Displayed=counter.Desired;counter.Moving=-1;}
             else if(counter.Moving<0)BeginRing(counter);
-            UpdateScoreLabels();if(graphic)graphic.SetVerticesDirty();
+            if(graphic)graphic.SetVerticesDirty();
             if(referenceArt)referenceArt.SetVerticesDirty();
         }
         void BeginRing(Counter n)
@@ -146,17 +144,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             VisualTime=time;TurnBlend=Mathf.Lerp(TurnBlend,ActiveSide==0?1:0,1-Mathf.Exp(-Mathf.Max(0,delta)*4));
             foreach(var n in Counters)if(n.Moving>=0 && time-n.Started>=RingDuration+.48f){n.Displayed=n.ToScore;n.Moving=-1;BeginRing(n);}
-            UpdateScoreLabels();if(graphic)graphic.SetVerticesDirty();
+            if(graphic)graphic.SetVerticesDirty();
             if(referenceArt)referenceArt.SetVerticesDirty();
-        }
-        void UpdateScoreLabels()
-        {
-            for(int i=0;i<2;i++)if(scores[i])
-            {
-                var n=Counters[i];int value=Mathf.Min(n.Target,n.Moving>=0&&n.Progress(VisualTime)>=1?n.ToScore:n.Displayed);
-                // TMP and its string remain untouched on animation-only frames.
-                if(scoreValues[i]==value&&scoreTargets[i]==n.Target&&scores[i].text.IndexOf('/')>=0)continue;scoreValues[i]=value;scoreTargets[i]=n.Target;scores[i].text=value+" / "+n.Target;
-            }
         }
         void LateUpdate()
         {
@@ -198,11 +187,32 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
     [RequireComponent(typeof(CanvasRenderer))]
     public sealed class MatchHudPortraitMask : MaskableGraphic
     {
+        // Left and right edges of the painted opening, in local HUD units from the top.
+        // Extra rows follow the rounded corners at the ends of the slanted sides.
+        static readonly Vector3[] OpeningRows =
+        {
+            new Vector3(63, 169, 5), new Vector3(56, 173, 9),
+            new Vector3(52, 174, 14), new Vector3(50, 174, 19),
+            new Vector3(9, 133, 128), new Vector3(9, 130, 134),
+            new Vector3(12, 125, 140), new Vector3(17, 119, 144),
+            new Vector3(23, 115, 146)
+        };
+
         protected override void OnPopulateMesh(VertexHelper vh)
         {
-            vh.Clear();var r=rectTransform.rect;var points=new[]{new Vector2(.26f,1),new Vector2(1,1),new Vector2(.74f,0),new Vector2(0,0)};
-            foreach(var p in points)vh.AddVert(new Vector3(r.xMin+p.x*r.width,r.yMin+p.y*r.height),new Color(.035f,.13f,.14f,1),p);
-            vh.AddTriangle(0,1,2);vh.AddTriangle(2,3,0);
+            vh.Clear();
+            var rect = rectTransform.rect;
+            var tint = new Color(.035f, .13f, .14f, 1);
+            foreach (var row in OpeningRows)
+            {
+                int start = vh.currentVertCount;
+                float y = rect.yMax - row.z;
+                vh.AddVert(new Vector3(rect.xMin + row.x, y), tint, Vector2.zero);
+                vh.AddVert(new Vector3(rect.xMin + row.y, y), tint, Vector2.zero);
+                if (start == 0) continue;
+                vh.AddTriangle(start - 2, start - 1, start);
+                vh.AddTriangle(start, start - 1, start + 1);
+            }
         }
     }
 

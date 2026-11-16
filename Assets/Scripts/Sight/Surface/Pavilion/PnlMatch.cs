@@ -406,12 +406,31 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             shotController.CuePutAside(); // 
 
             // 볼 뿌리기 
-            if (PoolLogic.controlInNetwork)
+            if (NetworkManager.TryGetExistingNetwork(out var network) && network is PunNetwork pun && pun.HasLegacyMatch)
+            {
+                pun.MarkTableReady();
+                if (PoolLogic.controlInNetwork)
+                    StartOpeningWhenReady(pun, pun.LegacyMatchId, matchViewLifetime.Token).Forget();
+            }
+            else if (PoolLogic.controlInNetwork)
             {
                 physicsManager.InitRandPosFlutter();
             }
 
             //physicsManager.StartBallScatter();
+        }
+
+        async UniTask StartOpeningWhenReady(PunNetwork network, string matchId, CancellationToken token)
+        {
+            while (!token.IsCancellationRequested && network && network.LegacyMatchId == matchId && !network.BlockLegacyShots)
+            {
+                if (network.TryBeginOpeningScatter(matchId))
+                {
+                    physicsManager.InitRandPosFlutter();
+                    return;
+                }
+                if (await UniTask.NextFrame(cancellationToken: token).SuppressCancellationThrow()) return;
+            }
         }
 
         void MatchTimeStart(int durationInSeconds)
@@ -1453,12 +1472,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                         PoolPlayer.currentPlayer.finishStep != FinishStep.Push) return;
                     if (PoolPlayer.mainPlayer.myTurn)
                     {
-                        gamFinishSelf.anchoredPosition = new Vector2(20f, 0f);
+                        gamFinishSelf.anchoredPosition = Vector2.zero;
                         //gamFinishSelf.SetActive(true);
                     }
                     else
                     {
-                        gamFinishOther.anchoredPosition = new Vector2(-20f, 0f);
+                        gamFinishOther.anchoredPosition = Vector2.zero;
                         //gamFinishOther.SetActive(true);
                     }
                     popNoticeMsg.NoticeView(notice);

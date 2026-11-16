@@ -255,6 +255,31 @@ namespace Assets.Scripts.Exert.Network
         }
         double matchDeadline;
         bool timeoutPreparing, timeoutReady, peerTimeoutReady, timeoutCommitted;
+        bool localTableReady, peerTableReady, openingScatterStarted;
+
+        public void MarkTableReady()
+        {
+            if (!HasLegacyMatch || historyEnded || !HistoryPeerPresent || localTableReady) return;
+            localTableReady = true;
+            view.RPC(nameof(TableReadyRPC), opponentPlayer, LegacyMatchId);
+        }
+
+        [PunRPC] void TableReadyRPC(string matchId, PhotonMessageInfo info)
+        {
+            // The peer can finish loading while this client still awaits the commit's API requests.
+            if (!HistoryPeerPresent || historyEnded || historyOffer.match.MatchId != matchId) return;
+            int peer = historyPlayer.SeatNo == 0 ? historyOffer.actor1 : historyOffer.actor0;
+            if (info.Sender.ActorNumber == peer) peerTableReady = true;
+        }
+
+        public bool TryBeginOpeningScatter(string matchId)
+        {
+            if (!HasLegacyMatch || historyEnded || !HistoryPeerPresent || LegacyMatchId != matchId ||
+                historyPlayer.SeatNo != historyOffer.startingSeat || !localTableReady || !peerTableReady || openingScatterStarted)
+                return false;
+            openingScatterStarted = true;
+            return true;
+        }
         public bool HasLegacyMatch => LegacyHistoryEnabled && historyStarted && historyOffer != null;
         public bool BlockLegacyShots => HasLegacyMatch && (timeoutPreparing || historyEnded);
         public string BallSkinMatchId => historyOffer?.match?.MatchId;
@@ -420,6 +445,7 @@ namespace Assets.Scripts.Exert.Network
             if (!seriesRematch) { seriesWinsA = seriesWinsB = 0; seriesCountedMatch = null; }
             confirmedLoserSeat = -1;
             historyOffer = offer; historyStarted = historyEnded = false;
+            localTableReady = peerTableReady = openingScatterStarted = false;
             MatchEquipment = null; nextEquipmentSend = 0; nextEquipmentReceive[0] = nextEquipmentReceive[1] = 0;
             PoolCoach.Instance.ApplyBallSkin(offer.match.MatchId);
             scoreCoins = previewScoreCoins = null;

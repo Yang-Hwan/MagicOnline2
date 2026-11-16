@@ -221,7 +221,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             Gauge(0);Gauge(1);ScoreRail(0);ScoreRail(1);
             Badge(101,141,65,29);Badge(1370,141,65,29);
             Coin(530,123);Coin(1031,123);
-            if(view.IsSeries){Badge(686,7,46,43);Badge(828,7,46,43);}
+            if(view.IsSeries){Badge(674,15,46,43);Badge(840,15,46,43);}
         }
     }
 }

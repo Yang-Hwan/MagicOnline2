@@ -46,7 +46,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         protected override void OnPopulateMesh(VertexHelper vh)
         {
             vh.Clear();if(!view||!artwork)return;
-            Tile(vh,new Rect(737.5f,10.25f,85,59.5f),new Rect(1028,89,128,88),false);
+            Tile(vh,new Rect(741.75f,13.225f,76.5f,53.55f),new Rect(1028,89,128,88),false);
             for(int side=0;side<2;side++)for(int i=0;i<Mathf.Min(15,view.Counters[side].Target);i++)
             {
                 var source=MatchHudGraphic.IsRedRing(i)?new Rect(399,226,24,57):new Rect(316,226,22,57);
