@@ -221,6 +221,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             replayCueActive = shotController.cueVertical.gameObject.activeSelf;
             replayLiveLineEnabled = line.enabled; line.enabled = false; replayTrailFrame = -1;
             IsPracticeReplay = true; Time.timeScale = 0; ShotCtrl.canControl = false;
+            shotController.HideLiveAimPrediction();
             ReplayFrameIndex = 0; replayClock = 0;
             ApplyReplayFrame(replayFrames[0]);
             var first = replayFrames[0];

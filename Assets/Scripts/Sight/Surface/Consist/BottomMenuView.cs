@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -214,10 +214,16 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 var mode = modes[i]; float x = i % 2 == 0 ? 420 : 920; float y = i < 2 ? 275 : 540;
                 if (mode == PracticeSceneFlow.Mode.Stage)
                 {
-                    StageSlice("StageIconBacking",body,new Rect(x+27,y+15,374,122),new Rect(750,86,370,114));
-                    for(int j=0;j<3;j++)
-                        StageSlice("StageIcon"+j,body,new Rect(x+100+j*76,y+16,70,120),
-                            new Rect(21+318*j,211,305,552));
+                    var stageButton=Resources.Load<Texture2D>("PracticeMenu/StageButton");
+                    if(stageButton)
+                    {
+                        // The approved artwork already contains its title and subtitle. Its
+                        // textured margin covers the old replay illustration in the backplate.
+                        Art("StageButtonArt",body,stageButton,x-30,y-10,490,285).uvRect=
+                            new Rect(136f/1628,1f-912f/966,1356f/1628,842f/966);
+                        Hit("Practice"+i,body,x-30,y-10,490,285,OpenStages);
+                        continue;
+                    }
                 }
                 Hit("Practice" + i, body, x, y, 430, 255, () => { if(mode==PracticeSceneFlow.Mode.Stage) OpenStages(); else PracticeSceneFlow.Enter(mode); });
                 Text("PracticeLabel" + i, body, labels[i], x + 20, y + (i < 2 ? 130 : 150), 390, 55, 43, Color.black);
@@ -227,44 +233,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
 
         public static bool CanEnter(SkillMatchData hall, long balance) => hall != null && balance >= hall.PrizeCoin && balance <= hall.MaxCoin;
 
-        void Multiplayer()
-        {
-            var halls = BackendChart.skillMatchData;
-            selectedHall = Mathf.Clamp(selectedHall, 0, Mathf.Max(0, halls.Count - 1));
-            for (int slot = 0; slot < 3; slot++)
-            {
-                int index = selectedHall + slot - 1;
-                var hall = index >= 0 && index < halls.Count ? halls[index] : null;
-                float x = new[] { 334f, 695, 1066 }[slot];
-                if (hall == null)
-                {
-                    Box("EmptyArena" + slot, body, x, 382, 278, 350, new Color(.015f, .07f, .12f, .95f));
-                    Text("NoArena" + slot, body, halls.Count == 0 && slot == 1 ? "경기장 정보를\n불러오지 못했습니다" : "—", x + 5, 470, 268, 100, 27, Color.white);
-                    continue;
-                }
-                Text("ArenaTitle" + slot, body, hall.HallName, x + 3, 382, 274, 60, 35, Color.white, autoSize: true);
-                string count = roomCounts.TryGetValue(hall.HallIdx, out int n) ? n + "명" : "확인 중";
-                string[] finish = { "", "쿠션 마무리", "뱅크 마무리", "투뱅크 마무리" };
-                string description = $"접속  {count}\n입장  {hall.PrizeCoin:N0} 코인\n규칙  {hall.MatchBall}구\n목표  {(hall.TargetHit)}개\n제한시간  {hall.MatchTotMin}분\n{finish[Mathf.Clamp(hall.FinishMission, 0, 3)]}";
-                var info = Text("ArenaInfo" + slot, body, description, x + 18, 450, 244, 213, 27, Color.white, TextAlignmentOptions.TopLeft, true);
-                info.lineSpacing = 10;
-                bool allowed = CanEnter(hall, BackendGame.Instance.UserMainData.Coin);
-                string label = slot == 1 ? (allowed ? "입장하기" : "입장 조건 확인") : "선택";
-                int chosen = index; var chosenHall = hall;
-                Hit("ArenaAction" + slot, body, x, 667, 278, 64, () =>
-                {
-                    if (chosen != selectedHall) { selectedHall = chosen; SelectPage(2); }
-                    else EnterArena(chosenHall);
-                });
-                Text("ArenaActionLabel" + slot, body, label, x + 5, 672, 268, 52, 33, slot == 1 ? Color.black : Color.white);
-            }
-            Hit("PreviousArena", body, 220, 425, 78, 110, () => { selectedHall = Mathf.Max(0, selectedHall - 1); SelectPage(2); });
-            Hit("NextArena", body, 1382, 425, 80, 110, () => { selectedHall = Mathf.Min(Mathf.Max(0, halls.Count - 1), selectedHall + 1); SelectPage(2); });
-            // Replace the mockup's three static dots with the real page index.
-            Box("ArenaPaginationBackground", body, 775, 760, 130, 32, new Color(.04f, .04f, .04f));
-            Text("ArenaPagination", body, halls.Count == 0 ? "0 / 0" : $"{selectedHall + 1} / {halls.Count}", 775, 759, 130, 33, 23, Yellow);
-            Text("ArenaHint", body, "경기장 입장 후 상대를 기다립니다", 450, 795, 770, 36, 24, Color.white);
-        }
+        void Multiplayer() => BuildArenaCarousel();
 
         void EnterArena(SkillMatchData hall)
         {
@@ -411,11 +380,11 @@ namespace Assets.Scripts.Sight.Surface.Consist
             headerPortrait.SetProfile(new MatchEquipmentProfile { Emotions = new[] { new MatchEquipmentEmotion { Code = "기본", Asset = asset } } });
             headerPortrait.Show("기본", headerFallback);
         }
-        void UserDataChanged() { RefreshUser(); if (CurrentPage == 2 || CurrentPage == 3) SelectPage(CurrentPage); }
+        void UserDataChanged() { RefreshUser(); if (CurrentPage == 2) RefreshArenaCards(); else if (CurrentPage == 3) SelectPage(3); }
         void RoomCountsChanged(Dictionary<int, int> counts)
         {
             roomCounts.Clear(); foreach (var pair in counts) roomCounts[pair.Key] = pair.Value;
-            if (CurrentPage == 2) SelectPage(2);
+            if (CurrentPage == 2) RefreshArenaCards();
         }
         void Subscribe()
         {

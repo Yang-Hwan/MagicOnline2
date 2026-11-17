@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using Assets.Scripts.Sight.Surface.Consist;
@@ -143,12 +143,12 @@ public static class BottomMenuRuntimeValidation
             else if(stage==9)
             {
                 var physics=UnityEngine.Object.FindAnyObjectByType<StagePhysics>();
-                var marker=physics.GetComponentsInChildren<TMPro.TMP_Text>().FirstOrDefault(t=>t.name=="Stage Cushion Number");
+                var marker=physics.GetComponentsInChildren<StageCushionNumber>().FirstOrDefault(t=>t.name=="Stage Cushion Number");
                 int seen=SessionState.GetInt(Key+"guideNumber",0);
                 if(marker)
                 {
                     if(ShotCtrl.canControl || physics.IsPracticeReplay) throw new Exception("Input enabled during cushion guide");
-                    if(marker.text==(seen+1).ToString())
+                    if(marker.Number==seen+1)
                     {
                         var line=physics.cushionHit.transform.Find(seen==1?"lineT":"lineR").GetComponent<ParticleSystem>();
                         if(!line.isPlaying) throw new Exception("Stage cushion did not light up with its number");
@@ -172,7 +172,28 @@ public static class BottomMenuRuntimeValidation
             else if(stage==5)
             {
                 var physics=UnityEngine.Object.FindAnyObjectByType<Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.PhysicsMng>();
-                if(physics.IsPracticeReplay)return;
+                var fields=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+                var illuminated=(ParticleSystem)typeof(StagePhysics).GetField("guideLine",fields).GetValue(physics);
+                if(physics.IsPracticeReplay)
+                {
+                    var contacts=(StageMissions.DemoCushion[])typeof(StagePhysics).GetField("demoCushions",fields).GetValue(physics);
+                    int due=contacts.Count(c=>c.frame<=physics.ReplayFrameIndex);
+                    int shown=(int)typeof(StagePhysics).GetField("demoCushionCursor",fields).GetValue(physics);
+                    if(shown!=due)throw new Exception("Demo illumination not synchronized to recorded contact frames");
+                    if(due==0 && illuminated)throw new Exception("Demo illuminated a cushion before contact");
+                    if(due>0 && (!illuminated || illuminated.name!="line"+contacts[due-1].side))
+                        throw new Exception("Demo illuminated the wrong cushion");
+                    if(due>0 && illuminated.GetComponentsInChildren<ParticleSystem>(true).Any(p=>!p.main.useUnscaledTime))
+                        throw new Exception("Demo cushion effect uses the paused physics clock");
+                    if(due>0 && physics.ReplayFrameIndex>contacts[due-1].frame+10 && illuminated.time<=0)
+                        throw new Exception("Demo cushion effect did not advance while physics was paused");
+                    if(GameObject.Find("Stage Cushion Light"))throw new Exception("Unwanted replacement cushion glow exists");
+                    if(due>0 && physics.ReplayFrameIndex>contacts[due-1].frame+10 &&
+                        illuminated.GetComponentsInChildren<ParticleSystem>(true).Any(p=>p.time<=0))
+                        throw new Exception("A child cushion light remained frozen in replay");
+                    return;
+                }
+                if(illuminated)throw new Exception("Demo illumination remained after returning to aim");
                 if(!Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.ShotCtrl.canControl)throw new Exception("No input after stage demo");
                 CheckStageLayout(physics);
                 TapCueBall(physics);
@@ -181,13 +202,13 @@ public static class BottomMenuRuntimeValidation
             else if(stage==6)
             {
                 var physics=UnityEngine.Object.FindAnyObjectByType<StagePhysics>();
-                var button=physics.GetComponentsInChildren<Button>().FirstOrDefault(b=>b.name=="StageAction");
+                var button=physics.GetComponentsInChildren<Button>().FirstOrDefault(b=>b.name=="StageRetry");
                 if(!button || physics.inMove)return;
                 int spent=StageMissions.Spent(1);
                 string action=button.GetComponentInChildren<TMPro.TMP_Text>().text;
                 if(spent<6)
                 {
-                    if(action!="다시 도전" || spent<1)throw new Exception("Failed shot did not consume half a star");
+                    if(action!="다시하기" || spent<1)throw new Exception("Failed shot did not consume half a star");
                     button.onClick.Invoke();
                     TapCueBall(physics);
                 }
@@ -209,7 +230,13 @@ public static class BottomMenuRuntimeValidation
                 int red=2;
                 foreach(char contact in StageMissions.Get(1).order)
                     if(contact=='O') ball.Invoke(physics,new object[]{0,red++});
-                    else rail.Invoke(physics,new object[]{0,"Board"+contact});
+                    else
+                    {
+                        rail.Invoke(physics,new object[]{0,"Board"+contact});
+                        var lit=(ParticleSystem)typeof(StagePhysics).GetField("guideLine",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(physics);
+                        if(!lit || !lit.isPlaying || lit.name!="line"+contact)
+                            throw new Exception("Player cushion contact did not illuminate the touched rail");
+                    }
                 rail.Invoke(physics,new object[]{0,"BoardB"});
                 SessionState.SetInt(Key+"stage",8);
             }
@@ -281,7 +308,13 @@ public static class BottomMenuRuntimeValidation
     }
     static void TapCueBall(StagePhysics physics)
     {
+        var state=Assets.TutorialInfo.Scripts.TableSet06.Excert.Match.PoolLogic.gameState;
+        // Reproduce an interrupted shot left in the static state, then take a new shot.
+        state.ballsHitBoardCount=2;
+        state.ballHitBall_1=2;
         var body=physics.ballcs[0].body;
         _=physics.StartShot(new Impulse(body.position,Vector3.left*.002f,Vector3.zero));
+        if(state.ballsHitBoardCount!=0 || state.ballHitBall_1!=-1 || state.hitKinds.Count!=0)
+            throw new Exception("Stage shot inherited previous cushion/object contacts");
     }
 }

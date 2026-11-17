@@ -450,6 +450,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
 
         void PhysicsManager_OnBallHitBall(BallC ball, BallC hitBall, bool inMove)
         {
+            // Stages adjudicate collision entry in RecordStageBall/RecordStageRail.
+            // Legacy exit callbacks also occur while repositioning recorded balls.
+            if (_physicsMng && _physicsMng.IsStage) return;
             if (!inMove)
             {
                 return;
@@ -470,6 +473,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
 
         void PhysicsManager_OnBallHitBoard(BallC ball, bool inMove, CushionDir cushion)
         {
+            if (_physicsMng && _physicsMng.IsStage) return;
             //Debug.Log("PhysicsManager_OnBallHitBoard");
 
             if (!inMove)

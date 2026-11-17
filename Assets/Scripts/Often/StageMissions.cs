@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Assets.Scripts.Exert.BackSys;
 using UnityEngine;
 
@@ -20,6 +21,7 @@ namespace Assets.Scripts.Often
             bool followsDemo = true;
             public bool Decided { get; private set; }
             public bool Scored { get; private set; }
+            public int Cushions => cushions;
             public bool Passed => Scored && followsDemo && cursor == mission.order.Length;
 
             public Shot(Mission mission) { this.mission = mission; }
@@ -46,6 +48,35 @@ namespace Assets.Scripts.Often
             }
         }
         [Serializable] sealed class Catalog { public Mission[] missions; }
+        public struct DemoCushion
+        {
+            public int frame, number;
+            public char side;
+        }
+        // Route vertices are the recorded contacts, not evenly timed animation targets.
+        // Resolve them against the cropped/mirrored cue-ball frames once per stage.
+        public static DemoCushion[] FindDemoCushions(Mission mission, IReadOnlyList<Vector2> cuePositions)
+        {
+            if(mission.route==null || mission.route.Length!=mission.order.Length+1 || cuePositions.Count<2)
+                throw new System.IO.InvalidDataException("Missing stage contact route");
+            var events=new List<DemoCushion>();
+            int previous=0;
+            for(int contact=0;contact<mission.order.Length;contact++)
+            {
+                int nearest=-1;float distance=float.MaxValue;
+                for(int f=previous+1;f<cuePositions.Count;f++)
+                {
+                    float d=(cuePositions[f]-mission.route[contact+1]).sqrMagnitude;
+                    if(d<distance){distance=d;nearest=f;}
+                }
+                if(nearest<0 || distance>.0025f)
+                    throw new System.IO.InvalidDataException("Stage contact does not match recorded trajectory");
+                previous=nearest;
+                char side=mission.order[contact];
+                if(side!='O')events.Add(new DemoCushion {frame=nearest,side=side,number=events.Count+1});
+            }
+            return events.ToArray();
+        }
         static Catalog catalog;
         public const int Count = 100, Chances = 6;
         public static int Current { get; private set; } = 1;

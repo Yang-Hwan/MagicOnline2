@@ -26,6 +26,13 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public bool PreviewIsCalculating => prediction!=null && prediction.IsCalculating;
         public double PreviewMaxSliceMs => prediction?.MaxSliceMilliseconds ?? 0;
 
+        public void HideLiveAimPrediction()
+        {
+            prediction?.Cancel();pendingPreview=false;
+            GuideLineReset();
+            if(ballCheckerRenderer)ballCheckerRenderer.enabled=false;
+        }
+
         // Call when board geometry changes; ordinary aim/ball changes only reset the actors.
         public void InvalidatePredictionGeometry() { prediction?.Dispose();prediction=null;predictionDirty=true;pendingPreview=false; }
         void OnDisable() { prediction?.Cancel();pendingPreview=false;predictionDirty=true; }
@@ -74,9 +81,16 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         {
             UpdateGaugeValueLabels();
             UpdateOverlapPreview();
+            // The contact-position ghost belongs to live aiming, not the recorded balls.
+            // Clearing only the guide lines left this renderer at the last predicted impact.
+            bool liveAim=physicsManager && physicsManager.CueGuideEnabled && cueBall && cueBall.isCueball &&
+                cueVertical.parent==cuePivot && canControl && !IsShotAnimating && !physicsManager.inMove &&
+                !physicsManager.IsPracticeReplay && !physicsManager.IsBallPlacement;
+            if(ballCheckerRenderer)ballCheckerRenderer.enabled=liveAim;
             if(!physicsManager || !physicsManager.CueGuideEnabled || !physicsManager.useCalibratedPhysics || !cueBall || !cueBall.isCueball || cueVertical.parent!=cuePivot || !canControl || IsShotAnimating ||
                 physicsManager.inMove || physicsManager.IsPracticeReplay || physicsManager.IsBallPlacement) {
                 prediction?.Cancel();pendingPreview=false;predictionDirty=true;
+                if(!liveAim && ballChecker)ballChecker.position=new Vector3(0,0,2f);
                 foreach(var line in cueBallLines)if(line)line.positionCount=0;
                 foreach(var line in targetBallLines)if(line)line.positionCount=0;
                 return;

@@ -34,7 +34,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         public void HitDir(CushionDir dir) => PlayLine(dir);
 
-        public ParticleSystem PlayLine(CushionDir dir)
+        public ParticleSystem PlayLine(CushionDir dir, bool useUnscaledTime = false)
         {
             ParticleSystem line;
             switch (dir)
@@ -45,7 +45,16 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 case CushionDir.L: line = lineL; break;
                 default: return null;
             }
-            line.Play();
+            // Stage demos freeze physics (timeScale == 0) and advance recorded balls manually.
+            // Their cushion flashes must continue on the same real-time clock as the replay.
+            // The green cushion strip is a child particle system; configuring only the
+            // parent advances the smoke while the actual light remains frozen in replay.
+            foreach(var particles in line.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main=particles.main;
+                main.useUnscaledTime=useUnscaledTime;
+            }
+            line.Play(true);
             return line;
         }
     }
