@@ -9,9 +9,41 @@ namespace Assets.Scripts.Often
         [Serializable] public sealed class Mission
         {
             public string source, order;
-            public int balls, cue, first;
+            public int balls, cue, first, scoreFrame;
             public bool mirrorX, mirrorZ;
             public Vector2[] layout, route;
+        }
+        public sealed class Shot
+        {
+            readonly Mission mission;
+            int cursor, cushions, firstObject = -1;
+            bool followsDemo = true;
+            public bool Decided { get; private set; }
+            public bool Scored { get; private set; }
+            public bool Passed => Scored && followsDemo && cursor == mission.order.Length;
+
+            public Shot(Mission mission) { this.mission = mission; }
+            void MatchContact(char contact)
+            {
+                followsDemo &= cursor < mission.order.Length && mission.order[cursor] == contact;
+                cursor++;
+            }
+            public void Rail(char side)
+            {
+                if (Decided) return;
+                cushions++;
+                MatchContact(side);
+            }
+            public void Ball(int id)
+            {
+                if (Decided || id == mission.cue || id < 0 || id >= mission.balls) return;
+                if (mission.balls == 4 && id < 2) { Decided = true; return; }
+                MatchContact('O');
+                if (firstObject == -1) { firstObject = id; return; }
+                if (id == firstObject) return;
+                Decided = true;
+                Scored = mission.balls == 4 || cushions >= 3;
+            }
         }
         [Serializable] sealed class Catalog { public Mission[] missions; }
         static Catalog catalog;

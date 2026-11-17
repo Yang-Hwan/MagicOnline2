@@ -32,24 +32,21 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             lineL = transform.GetChild(3).GetComponent<ParticleSystem>();
         }
 
-        public void HitDir(CushionDir dir)
+        public void HitDir(CushionDir dir) => PlayLine(dir);
+
+        public ParticleSystem PlayLine(CushionDir dir)
         {
+            ParticleSystem line;
             switch (dir)
             {
-                case CushionDir.T:
-                    lineT.Play();
-                    break;
-                case CushionDir.B:
-                    lineB.Play();
-                    break;
-                case CushionDir.R:
-                    lineR.Play();
-                    break;
-                case CushionDir.L:
-                    lineL.Play();
-                    break;
+                case CushionDir.T: line = lineT; break;
+                case CushionDir.B: line = lineB; break;
+                case CushionDir.R: line = lineR; break;
+                case CushionDir.L: line = lineL; break;
+                default: return null;
             }
+            line.Play();
+            return line;
         }
-
     }
 }

@@ -205,6 +205,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 else
                 {
                     var target=collision.collider.GetComponent<BallC>();
+                    if(target && physicsManager.IsStage) physicsManager.RecordStageBall(id,target.id);
                     if(target)trace.Hit(target.id,-1,body.position,impactIncomingVelocity,body.linearVelocity,impactIncomingSpin.y,
                         target.body.position,GetComponent<SphereCollider>().radius*Mathf.Abs(transform.lossyScale.x));
                 }

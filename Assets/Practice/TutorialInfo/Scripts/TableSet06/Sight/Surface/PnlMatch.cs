@@ -169,7 +169,18 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             aniCtrl = transform.Find("AchieveMsg").GetComponent<AniCtrl>();
             wordBalloonCtrl = transform.Find("WordBalloonMsg").GetComponent<WordBalloonCtrl>();
 
-            gameObject.AddComponent<Assets.Scripts.Sight.Surface.Pavilion.PracticeStoryPreview>();
+            if (physicsManager.IsStage)
+            {
+                foreach (var name in new[] { "PlayerBoxs", "TopCenter", "BtnMatchEnd", "MsgInfo", "WordBalloonMsg", "AchieveMsg", "CushionHit" })
+                {
+                    var group = transform.Find(name).gameObject.AddComponent<CanvasGroup>();
+                    group.alpha = 0;
+                    group.interactable = false;
+                    group.blocksRaycasts = false;
+                }
+                inningTimerBar.transform.parent.parent.gameObject.SetActive(false); // Table/UI_TOP
+            }
+            else gameObject.AddComponent<Assets.Scripts.Sight.Surface.Pavilion.PracticeStoryPreview>();
             BindRuntimeEvents();
             //physicsManager.OnBallAllStop += PhysicsManager_OnBallAllStop;
             //Debug.Log($"PnlMatch Awake -----------------");

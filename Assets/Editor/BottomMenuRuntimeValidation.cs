@@ -119,8 +119,17 @@ public static class BottomMenuRuntimeValidation
                 if(mode==4)
                 {
                     var physics=UnityEngine.Object.FindAnyObjectByType<Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.PhysicsMng>();
-                    if(!physics || !physics.IsPracticeReplay) throw new Exception("Stage demo did not start");
-                    SessionState.SetInt(Key+"stage",5);return;
+                    if(!physics) return;
+                    var start=physics.GetComponentsInChildren<Button>().FirstOrDefault(b=>b.name=="StageStart");
+                    if(!start) return;
+                    var panel=UnityEngine.Object.FindAnyObjectByType<Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface.PnlMatch>();
+                    var players=panel.transform.Find("PlayerBoxs").GetComponent<CanvasGroup>();
+                    if(physics.IsPracticeReplay || ShotCtrl.canControl || !players || players.alpha!=0 || players.blocksRaycasts || GameObject.Find("Table/UI_TOP"))
+                        throw new Exception("Stage intro did not lock input and hide the match HUD");
+                    CheckStageLayout(physics);
+                    start.onClick.Invoke();
+                    SessionState.SetInt(Key+"guideNumber",0);
+                    SessionState.SetInt(Key+"stage",9);return;
                 }
                 PracticeSceneFlow.ReturnToMenu(); SessionState.SetInt(Key + "mode", mode + 1);
                 SessionState.SetInt(Key + "stage", 3); next = EditorApplication.timeSinceStartup + 2;
@@ -129,20 +138,43 @@ public static class BottomMenuRuntimeValidation
             {
                 var view=UnityEngine.Object.FindAnyObjectByType<BottomMenuView>();
                 view.GetComponentsInChildren<Button>().Single(b=>b.name=="Challenge1").onClick.Invoke();
-                SessionState.SetInt(Key+"stage",2);next=EditorApplication.timeSinceStartup+2;
+                SessionState.SetInt(Key+"stage",2);next=EditorApplication.timeSinceStartup;
+            }
+            else if(stage==9)
+            {
+                var physics=UnityEngine.Object.FindAnyObjectByType<StagePhysics>();
+                var marker=physics.GetComponentsInChildren<TMPro.TMP_Text>().FirstOrDefault(t=>t.name=="Stage Cushion Number");
+                int seen=SessionState.GetInt(Key+"guideNumber",0);
+                if(marker)
+                {
+                    if(ShotCtrl.canControl || physics.IsPracticeReplay) throw new Exception("Input enabled during cushion guide");
+                    if(marker.text==(seen+1).ToString())
+                    {
+                        var line=physics.cushionHit.transform.Find(seen==1?"lineT":"lineR").GetComponent<ParticleSystem>();
+                        if(!line.isPlaying) throw new Exception("Stage cushion did not light up with its number");
+                        var badge=marker.transform.parent;
+                        var camera=InputOutput.usedCamera;
+                        Vector3 railCenter=camera.WorldToScreenPoint(line.transform.position);
+                        Vector2 badgeCenter=RectTransformUtility.WorldToScreenPoint(null,badge.position);
+                        float error=seen==1?Mathf.Abs(badgeCenter.x-railCenter.x):Mathf.Abs(badgeCenter.y-railCenter.y);
+                        if(error>Screen.height*.05f) throw new Exception("Stage number was not centered along its cushion");
+                        SessionState.SetInt(Key+"guideNumber",seen+1);
+                    }
+                    return;
+                }
+                if(seen!=3 || !ShotCtrl.canControl || StageMissions.Spent(1)!=0) throw new Exception("Cushion guide did not finish in aim mode");
+                var action=physics.GetComponentsInChildren<Button>().Single(b=>b.name=="StageAction");
+                if(((RectTransform)action.transform.parent).anchorMax.y!=1) throw new Exception("Mission bar not at top");
+                action.onClick.Invoke();
+                if(!physics.IsPracticeReplay) throw new Exception("Manual stage preview did not start");
+                SessionState.SetInt(Key+"stage",5);
             }
             else if(stage==5)
             {
                 var physics=UnityEngine.Object.FindAnyObjectByType<Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.PhysicsMng>();
                 if(physics.IsPracticeReplay)return;
                 if(!Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.ShotCtrl.canControl)throw new Exception("No input after stage demo");
-                var layout=StageMissions.Get(1).layout;
-                for(int i=0;i<layout.Length;i++)
-                {
-                    var p=physics.ballcs[i].body.position;
-                    if(Mathf.Abs((p.x+1.304f)/2.606f-layout[i].x)>.001f || Mathf.Abs((.473f-p.z)/1.265f-layout[i].y)>.001f)
-                        throw new Exception("Stage starting position mismatch");
-                }
+                CheckStageLayout(physics);
                 TapCueBall(physics);
                 SessionState.SetInt(Key+"stage",6);
             }
@@ -171,9 +203,14 @@ public static class BottomMenuRuntimeValidation
                 var physics=UnityEngine.Object.FindAnyObjectByType<StagePhysics>();
                 if(StageMissions.Spent(1)!=0 || physics.IsPracticeReplay || !ShotCtrl.canControl)return;
                 TapCueBall(physics);
-                // Feed the recorded contact order through the same receiver used by the board colliders.
+                CheckStageScores();
                 var rail=typeof(StagePhysics).GetMethod("RecordStageRail",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
-                foreach(char side in StageMissions.Get(1).order)rail.Invoke(physics,new object[]{0,"Board"+side});
+                var ball=typeof(StagePhysics).GetMethod("RecordStageBall",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
+                int red=2;
+                foreach(char contact in StageMissions.Get(1).order)
+                    if(contact=='O') ball.Invoke(physics,new object[]{0,red++});
+                    else rail.Invoke(physics,new object[]{0,"Board"+contact});
+                rail.Invoke(physics,new object[]{0,"BoardB"});
                 SessionState.SetInt(Key+"stage",8);
             }
             else if(stage==8)
@@ -195,7 +232,45 @@ public static class BottomMenuRuntimeValidation
         catch (Exception e)
         { File.WriteAllText("Logs/BottomMenu/runtime-failure.txt", e.ToString()); EditorApplication.isPlaying = false; }
     }
+    static void CheckStageLayout(StagePhysics physics)
+    {
+        var layout=StageMissions.Get(1).layout;
+        for(int i=0;i<layout.Length;i++)
+        {
+            var p=physics.ballcs[i].body.position;
+            if(Mathf.Abs((p.x+1.304f)/2.606f-layout[i].x)>.001f || Mathf.Abs((.473f-p.z)/1.265f-layout[i].y)>.001f)
+                throw new Exception("Stage starting position mismatch");
+        }
+    }
     const string GuestStage="StageMissions.v1..1";
+    static void CheckStageScores()
+    {
+        void Check(StageMissions.Mission m,string contacts,bool scored,bool passed)
+        {
+            var shot=new StageMissions.Shot(m);
+            foreach(char c in contacts)
+                if(char.IsDigit(c)) shot.Ball(c-'0'); else shot.Rail(c);
+            if(shot.Scored!=scored || shot.Passed!=passed)throw new Exception("Stage score mismatch: "+contacts);
+        }
+        var first=StageMissions.Get(1);
+        Check(first,"2RTR3BL",true,true);
+        Check(first,"3RTR2",true,true);
+        Check(first,"2TRR3",true,false);
+        Check(first,"2RTR2",false,false);
+        Check(first,"2R1TR3",false,false);
+        var three=new StageMissions.Mission{balls=3,cue=0,order="ORLTO"};
+        Check(three,"1RLT2B",true,true);
+        Check(three,"1RL2T",false,false);
+        for(int i=1;i<=StageMissions.Count;i++)
+        {
+            var m=StageMissions.Get(i);
+            string contacts=m.order;
+            int a=m.balls==4?2:1-m.cue, b=m.balls==4?3:2;
+            int at=contacts.IndexOf('O');
+            contacts=contacts.Substring(0,at)+a+contacts.Substring(at+1).Replace('O',(char)('0'+b));
+            Check(m,contacts+"BL",true,true);
+        }
+    }
     static void RestoreStageProgress()
     {
         if(!SessionState.GetBool(Key+"restoreGuest",false))return;
