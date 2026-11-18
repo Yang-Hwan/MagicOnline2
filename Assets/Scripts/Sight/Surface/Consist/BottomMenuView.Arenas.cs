@@ -13,7 +13,8 @@ namespace Assets.Scripts.Sight.Surface.Consist
         sealed class ArenaCard
         {
             public RectTransform Root,Swing;
-            public RawImage Blue,Gold,Entry;
+            public RawImage Blue,Gold;
+            public Graphic Entry;
             public TMP_Text Title,Status,Prize,Rules,Goal,Time,Finish,Action;
             public int Logical=int.MinValue,Index=-1;
             public bool Selected;
@@ -81,8 +82,9 @@ namespace Assets.Scripts.Sight.Surface.Consist
             Row("입장",274,out c.Prize);Row("규칙",316,out c.Rules);
             Row("목표",358,out c.Goal);Row("제한시간",400,out c.Time);
             c.Finish=Text("ArenaFinish",content,"",35,445,250,32,23,new Color(.7f,.94f,1),autoSize:true);
-            c.Entry=ArenaArt("Entry Brush",content,new Rect(23,496,274,54),new Rect(175,930,900,162));
-            c.Action=Text("ArenaActionLabel",content,"",23,498,274,48,28,Color.white,autoSize:true);
+            c.Entry=Node("Entry Capsule",content,50.4f,501.4f,219.2f,43.2f).gameObject.AddComponent<ArenaEntryCapsuleGraphic>();
+            c.Entry.color=Yellow;c.Entry.raycastTarget=false;
+            c.Action=Text("ArenaActionLabel",content,"",50.4f,502.8f,219.2f,38.4f,22.4f,Color.white,autoSize:true);
             // Button covers the sign, so a tap anywhere on a side card brings it to centre.
             var hit=Hit("ArenaAction"+slot,content,0,80,320,480,()=>
             {
@@ -107,7 +109,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             c.Finish.gameObject.SetActive(!string.IsNullOrEmpty(c.Finish.text));
             bool allowed=CanEnter(hall,BackendGame.Instance.UserMainData.Coin);
             c.Entry.gameObject.SetActive(c.Selected);
-            c.Action.text=c.Selected?(allowed?"입장하기":"입장 조건 확인"):"눌러서 중앙으로";
+            c.Action.text=c.Selected?(allowed?"입장하기":"입장 조건 확인"):"";
             c.Action.color=c.Selected?Color.black:new Color(.75f,.94f,1);
         }
         void PositionArenaCards()
@@ -147,6 +149,71 @@ namespace Assets.Scripts.Sight.Surface.Consist
             if(CurrentPage!=2 || !arenaCarousel)return;
             PositionArenaCards();
             foreach(var card in arenaCards)if(card.Root.gameObject.activeSelf)BindArenaCard(card);
+        }
+    }
+
+    // Radius follows half the button height, so both ends remain true semicircles.
+    [RequireComponent(typeof(CanvasRenderer))]
+    public sealed class ArenaEntryCapsuleGraphic : MaskableGraphic
+    {
+        protected override void OnPopulateMesh(VertexHelper vh)
+        {
+            vh.Clear();
+            var rect=rectTransform.rect;
+            float radius=Mathf.Min(rect.width,rect.height)*.5f;
+            if(radius<=0)return;
+            const int steps=24;
+            Color Paint(float y)
+            {
+                var tint=Color.Lerp(new Color(1,.65f,.035f),new Color(1,.95f,.24f),Mathf.InverseLerp(rect.yMin,rect.yMax,y));
+                tint.a=color.a;return tint;
+            }
+            vh.AddVert(rect.center,Paint(rect.center.y),Vector2.zero);
+            for(int side=0;side<2;side++)
+            {
+                float cx=side==0?rect.xMax-radius:rect.xMin+radius;
+                for(int i=0;i<=steps;i++)
+                {
+                    float angle=(-90f+180f*side+180f*i/steps)*Mathf.Deg2Rad;
+                    var point=new Vector2(cx+Mathf.Cos(angle)*radius,rect.center.y+Mathf.Sin(angle)*radius);
+                    vh.AddVert(point,Paint(point.y),Vector2.zero);
+                }
+            }
+            int perimeter=2*(steps+1);
+            for(int i=0;i<perimeter;i++)vh.AddTriangle(0,i+1,(i+1)%perimeter+1);
+            // Deterministic spray flecks and angled paint scratches, contained by the capsule.
+            // Keep the centre quiet for the black entry label; no per-frame random flicker.
+            float Noise(int seed)=>Mathf.Repeat(Mathf.Sin(seed*91.71f+13.3f)*43758.54f,1);
+            bool Inside(Vector2 p)
+            {
+                float cx=Mathf.Clamp(p.x,rect.xMin+radius,rect.xMax-radius);
+                return (p-new Vector2(cx,rect.center.y)).sqrMagnitude<(radius-1)*(radius-1);
+            }
+            void Mark(Vector2 a,Vector2 b,float halfWidth,Color tint)
+            {
+                var offset=new Vector2(-(b-a).y,(b-a).x).normalized*halfWidth;
+                if(!Inside(a-offset)||!Inside(a+offset)||!Inside(b-offset)||!Inside(b+offset))return;
+                int start=vh.currentVertCount;tint.a*=color.a;
+                vh.AddVert(a-offset,tint,Vector2.zero);vh.AddVert(b-offset,tint,Vector2.zero);
+                vh.AddVert(b+offset,tint,Vector2.zero);vh.AddVert(a+offset,tint,Vector2.zero);
+                vh.AddTriangle(start,start+1,start+2);vh.AddTriangle(start+2,start+3,start);
+            }
+            for(int i=0;i<13;i++)
+            {
+                float u=(i+.5f)/13;
+                var a=new Vector2(rect.xMin+rect.width*u,rect.yMin+rect.height*(i%2==0?.12f:.72f));
+                var b=a+new Vector2(rect.height*.24f,rect.height*.17f);
+                Mark(a,b,.6f+Noise(i)*1.1f,i%3==0?new Color(1,1,.62f,.34f):new Color(.57f,.29f,.015f,.16f));
+            }
+            for(int i=0;i<90;i++)
+            {
+                float u=Noise(i+100),v=Noise(i+300);
+                var p=new Vector2(rect.xMin+u*rect.width,rect.yMin+v*rect.height);
+                float quiet=u>.2f&&u<.8f&&v>.25f&&v<.75f?.35f:1;
+                float size=.25f+Noise(i+500)*.65f;
+                var tint=i%3==0?new Color(1,1,.65f,.28f*quiet):new Color(.43f,.25f,.015f,.19f*quiet);
+                Mark(p,p+Vector2.right*size*2,size,tint);
+            }
         }
     }
 

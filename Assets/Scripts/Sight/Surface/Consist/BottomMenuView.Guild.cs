@@ -206,7 +206,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 var row=Node("Member"+member.Id,guildRows,0,y,1536,66);Box("Background",row,0,0,1536,66,GuildRow);
                 var avatar=Box("Avatar",row,14,5,56,56,Color.white);avatar.preserveAspect=true;
                 var portrait=avatar.gameObject.AddComponent<EquipmentPortrait>();portrait.SetProfile(new MatchEquipmentProfile{Emotions=new[]{new MatchEquipmentEmotion{Code="기본",Asset=member.Portrait}}});
-                var fallback=Resources.Load<Texture2D>("Menu/Friends/Avatar"+member.Avatar)??Resources.Load<Texture2D>("Menu/Friends/Avatar1");
+                var fallback=SocialAvatar(member.Avatar);
                 if(fallback){var sprite=Sprite.Create(fallback,new Rect(0,0,fallback.width,fallback.height),Vector2.one*.5f);GuildOwnedSprites.Add(sprite);portrait.Show("기본",sprite);}else portrait.Show("기본",null);
                 Text("Name",row,member.Name,90,3,430,60,29,Color.white,TextAlignmentOptions.MidlineLeft,true);
                 Text("Level",row,"Lv."+member.Level,527,3,120,60,22,Color.gray);

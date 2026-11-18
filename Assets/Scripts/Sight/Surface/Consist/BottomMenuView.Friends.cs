@@ -13,6 +13,12 @@ namespace Assets.Scripts.Sight.Surface.Consist
 {
     public sealed partial class BottomMenuView
     {
+        static Texture2D SocialAvatar(int index)
+        {
+            // New accounts start at index 1; higher indices are legacy profile choices.
+            var selected = index > 1 ? Resources.Load<Texture2D>("Menu/Friends/Avatar"+index) : null;
+            return selected ? selected : Assets.Scripts.Sight.Surface.Pavilion.MatchAvatarReactions.Anonymous.texture;
+        }
         RectTransform friendsPanel;
         int friendListVersion, searchVersion;
         bool managingFriends;
@@ -124,7 +130,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             var row=Node("Friend"+player.Id,content,0,i*114,1048,106);
             Box("Edge",row,0,0,1048,106,new Color(.65f,.70f,.76f));
             Box("Card",row,2,2,1044,102,new Color(.035f,.052f,.074f));
-            var avatar=Resources.Load<Texture2D>("Menu/Friends/Avatar"+player.Avatar)??Resources.Load<Texture2D>("Menu/Friends/Avatar1");
+            var avatar=SocialAvatar(player.Avatar);
             Art("Avatar",row,avatar,18,10,86,86);
             Text("Level",row,"Lv."+player.Level,124,8,120,90,27,Color.white,TextAlignmentOptions.MidlineLeft,true);
             Text("Name",row,player.Name,248,8,340,90,32,Color.white,TextAlignmentOptions.MidlineLeft,true);
@@ -199,7 +205,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                     var player=rows[i];
                     var row=Node("Member"+player.Id,content,0,i*84,1048,78);
                     Box("Card",row,0,0,1048,78,new Color(.07f,.10f,.14f));
-                    var avatar=Resources.Load<Texture2D>("Menu/Friends/Avatar"+player.Avatar)??Resources.Load<Texture2D>("Menu/Friends/Avatar1");
+                    var avatar=SocialAvatar(player.Avatar);
                     Art("Avatar",row,avatar,14,7,64,64);
                     Text("Level",row,"Lv."+player.Level,100,0,125,78,23,Color.white,TextAlignmentOptions.MidlineLeft,true);
                     Text("Name",row,player.Name,230,0,530,78,27,Color.white,TextAlignmentOptions.MidlineLeft,true);

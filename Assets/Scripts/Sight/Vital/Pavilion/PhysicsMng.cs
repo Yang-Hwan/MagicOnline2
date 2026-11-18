@@ -492,7 +492,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 var area = areaObject ? areaObject.transform : clothSpace;
                 var surface = area.GetComponent<Collider>();
                 var bounds = surface ? surface.bounds : new Bounds(area.position, area.lossyScale);
-                TechniqueTrace.Begin(cueBall.id, cueBall.body.position, bounds);
+                TechniqueTrace.Begin(cueBall.id, cueBall.body.position, bounds, impulse.impulse);
             }
             line.positionCount = 0;
             inMove = true;

@@ -15,6 +15,23 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         static readonly Color[] SilverMetal={new Color(.11f,.16f,.19f),new Color(.99f,.99f,.93f),new Color(.65f,.73f,.78f),new Color(.1f,.16f,.2f),new Color(.92f,.98f,1),new Color(.16f,.21f,.24f)};
         static readonly Vector2[] SelfRim={new Vector2(58,12),new Vector2(188,12),new Vector2(139,158),new Vector2(12,158)};
         static readonly Vector2[] OtherRim={new Vector2(1418,12),new Vector2(1547,12),new Vector2(1498,158),new Vector2(1369,158)};
+        // Source: BlackGoldShell (2101 x 239), mapped to the 1560 x 178 HUD.
+        // Trace the gold ridge itself; a single bowed Bezier cuts across these mostly straight necks.
+        // Both run top to bottom. The painted shell is not exactly symmetrical around the VS.
+        static readonly Vector2[] SelfNeck={
+            new Vector2(653,9),new Vector2(670,9),new Vector2(681,12),new Vector2(686.1f,16),
+            new Vector2(692.8f,21),new Vector2(700.2f,31),new Vector2(706.9f,41),new Vector2(712.8f,51),
+            new Vector2(718.0f,58),new Vector2(721.7f,62),new Vector2(727.7f,65),new Vector2(735.1f,66),
+            new Vector2(727.7f,70),new Vector2(722.5f,75),new Vector2(718.7f,82),new Vector2(710.6f,92),
+            new Vector2(705.4f,102),new Vector2(700.2f,112),new Vector2(694.2f,122),new Vector2(688.3f,132),
+            new Vector2(680.1f,146),new Vector2(674.9f,152),new Vector2(667.5f,157),new Vector2(658,159),new Vector2(648,159)};
+        static readonly Vector2[] OtherNeck={
+            new Vector2(907,9),new Vector2(886,9),new Vector2(875,12),new Vector2(867.2f,16),
+            new Vector2(860.6f,21),new Vector2(853.1f,31),new Vector2(846.5f,41),new Vector2(839.8f,51),
+            new Vector2(833.1f,58),new Vector2(829.4f,62),new Vector2(824.2f,65),new Vector2(818.2f,66),
+            new Vector2(824.2f,70),new Vector2(830.1f,75),new Vector2(835.3f,82),new Vector2(842.0f,92),
+            new Vector2(847.2f,102),new Vector2(853.1f,112),new Vector2(859.1f,122),new Vector2(864.3f,132),
+            new Vector2(873.2f,146),new Vector2(879.1f,152),new Vector2(887.3f,157),new Vector2(898,159),new Vector2(912,159)};
         readonly Vector2[] rim=new Vector2[65];
         public void Initialize(MatchHudView owner){view=owner;raycastTarget=false;SetVerticesDirty();}
         static Color Alpha(Color c,float a){c.a=a;return c;}
@@ -63,13 +80,28 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             for(int i=0;i<20;i++){float a=i*Mathf.PI*.1f,b=(i+1)*Mathf.PI*.1f;Segment(p+new Vector2(Mathf.Cos(a)*rx,Mathf.Sin(a)*ry),p+new Vector2(Mathf.Cos(b)*rx,Mathf.Sin(b)*ry),width,color);}
         }
+        void BubbleArc(Vector2 center,float radius,float startDegrees,Color color)
+        {
+            // Two open, softly tapered arcs suggest refraction without closing a bright ring.
+            // No centre geometry: the existing liquid remains visible through the bubble.
+            const int steps=10;
+            for(int i=0;i<steps;i++)
+            {
+                float a=(startDegrees+100f*i/steps)*Mathf.Deg2Rad;
+                float b=(startDegrees+100f*(i+1)/steps)*Mathf.Deg2Rad;
+                float taper=.35f+.65f*Mathf.Sin((i+.5f)/steps*Mathf.PI);
+                // The HUD often renders below 60% of design size. A .65-unit feather
+                // with low alpha vanished at that scale; keep a wider visible soft edge.
+                SoftSegment(center+new Vector2(Mathf.Cos(a),Mathf.Sin(a))*radius,
+                    center+new Vector2(Mathf.Cos(b),Mathf.Sin(b))*radius,1.2f,Alpha(color,color.a*taper));
+            }
+        }
         static Vector2 Bezier(Vector2 a,Vector2 b,Vector2 c,Vector2 d,float t){float u=1-t;return u*u*u*a+3*u*u*t*b+3*u*t*t*c+t*t*t*d;}
         void TurnRim(int side,float intensity)
         {
             // This follows the painted shell's long top/bottom rails and curved neck.
-            int n=0;rim[n++]=new Vector2(67,9);rim[n++]=new Vector2(653,9);
-            for(int i=1;i<=12;i++)rim[n++]=Bezier(new Vector2(653,9),new Vector2(696,9),new Vector2(697,65),new Vector2(741,65),i/12f);
-            for(int i=1;i<=12;i++)rim[n++]=Bezier(new Vector2(741,65),new Vector2(697,69),new Vector2(697,159),new Vector2(648,159),i/12f);
+            int n=0;rim[n++]=new Vector2(67,9);
+            foreach(var point in SelfNeck)rim[n++]=point;
             rim[n++]=new Vector2(26,159);
             for(int i=1;i<=8;i++)rim[n++]=Bezier(new Vector2(26,159),new Vector2(4,159),new Vector2(7,147),new Vector2(10,137),i/8f);
             rim[n++]=new Vector2(48,22);rim[n++]=new Vector2(67,9);
@@ -81,9 +113,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 for(int i=1;i<=8;i++)rim[n++]=Bezier(new Vector2(1530,9),new Vector2(1552,9),new Vector2(1552,16),new Vector2(1548,29),i/8f);
                 rim[n++]=new Vector2(1510,146);
                 for(int i=1;i<=8;i++)rim[n++]=Bezier(new Vector2(1510,146),new Vector2(1506,159),new Vector2(1499,159),new Vector2(1483,159),i/8f);
-                rim[n++]=new Vector2(912,159);
-                for(int i=1;i<=12;i++)rim[n++]=Bezier(new Vector2(912,159),new Vector2(863,159),new Vector2(863,69),new Vector2(819,65),i/12f);
-                for(int i=1;i<=12;i++)rim[n++]=Bezier(new Vector2(819,65),new Vector2(863,65),new Vector2(864,9),new Vector2(907,9),i/12f);
+                for(int i=OtherNeck.Length-1;i>=0;i--)rim[n++]=OtherNeck[i];
             }
             Color tint=side==0?Cyan:Violet;float breath=.82f+.12f*Mathf.Sin(view.VisualTime*1.45f+side*.8f),power=intensity*breath;
             float phase=Frac(view.VisualTime*.14f+side*.29f);
@@ -133,17 +163,20 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                     Color ca=LiquidColor(a/h,bright,liquid,dark),cb=LiquidColor(b/h,bright,liquid,dark);
                     Quad(new Vector2(leftA,y+a),new Vector2(rightA,y+a),new Vector2(rightB,y+b),new Vector2(leftB,y+b),ca,ca,cb,cb);
                 }
-                // Bubble positions are continuous in track space as the fill recedes.
-                int count=view.TimerRunning?34:0;
+                // Flow from each avatar toward VS: left-to-right for self, right-to-left for other.
+                // Keep positions in full-track space so the timer cannot drag bubbles backwards.
+                int count=view.TimerRunning?28:0;
                 for(int i=0;i<count;i++)
                 {
-                    float life=Frac(view.VisualTime*(.16f+Seed(i)*.12f)*(1+heat*2.7f)+Seed(i+19));
-                    float xx=x+w*Seed(i+42)+Mathf.Sin(view.VisualTime*1.1f+i)*1.1f,yy=y+h+4-life*(h+9),r=.7f+Seed(i+77)*2.4f;
-                    float edge=CapsuleEdge(Mathf.Clamp(yy-y,0,h),h,radius);
+                    float life=Frac(view.VisualTime*(.095f+Seed(i)*.065f)*(1+heat*.8f)+Seed(i+19));
+                    float r=2.4f+Seed(i+77)*3f;
+                    float xx=x+w*(side==0?life:1-life);
+                    float yy=y+8+Seed(i+42)*(h-16);
+                    float edge=Mathf.Max(CapsuleEdge(yy-y-r,h,radius),CapsuleEdge(yy-y+r,h,radius));
                     if(xx-r<Mathf.Max(fx,x+edge)+2||xx+r>Mathf.Min(fx+fill,x+w-edge)-2||yy-r<y+2||yy+r>y+h-2)continue;
-                    float alpha=Mathf.Sin(life*Mathf.PI)*(.13f+heat*.22f);
-                    EllipseLine(new Vector2(xx,yy),r,r,Alpha(new Color(1,1,.78f),alpha),.7f);
-                    if(i%3==0)Aura(new Vector2(xx-r*.3f,yy-r*.4f),r*.6f,r*.6f,Alpha(Color.white,alpha*.7f));
+                    float fade=Mathf.Min(Mathf.Clamp01(life/.04f),Mathf.Clamp01((1-life)/.04f));
+                    BubbleArc(new Vector2(xx,yy),r,180,Alpha(new Color(.72f,.94f,.60f),fade*.48f));
+                    BubbleArc(new Vector2(xx,yy),r,0,Alpha(new Color(.025f,.17f,.045f),fade*.32f));
                 }
                 // Slow caustic ribbons; only the urgent state adds faster liquid motion.
                 for(int row=0;row<2;row++)for(int j=0;j<34;j++)
@@ -154,10 +187,14 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 }
                 float end=side==0?fx+fill:fx;SoftSegment(new Vector2(end,y+5),new Vector2(end,y+h-5),5,Alpha(bright,.22f));
             }
-            if(heat>0)
+            if(heat>0 && fill>2)
             {
+                // Urgency glow follows the remaining liquid, including the mirrored right gauge.
+                // Keep it on the bottom rail and never extend it under the empty track.
+                float glowLeft=Mathf.Max(fx,x+20),glowRight=Mathf.Min(fx+fill,x+w-20);
                 float pulse=(.18f+.1f*Mathf.Sin(view.VisualTime*7))*heat;
-                SoftSegment(new Vector2(x+20,y+h),new Vector2(x+w-20,y+h),10,Alpha(liquid,pulse));
+                if(glowRight>glowLeft)
+                    SoftSegment(new Vector2(glowLeft,y+h),new Vector2(glowRight,y+h),10,Alpha(liquid,pulse));
             }
         }
         static Color LiquidColor(float u,Color bright,Color liquid,Color dark)
@@ -219,7 +256,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             vh.Clear();if(!view)return;mesh=vh;
             TurnRim(0,view.TurnBlend);TurnRim(1,1-view.TurnBlend);
             Gauge(0);Gauge(1);ScoreRail(0);ScoreRail(1);
-            Badge(101,141,65,29);Badge(1370,141,65,29);
+            if(view.ShowLevels){Badge(101,141,65,29);Badge(1370,141,65,29);}
             Coin(530,123);Coin(1031,123);
             Coin(221,31);Coin(1338,31);
             if(view.IsSeries){Badge(674,15,46,43);Badge(840,15,46,43);}

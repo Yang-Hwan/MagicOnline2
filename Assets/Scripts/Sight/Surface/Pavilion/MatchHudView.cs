@@ -37,6 +37,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         float nextDataRefresh, lastWidth=-1;
         int generation;
         string loadedMatch;
+        bool localPractice;
+        public bool ShowLevels => !localPractice;
         public int ActiveSide {get;private set;}
         public float RemainingRatio {get;private set;}=1;
         public float RemainingSeconds {get;private set;}=30;
@@ -48,10 +50,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public RectTransform DesignRoot=>root;
         static readonly Color Gold=new Color32(255,216,118,255);
 
-        public static MatchHudView Install(Transform panel)
+        public static MatchHudView Install(Transform panel,bool localPractice=false)
         {
             var existing=panel.GetComponent<MatchHudView>();if(existing)return existing;
-            var view=panel.gameObject.AddComponent<MatchHudView>();view.Build();return view;
+            var view=panel.gameObject.AddComponent<MatchHudView>();view.localPractice=localPractice;view.Build();return view;
         }
         static RectTransform Node(string name,Transform parent,float x,float y,float w,float h)
         {
@@ -81,13 +83,18 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             graphic=Node("LiveLightingAndCounters",root,0,0,DesignWidth,DesignHeight).gameObject.AddComponent<MatchHudGraphic>();graphic.Initialize(this);
             referenceArt=Node("ReferenceVSAndScoreRings",root,0,0,DesignWidth,DesignHeight).gameObject.AddComponent<MatchHudArtGraphic>();referenceArt.Initialize(this);
             var box=(RectTransform)transform.Find("PlayerBoxs");box.anchorMin=box.anchorMax=new Vector2(.5f,1);box.pivot=new Vector2(.5f,1);box.anchoredPosition=Vector2.zero;box.sizeDelta=new Vector2(DesignWidth,DesignHeight);
+            if(localPractice && box.TryGetComponent<Image>(out var legacyBackground))
+                legacyBackground.enabled=false;
             for(int side=0;side<2;side++)
             {
                 var p=(RectTransform)box.Find(side==0?"PlayerSelf":"PlayerOther");Place(p,0,0,DesignWidth,DesignHeight);
                 foreach(var g in p.GetComponentsInChildren<Graphic>(true))g.enabled=false;
                 bool self=side==0;float gx=self?205:880,aw=177,ax=self?9:DesignWidth-190;
                 sources[side]=(RectTransform)p.Find("Avatar");Place(sources[side],ax,9,aw,150);
-                sourceFaces[side]=sources[side].GetComponent<Image>();sourceFaces[side].enabled=true;sourceFaces[side].color=Color.clear;sourceFaces[side].raycastTarget=true;
+                sourceFaces[side]=sources[side].GetComponent<Image>();
+                if(localPractice) sourceFaces[side].overrideSprite=
+                    Resources.Load<Sprite>("Gameplay/PracticeAnonymousAvatar") ?? MatchAvatarReactions.Anonymous;
+                sourceFaces[side].enabled=true;sourceFaces[side].color=Color.clear;sourceFaces[side].raycastTarget=!localPractice;
                 var maskRect=Node("EquippedPortraitMask",p,ax,9,aw,150);maskRect.SetAsFirstSibling();var shape=maskRect.gameObject.AddComponent<MatchHudPortraitMask>();shape.raycastTarget=false;maskRect.gameObject.AddComponent<Mask>().showMaskGraphic=true;
                 portraitGlows[side]=Node("TurnGlow",maskRect,0,0,aw,150).gameObject.AddComponent<MatchHudPortraitGlow>();
                 portraitGlows[side].raycastTarget=false;
@@ -105,12 +112,16 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 var timer=(RectTransform)p.Find("TimeInning");Place(timer,gx,GaugeTop,474,42);var hit=timer.GetComponent<Image>();if(!hit)hit=timer.gameObject.AddComponent<Image>();hit.enabled=true;hit.color=Color.clear;hit.raycastTarget=true;
                 coins[side]=Existing(p,"TxtMatchCoin",self?542:881,110,137,35,25,Gold,self?TextAlignmentOptions.MidlineRight:TextAlignmentOptions.MidlineLeft);
                 p.Find("HitCountBox/HitCnt").gameObject.SetActive(false);
-                series[side]=Existing(p,"TxtScore",self?669:835,15,56,43,26,Gold,TextAlignmentOptions.Center);
-                Node("LevelBacking",p,self?101:1370,141,65,29).gameObject.AddComponent<MatchHudBadgeGraphic>();
-                levels[side]=Label("Level",Node("Level",p,self?101:1370,141,65,29),"",20,Gold,TextAlignmentOptions.Center);
+                if(!localPractice) series[side]=Existing(p,"TxtScore",self?669:835,15,56,43,26,Gold,TextAlignmentOptions.Center);
+                if(ShowLevels)
+                {
+                    Node("LevelBacking",p,self?101:1370,141,65,29).gameObject.AddComponent<MatchHudBadgeGraphic>();
+                    levels[side]=Label("Level",Node("Level",p,self?101:1370,141,65,29),"",20,Gold,TextAlignmentOptions.Center);
+                }
                 p.Find("HitCountBox/EggBox").gameObject.SetActive(false);
                 // Completed beads collect at the inner end of each score rail.
                 var finish=(RectTransform)p.Find("HitCountBox/Finish");
+                if (!finish) continue;
                 var finishSlot=Node("FinishSlot",p,self?344:1055,106,160,40);
                 finish.SetParent(finishSlot,false);
                 Place(finish,0,-800,160,40);
@@ -170,7 +181,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         void LateUpdate()
         {
             if(!root)return;AdvanceVisual(VisualTime+Time.unscaledDeltaTime,Time.unscaledDeltaTime);RefreshLayout();SyncPortraits();
-            if(Time.unscaledTime<nextDataRefresh)return;nextDataRefresh=Time.unscaledTime+.35f;
+            if(localPractice || Time.unscaledTime<nextDataRefresh)return;nextDataRefresh=Time.unscaledTime+.35f;
             if(NetworkManager.TryGetExistingNetwork(out var net)&&net is PunNetwork pun&&pun.HasLegacyMatch)
             {
                 SetSeries(pun.SeriesSelfWinsText,pun.SeriesOtherWinsText);

@@ -111,11 +111,18 @@ public static class BottomMenuRuntimeValidation
                 }
                 SessionState.SetInt(Key + "stage", 2); next = EditorApplication.timeSinceStartup + 3;
             }
-            else if (stage == 2)
+            else if (stage == 2 || stage == 10)
             {
                 if (SceneManager.GetActiveScene().path != PracticeSceneFlow.ScenePath) return;
                 var expected = new[] { PracticeSceneFlow.Mode.ThreeBall, PracticeSceneFlow.Mode.FourBall, PracticeSceneFlow.Mode.Replay, PracticeSceneFlow.Mode.MatchReplay, PracticeSceneFlow.Mode.Stage };
                 if (PracticeSceneFlow.SelectedMode != expected[mode]) throw new Exception("Practice/replay mode mismatch");
+                if(stage==2 && (mode==0 || mode==1))
+                {
+                    ScreenCapture.CaptureScreenshot("Logs/BottomMenu/practice-hud-"+(mode==0?"3":"4")+".png");
+                    SessionState.SetInt(Key+"stage",10);next=EditorApplication.timeSinceStartup+.5;
+                    return;
+                }
+                if(stage==10) CheckPracticeHud(mode==1);
                 if(mode==4)
                 {
                     var physics=UnityEngine.Object.FindAnyObjectByType<Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.PhysicsMng>();
@@ -162,6 +169,7 @@ public static class BottomMenuRuntimeValidation
                     }
                     return;
                 }
+                if(seen==0 && !ShotCtrl.canControl) return; // Initial one-second guide pause.
                 if(seen!=3 || !ShotCtrl.canControl || StageMissions.Spent(1)!=0) throw new Exception("Cushion guide did not finish in aim mode");
                 var action=physics.GetComponentsInChildren<Button>().Single(b=>b.name=="StageAction");
                 if(((RectTransform)action.transform.parent).anchorMax.y!=1) throw new Exception("Mission bar not at top");
@@ -258,6 +266,29 @@ public static class BottomMenuRuntimeValidation
         }
         catch (Exception e)
         { File.WriteAllText("Logs/BottomMenu/runtime-failure.txt", e.ToString()); EditorApplication.isPlaying = false; }
+    }
+    static void CheckPracticeHud(bool fourBall)
+    {
+        var hud=UnityEngine.Object.FindAnyObjectByType<Assets.Scripts.Sight.Surface.Pavilion.MatchHudView>();
+        var anonymous=Assets.Scripts.Sight.Surface.Pavilion.MatchAvatarReactions.Anonymous;
+        if(!hud || !anonymous) throw new Exception("Practice HUD or default portrait missing");
+        if(hud.transform.Find("PlayerBoxs").GetComponent<Image>().enabled)
+            throw new Exception("Legacy player panel is covering the practice HUD");
+        foreach(string player in new[]{"PlayerSelf","PlayerOther"})
+        {
+            var face=hud.transform.Find("PlayerBoxs/"+player+"/EquippedPortraitMask/EquippedPortrait").GetComponent<Image>();
+            if(face.sprite!=anonymous) throw new Exception("Practice portrait mismatch");
+        }
+        var trace=UnityEngine.Object.FindAnyObjectByType<StagePhysics>().TechniqueTrace;
+        trace.Begin(0,Vector3.zero,new Bounds(Vector3.zero,new Vector3(4,.02f,2)));
+        trace.Hit(fourBall?2:1,-1,Vector3.zero,Vector3.forward,Vector3.forward,0);
+        trace.Hit(-1,3,Vector3.forward,Vector3.forward,Vector3.right,0);
+        trace.Hit(-1,1,2*Vector3.right,Vector3.right,Vector3.back,0);
+        trace.Hit(-1,2,Vector3.back,Vector3.back,Vector3.left,0);
+        trace.Hit(fourBall?3:2,-1,Vector3.zero,Vector3.left,Vector3.zero,0);
+        Assets.TutorialInfo.Scripts.TableSet06.Excert.Match.PoolCoach.Instance.ScoreChanged(true,0,Assets.TutorialInfo.Scripts.TableSet06.Often.RunPath.None);
+        var motion=UnityEngine.Object.FindAnyObjectByType<Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion>();
+        if (!motion || motion.Technique!=ThreeCushionTechnique.Side) throw new Exception("Practice side-shot title missing");
     }
     static void CheckStageLayout(StagePhysics physics)
     {

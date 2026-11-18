@@ -1,3 +1,5 @@
+using PracticeSceneFlow = Assets.Scripts.Often.PracticeSceneFlow;
+using MatchHudView = Assets.Scripts.Sight.Surface.Pavilion.MatchHudView;
 ﻿using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Often;
 using Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital;
@@ -12,6 +14,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
     public class PnlMatch : MonoBehaviour
     {
+        MatchHudView practiceHud;
         TextMeshProUGUI onlineStatus;
         public void SetOnlineStatus(string message)
         {
@@ -180,7 +183,16 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
                 }
                 inningTimerBar.transform.parent.parent.gameObject.SetActive(false); // Table/UI_TOP
             }
-            else gameObject.AddComponent<Assets.Scripts.Sight.Surface.Pavilion.PracticeStoryPreview>();
+            else
+            {
+                if (PracticeSceneFlow.Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.LocalPractice &&
+                    (PracticeSceneFlow.SelectedMode == PracticeSceneFlow.Mode.ThreeBall || PracticeSceneFlow.SelectedMode == PracticeSceneFlow.Mode.FourBall))
+                {
+                    inningTimerBar.transform.parent.parent.gameObject.SetActive(false);
+                    practiceHud = MatchHudView.Install(transform,true);
+                }
+                gameObject.AddComponent<Assets.Scripts.Sight.Surface.Pavilion.PracticeStoryPreview>();
+            }
             BindRuntimeEvents();
             //physicsManager.OnBallAllStop += PhysicsManager_OnBallAllStop;
             //Debug.Log($"PnlMatch Awake -----------------");
@@ -234,6 +246,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         {
             var coach = PoolCoach.Instance;
             coach.Update(Time.fixedDeltaTime);
+            if (practiceHud && !coach.calculateTime) practiceHud.StopTimer();
             if (coach.isRulePractice && (!PoolLogic.gameState.gameIsComplete || coach.PracticeTimedOut))
                 DisplayClock(Mathf.CeilToInt((float)coach.PracticeSecondsLeft));
 
@@ -321,6 +334,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         {
             StopEggAnimations();
             hitTarget = PoolCoach.Instance.targetHit;
+            if(practiceHud) practiceHud.ResetScores(hitTarget);
             for (int i = 0; i < eggBoxSelf.childCount; i++)
             {
                 if(i < hitTarget)
@@ -471,6 +485,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         void PoolCoach_OnSetActivePlayer(int playerId)
         {
+            if(practiceHud) practiceHud.SetTurn(playerId);
             RefreshPracticeScoreboard();
             //Debug.Log($"PoolCoach_OnSetActivePlayer : {playerId}");
             if(playerId == 0)
@@ -487,6 +502,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         void PoolCoach_OnUpdateTime(float timeProc)
         {
+            if(practiceHud) practiceHud.SetTime(timeProc,PoolCoach.Instance.maxPlayTime,PoolCoach.Instance.calculateTime);
             if (!PoolCoach.Instance.isRulePractice)
                 DisplayClock(Mathf.CeilToInt(PoolCoach.Instance.maxPlayTime * (1f - Mathf.Clamp01(timeProc))));
             float ing = Mathf.Lerp(inningWidthMax, 0, timeProc);
@@ -518,8 +534,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         void PoolCoach_OnScoreChanged(int playerId, bool isHit, int coin, RunPath runPath)
         {
-            if(isHit && (int)PoolCoach.Instance.matchBall==3 && PoolCoach.Instance.Configuration.CushionCount==3 &&
-                physicsManager && physicsManager.OnlineAdapter==null && !physicsManager.IsPracticeReplay)
+            if(isHit && practiceHud && !physicsManager.IsPracticeReplay)
                 Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Show(physicsManager.TechniqueTrace.Classify(true));
             if (isHit) ShowScoreFloat(Mathf.Max(1, PoolPlayer.players[playerId].hitInning));
             else if (PoolLogic.gameState.hitKinds.Contains(HitKind.Ball_Foul)) ShowScoreFloat(-1);
@@ -670,6 +685,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             txtNameOther.text = PoolPlayer.otherPlayer.name;
             hitCntSelf = PoolPlayer.mainPlayer.hitCnt;
             hitCntOther = PoolPlayer.otherPlayer.hitCnt;
+            if(practiceHud)
+            {
+                practiceHud.SetScore(0,hitCntSelf);
+                practiceHud.SetScore(1,hitCntOther);
+            }
             txtHitCntSelf.text = hitCntSelf.ToString();
             txtHitCntOther.text = hitCntOther.ToString();
             txtCoinSelf.text = Utility.CoinNumToStr(PoolPlayer.mainPlayer.coin);

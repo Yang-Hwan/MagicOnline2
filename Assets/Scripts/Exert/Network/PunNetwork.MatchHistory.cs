@@ -177,7 +177,7 @@ namespace Assets.Scripts.Exert.Network
         [PunRPC] async void ThreeBallScoreMotionRPC(string id, int serial, int streak, int technique, PhotonMessageInfo info)
         {
             if (!HasLegacyMatch || historyEnded || id != LegacyMatchId || historyOffer.match.MatchBall != 3 ||
-                streak < 1 || streak > 4096 || technique < 0 || technique > (int)ThreeCushionTechnique.Kick ||
+                streak < 1 || streak > 4096 || technique < 0 || technique > (int)ThreeCushionTechnique.HorizontalHit ||
                 info.Sender.ActorNumber != (historyPlayer.SeatNo == 0 ? historyOffer.actor1 : historyOffer.actor0) ||
                 serial < legacyShotSerial || serial > legacyShotSerial + 1) return;
             float deadline = Time.realtimeSinceStartup + 5;
@@ -428,7 +428,6 @@ namespace Assets.Scripts.Exert.Network
                 {
                     await LoadMatchEquipment(offer.match.MatchId, true);
                     if (historyOffer != offer || historyEnded || !HistoryPeerPresent) return;
-                    PhotonNetwork.CurrentRoom.IsOpen = false;
                     view.RPC(nameof(HistoryOfferRPC), opponentPlayer, JsonUtility.ToJson(offer));
                     return;
                 }
@@ -451,6 +450,7 @@ namespace Assets.Scripts.Exert.Network
 
         void InstallHistoryOffer(HistoryStartOffer offer, int seat)
         {
+            CloseMatchedRoom();
             seriesRematch = IsSameSeriesRematch(offer);
             if (!seriesRematch) { seriesWinsA = seriesWinsB = 0; seriesCountedMatch = null; }
             confirmedLoserSeat = -1;
@@ -673,6 +673,9 @@ namespace Assets.Scripts.Exert.Network
 
         public override void OnMasterClientSwitched(Photon.Realtime.Player newMaster)
         {
+            // The remaining player may be on the result/rematch screen already.
+            // Authority changes must not make that room available to new opponents.
+            if (historyOffer != null) CloseMatchedRoom();
             if (!LegacyHistoryEnabled || historyOffer == null || historyEnded || newMaster.ActorNumber == historyOffer.actor0) return;
             AbortLegacyHistory("AuthorityChanged");
             CallNetworkState(NetworkState.OpponentLeftRoom);

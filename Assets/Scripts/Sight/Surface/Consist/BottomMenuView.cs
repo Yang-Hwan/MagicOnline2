@@ -90,10 +90,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             Crop("SharedHeader", design, plates[0], new Rect(0, 0, Width, 127));
             Crop("SharedFooter", design, plates[0], new Rect(0, 837, Width, 104));
             var avatarArea = new Rect(60, 17, 97, 97);
-            var uv = UV(avatarArea);
-            var plate = plates[0];
-            headerFallback = Sprite.Create(plate, new Rect(uv.x * plate.width, uv.y * plate.height,
-                uv.width * plate.width, uv.height * plate.height), Vector2.one * .5f, 100, 0, SpriteMeshType.FullRect);
+            headerFallback = MatchAvatarReactions.Anonymous;
             var frame = Box("AvatarBackground", design, avatarArea.x, avatarArea.y, avatarArea.width, avatarArea.height, new Color(.09f, .1f, .13f));
             var avatar = Box("EquippedAvatar", frame.transform, 0, 0, avatarArea.width, avatarArea.height, Color.white);
             avatar.sprite = headerFallback;
@@ -508,7 +505,6 @@ namespace Assets.Scripts.Sight.Surface.Consist
         void OnDestroy()
         {
             ReleaseShopTextures();
-            if (headerFallback) { if (Application.isPlaying) Destroy(headerFallback); else DestroyImmediate(headerFallback); }
             if (textMaterial) { if (Application.isPlaying) Destroy(textMaterial); else DestroyImmediate(textMaterial); }
         }
         public void Resize()

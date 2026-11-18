@@ -55,10 +55,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public bool Play(ThreeCushionTechnique kind)
         {
-            if(kind<ThreeCushionTechnique.Side || kind>ThreeCushionTechnique.Kick)return false;
+            if(kind<ThreeCushionTechnique.Side || kind>ThreeCushionTechnique.HorizontalHit)return false;
             Technique=kind;
             Rect uv=new Rect(0,0,1,1);
             if(kind==ThreeCushionTechnique.Back)title.texture=Resources.Load<Texture2D>("Gameplay/Techniques/Back");
+            else if(kind==ThreeCushionTechnique.HorizontalHit)title.texture=Resources.Load<Texture2D>("Gameplay/Techniques/HorizontalHit");
+            else if(kind==ThreeCushionTechnique.OneBank)title.texture=Resources.Load<Texture2D>("Gameplay/Techniques/OneBank");
             else
             {
                 bool extra=kind>=ThreeCushionTechnique.Cut;

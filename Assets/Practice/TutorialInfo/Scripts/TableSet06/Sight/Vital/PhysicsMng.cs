@@ -523,7 +523,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             {
                 TechniqueTrace.Clear();
                 Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Hide();
-                if((int)PoolCoach.Instance.matchBall==3 && PoolCoach.Instance.Configuration.CushionCount==3 && !IsPracticeReplay)
+                if(!IsPracticeReplay && ((int)PoolCoach.Instance.matchBall==3 && PoolCoach.Instance.Configuration.CushionCount==3 ||
+                    IsLocalPractice && Assets.Scripts.Often.PracticeSceneFlow.SelectedMode==Assets.Scripts.Often.PracticeSceneFlow.Mode.FourBall))
                 {
                     var surface=GameObject.Find("Table/ClothSpace");
                     if(!surface)surface=GameObject.Find("Table/Collider/Bottom");
@@ -531,7 +532,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                     {
                         var shape=surface.GetComponent<Collider>();
                         TechniqueTrace.Begin(ballcs.First(b=>b.body==cuball).id,cuball.position,
-                            shape?shape.bounds:new Bounds(surface.transform.position,surface.transform.lossyScale));
+                            shape?shape.bounds:new Bounds(surface.transform.position,surface.transform.lossyScale),impulse.impulse);
                     }
                 }
                 impulsePre = impulse;

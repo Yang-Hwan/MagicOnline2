@@ -41,6 +41,14 @@ namespace Assets.Scripts.Exert.Network
             (matchRequestCancelled || !PhotonNetwork.InRoom);
         float matchRequestDeadline;
 
+        void CloseMatchedRoom()
+        {
+            if (!PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient) return;
+            // Keep the existing pair for rematches; new matchmaking must use a fresh room.
+            PhotonNetwork.CurrentRoom.IsOpen = false;
+            PhotonNetwork.CurrentRoom.IsVisible = false;
+        }
+
         // Diagnostic context intentionally excludes user IDs, credentials and room names.
         void LogMatchContext(string operation)
         {
@@ -697,6 +705,7 @@ namespace Assets.Scripts.Exert.Network
         {
             if (IgnoreCancelledTestMatchCallback) return;
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
+            if (historyOffer != null) { CloseMatchedRoom(); return; }
             // Debug.Log("OnPlayerEnteredRoom 방장만 받음.. 손님이 조인시 방장에게 알림 IsMasterClient : " + newPlayer.IsMasterClient);
             if (friendlyRoom!=null && newPlayer.UserId != friendlyOpponent)
             { PhotonNetwork.LeaveRoom(); return; }
@@ -760,6 +769,7 @@ namespace Assets.Scripts.Exert.Network
         public override void OnOpponentReadToPlay(string playerData)
         {
             if (IgnoreCancelledTestMatchCallback) return;
+            if (historyOffer != null) { CloseMatchedRoom(); return; }
             NetworkManager.opponentPlayer = NetworkManager.PlayerFromString(playerData);
             CallNetworkState(NetworkState.OpponentReadToPlay);
             //Debug.Log("OnOpponentReadToPlay 손님 -> 방장 : " + playerData);
@@ -781,6 +791,7 @@ namespace Assets.Scripts.Exert.Network
         public void OnMasterInfoToGuest(string playerData)
         {
             if (IgnoreCancelledTestMatchCallback) return;
+            if (historyOffer != null) return;
             //Debug.Log("방장 -> 손님 : " + playerData);
             NetworkManager.opponentPlayer = NetworkManager.PlayerFromString(playerData);
             string uuid = NetworkManager.opponentPlayer.uuid;
