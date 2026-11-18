@@ -37,10 +37,11 @@ namespace Assets.Scripts.Exert.Network
         public void AddScoringCoins(int playerId, int scoreBefore, int firstStreak, int points)
         {
             if (!HasScoreCoins || historyEnded || points <= 0 || scoreCoins.LastShot == legacyShotSerial || scoreCoins.BustWinner >= 0) return;
-            points = Math.Min(points, Math.Max(0, historyOffer.match.Rules.TargetScore - scoreBefore));
-            if (points == 0) return; // Cushion finish is not a scoring point.
+            // Three-ball banks retain their full bonus; preserve the existing four-ball cap.
+            if (historyOffer.match.MatchBall != 3) points = Math.Min(points, Math.Max(0, historyOffer.match.Rules.TargetScore - scoreBefore));
+            if (points <= 0 || scoreBefore >= historyOffer.match.Rules.TargetScore) return; // Finish missions do not award scoring coins.
             int seat = playerId == PoolPlayer.mainPlayer.playerId ? historyPlayer.SeatNo : 1 - historyPlayer.SeatNo;
-            scoreCoins.Add(legacyShotSerial, seat, firstStreak, points);
+            scoreCoins.Add(legacyShotSerial, seat, firstStreak, points, historyOffer.match.MatchBall == 3 && points == 2);
             previewScoreCoins = null;
             BackendMatchHistory.Instance.QueueCoinCheckpoint(LegacyMatchId, scoreCoins.Events);
         }
@@ -146,18 +147,18 @@ namespace Assets.Scripts.Exert.Network
         }
 
         // Presentation only. Remote scoring still uses the authoritative end-of-shot contacts.
-        public void PresentThreeBallScore(int streak, ThreeCushionTechnique technique = ThreeCushionTechnique.None)
+        public void PresentThreeBallScore(int streak, ThreeCushionTechnique technique = ThreeCushionTechnique.None, int points = 1)
         {
             if (!HasLegacyMatch || historyEnded || historyOffer.match.MatchBall != 3 || streak < 1 ||
                 scoreMotionSerial == legacyShotSerial) return;
             // The shooter alone has the physical trajectory. Peers never reclassify snapshot interpolation.
             if (!PoolLogic.controlInNetwork) technique = ThreeCushionTechnique.None;
-            ApplyThreeBallScore(streak, technique);
+            ApplyThreeBallScore(streak, technique, points);
             if (PoolLogic.controlInNetwork)
-                view.RPC(nameof(ThreeBallScoreMotionRPC), RpcTarget.Others, LegacyMatchId, legacyShotSerial, streak, (int)technique);
+                view.RPC(nameof(ThreeBallScoreMotionRPC), RpcTarget.Others, LegacyMatchId, legacyShotSerial, streak, (int)technique, points);
         }
 
-        void ApplyThreeBallScore(int streak, ThreeCushionTechnique technique)
+        void ApplyThreeBallScore(int streak, ThreeCushionTechnique technique, int points)
         {
             var panel = Assets.Scripts.Sight.Surface.Pavilion.PnlMatch.Instance;
             if (!panel || !panel.isActiveAndEnabled) return;
@@ -169,12 +170,12 @@ namespace Assets.Scripts.Exert.Network
             }
             if (scoreMotionSerial == legacyShotSerial) return;
             // Capture the displayed cue ball's position now; the label will not follow it.
-            panel.ShowScoreFloat(streak);
+            panel.ShowScoreFloat(points);
             panel.ShowPointAvatar();
             scoreMotionSerial = legacyShotSerial;
         }
 
-        [PunRPC] async void ThreeBallScoreMotionRPC(string id, int serial, int streak, int technique, PhotonMessageInfo info)
+        [PunRPC] async void ThreeBallScoreMotionRPC(string id, int serial, int streak, int technique, int award, PhotonMessageInfo info)
         {
             if (!HasLegacyMatch || historyEnded || id != LegacyMatchId || historyOffer.match.MatchBall != 3 ||
                 streak < 1 || streak > 4096 || technique < 0 || technique > (int)ThreeCushionTechnique.HorizontalHit ||
@@ -187,7 +188,7 @@ namespace Assets.Scripts.Exert.Network
                 !PoolLogic.controlFromNetwork) return;
             // Immediate opponent UI only; settlement still waits for contact replay.
             var scorer = PoolPlayer.otherPlayer;
-            int points = Math.Min(streak - scorer.hitInning, Math.Max(0, historyOffer.match.Rules.TargetScore - scorer.hitCnt));
+            int points = streak - scorer.hitInning;
             if (HasScoreCoins && scoreCoins.LastShot < serial && scoreCoins.BustWinner < 0 && points > 0 && points <= 2)
             {
                 try {
@@ -195,10 +196,10 @@ namespace Assets.Scripts.Exert.Network
                     long entry = historyOffer.match.Rules.EntryCoin;
                     previewScoreCoins = ScoreCoinLedger.Replay(scoreCoins.BalanceA - scoreCoins.NetA + entry,
                         scoreCoins.BalanceB + scoreCoins.NetA + entry, entry, historyOffer.match.Rules.TargetScore, scoreCoins.Events);
-                    previewScoreCoins.Add(serial, 1 - historyPlayer.SeatNo, scorer.hitInning + 1, points);
+                    previewScoreCoins.Add(serial, 1 - historyPlayer.SeatNo, scorer.hitInning + 1, points, historyOffer.match.MatchBall == 3 && points == 2);
                 } catch (ArgumentException) { previewScoreCoins = null; }
             }
-            ApplyThreeBallScore(streak, (ThreeCushionTechnique)technique);
+            ApplyThreeBallScore(streak, (ThreeCushionTechnique)technique, Math.Max(1, Math.Min(2, award)));
         }
 
         public void PublishCushionMotion(int count)
@@ -576,8 +577,8 @@ namespace Assets.Scripts.Exert.Network
             if (!CanReportLocalOutcome) return;
             int winningPlayer = PoolPlayer.GetHitWin();
             string winner = winningPlayer == -1 ? "" : winningPlayer == PoolPlayer.mainPlayer.playerId ? historyPlayer.UserId : historyPlayer.OpponentUserId;
-            int score0 = historyPlayer.SeatNo == 0 ? PoolPlayer.mainPlayer.hitCnt : PoolPlayer.otherPlayer.hitCnt;
-            int score1 = historyPlayer.SeatNo == 0 ? PoolPlayer.otherPlayer.hitCnt : PoolPlayer.mainPlayer.hitCnt;
+            int score0 = historyPlayer.SeatNo == 0 ? PoolPlayer.mainPlayer.DisplayedHitCount : PoolPlayer.otherPlayer.DisplayedHitCount;
+            int score1 = historyPlayer.SeatNo == 0 ? PoolPlayer.otherPlayer.DisplayedHitCount : PoolPlayer.mainPlayer.DisplayedHitCount;
             view.RPC(nameof(HistoryResultRPC), RpcTarget.Others, historyOffer.match.MatchId, winner, score0, score1, false);
             EndLegacyHistory("Completed", "LegacyOutcome", winner, score0, score1);
         }
@@ -644,8 +645,8 @@ namespace Assets.Scripts.Exert.Network
                 if (!IsFriendly && reason == "Surrender") BackendMatchHistory.Instance.QueueSurrender(historyOffer.match.MatchId);
                 else if (!IsFriendly && (reason.StartsWith("Disconnected:") || reason == "StartTimeout" || reason == "RegistrationFailed"))
                     BackendMatchHistory.Instance.StopHeartbeat(historyOffer.match.MatchId);
-                int own = historyStarted ? PoolPlayer.mainPlayer?.hitCnt ?? 0 : 0;
-                int other = historyStarted ? PoolPlayer.otherPlayer?.hitCnt ?? 0 : 0;
+                int own = historyStarted ? PoolPlayer.mainPlayer?.DisplayedHitCount ?? 0 : 0;
+                int other = historyStarted ? PoolPlayer.otherPlayer?.DisplayedHitCount ?? 0 : 0;
                 EndLegacyHistory("Aborted", reason, "", historyPlayer.SeatNo == 0 ? own : other, historyPlayer.SeatNo == 0 ? other : own);
             }
             historyStartRequest = null;

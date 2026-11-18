@@ -192,7 +192,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             if (Assets.Scripts.Often.PracticeMatchTestRoute.Enabled &&
                 (mouseState == MouseState.Down || mouseState == MouseState.Up))
                 Debug.Log($"[PracticeMatchInput] event={mouseState} control={canControl} canSubmit={physicsManager.OnlineAdapter?.CanSubmit} equip={InputOutput.targetEquip} blocked={physicsManager.IsPointerOverUndoButton()} power={force}");
-            if (mouseState == MouseState.Down && physicsManager.IsPointerOverUndoButton())
+            if (mouseState == MouseState.Down && (physicsManager.IsPointerOverUndoButton() ||
+                Assets.Scripts.Sight.Surface.Pavilion.InningScoreView.ContainsPointer(Input.mousePosition)))
             {
                 _targetEquip = TargetEquip.None;
                 return;

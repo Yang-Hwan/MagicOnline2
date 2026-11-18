@@ -15,6 +15,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
     public class PnlMatch : MonoBehaviour
     {
         MatchHudView practiceHud;
+        Assets.Scripts.Sight.Surface.Pavilion.InningScoreView inningScores;
         TextMeshProUGUI onlineStatus;
         public void SetOnlineStatus(string message)
         {
@@ -41,6 +42,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         public void ApplyOnlineResult(Assets.Scripts.Often.MatchResultSession result, int turn)
         {
+            if(inningScores)inningScores.Bind(result.InningScores);
             var config = PoolCoach.Instance.Configuration;
             int self = config.LocalSeat;
             int previousSelf = hitCntSelf, previousOther = hitCntOther;
@@ -191,6 +193,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
                     inningTimerBar.transform.parent.parent.gameObject.SetActive(false);
                     practiceHud = MatchHudView.Install(transform,true);
                 }
+                if(PracticeSceneFlow.Configuration.Execution!=Assets.Scripts.Often.MatchExecutionMode.Replay)
+                    inningScores=Assets.Scripts.Sight.Surface.Pavilion.InningScoreView.Install(transform,
+                        ()=>PoolCoach.Instance.InningScores,
+                        seat=>PoolPlayer.players!=null && seat<PoolPlayer.players.Length?PoolPlayer.players[seat].name:"선수",
+                        ()=>PoolCoach.Instance.Configuration.LocalSeat);
                 gameObject.AddComponent<Assets.Scripts.Sight.Surface.Pavilion.PracticeStoryPreview>();
             }
             BindRuntimeEvents();
@@ -229,6 +236,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         void PoolCoach_OnMatchComplite()
         {
+            PoolCoach.Instance.InningScores.Finish();
             Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             if (!PoolCoach.Instance.isRulePractice || finishReturnRoutine != null) return;
             matchFinish.PracticeResultView(PoolPlayer.currentPlayer.name, PoolCoach.Instance.targetHit, PoolCoach.Instance.PracticeTimedOut);
@@ -536,7 +544,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         {
             if(isHit && practiceHud && !physicsManager.IsPracticeReplay)
                 Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Show(physicsManager.TechniqueTrace.Classify(true));
-            if (isHit) ShowScoreFloat(Mathf.Max(1, PoolPlayer.players[playerId].hitInning));
+            if (isHit) ShowScoreFloat(PoolLogic.Instance.ShotPoints);
             else if (PoolLogic.gameState.hitKinds.Contains(HitKind.Ball_Foul)) ShowScoreFloat(-1);
             if (PoolCoach.Instance.isRulePractice)
             {

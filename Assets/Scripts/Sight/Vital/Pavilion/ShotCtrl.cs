@@ -244,7 +244,9 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void InputOutput_OnMouseState(MouseState mouseState)
         {
-            if (!canControl || MatchPlayerInfoWindow.IsOpen || IsShotAnimating || inMove || physicsManager.inMove || physicsManager.IsResolvingShot)
+            if (!canControl || MatchPlayerInfoWindow.IsOpen ||
+                mouseState==MouseState.Down && Assets.Scripts.Sight.Surface.Pavilion.InningScoreView.ContainsPointer(Input.mousePosition) ||
+                IsShotAnimating || inMove || physicsManager.inMove || physicsManager.IsResolvingShot)
             {
                 _targetEquip = TargetEquip.None;
                 return;

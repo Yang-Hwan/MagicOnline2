@@ -9,6 +9,7 @@ namespace Assets.Scripts.Often
         public int seat, turnRevision, score0, score1, sequence;
         public double time, matchDeadline, turnDeadline;
         public MatchBallSnapshot balls;
+        public InningScoreSnapshot innings;
     }
 
     // Only idle, guest-only disconnects are recoverable. Authority migration is not supported.
@@ -46,7 +47,8 @@ namespace Assets.Scripts.Often
             return new MatchRecoveryCheckpoint { matchId = start.MatchId, key = start.ConfigurationKey, requestId = requestId,
                 seat = shots.TurnSeat, turnRevision = shots.TurnRevision + 1, score0 = results.Score0, score1 = results.Score1,
                 sequence = results.Sequence, time = now, matchDeadline = results.MatchDeadline + now - pausedAt,
-                turnDeadline = results.TurnDeadline + now - pausedAt, balls = shots.LastSettled };
+                turnDeadline = results.TurnDeadline + now - pausedAt, balls = shots.LastSettled,
+                innings = results.InningScores.Capture() };
         }
         public bool Restore(int sender, MatchRecoveryCheckpoint checkpoint, string expectedRequest, double realtime)
         {
@@ -64,6 +66,7 @@ namespace Assets.Scripts.Often
                 checkpoint.balls == null || checkpoint.balls.matchId != start.MatchId || !checkpoint.balls.settled ||
                 checkpoint.balls.shotId < shots.ShotId || checkpoint.balls.frame < 0 ||
                 !MatchShotSession.ValidBalls(checkpoint.balls, start.Configuration.BallCount)) return false;
+            if(checkpoint.innings!=null && !InningScoreHistory.Valid(checkpoint.innings,checkpoint.seat,checkpoint.score0,checkpoint.score1))return false;
             // Validate the entire checkpoint before mutating either replica.
             shots.RestoreCheckpoint(checkpoint); results.RestoreCheckpoint(checkpoint);
             start.Resume(sender, checkpoint.matchId);

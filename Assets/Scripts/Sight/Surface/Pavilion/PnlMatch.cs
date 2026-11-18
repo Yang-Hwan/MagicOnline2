@@ -214,6 +214,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             if (!NetworkManager.initialized) return;
             matchHud = MatchHudView.Install(transform);
+            InningScoreView.Install(transform,()=>PoolCoach.Instance.InningScores,
+                seat=>PoolPlayer.players!=null && seat<PoolPlayer.players.Length?PoolPlayer.players[seat].name:"선수",
+                ()=>PoolPlayer.mainPlayer?.playerId??0);
             matchHud.ResetScores(PoolCoach.Instance.targetHit);
             matchHud.SetScore(0, PoolPlayer.mainPlayer?.DisplayedHitCount ?? 0, false);
             matchHud.SetScore(1, PoolPlayer.otherPlayer?.DisplayedHitCount ?? 0, false);
@@ -1071,7 +1074,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             var scoringPlayer = PoolPlayer.player(playerId);
             int before = Mathf.Max(0, scoringPlayer.hitCnt - cnt);
-            cnt = Mathf.Max(0, scoringPlayer.DisplayedHitCount - Mathf.Min(before, PoolCoach.Instance.targetHit));
+            cnt = before < PoolCoach.Instance.targetHit ? cnt : 0;
 
             //Debug.Log($" PoolCoach_OnScoreChanged myturn : {PoolPlayer.mainPlayer.myTurn}, playerId : {playerId}, cnt : {cnt}, reward : {reward}, runPath : {runPath}");
 
@@ -1083,10 +1086,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 if (PoolCoach.Instance.matchBall == MatchBall.ThreeBall &&
                     NetworkManager.TryGetExistingNetwork(out var scoreNetwork) &&
                     scoreNetwork is PunNetwork scorePun && scorePun.HasLegacyMatch)
-                    scorePun.PresentThreeBallScore(streak, physicsManager.TechniqueTrace.Classify(true));
+                    scorePun.PresentThreeBallScore(streak, physicsManager.TechniqueTrace.Classify(true), cnt);
                 else
                 {
-                    ShowScoreFloat(streak);
+                    ShowScoreFloat(cnt);
                     if (PoolCoach.Instance.matchBall == MatchBall.ThreeBall && PoolPlayer.currentPlayer.checkCushion == 3)
                         ShowTechnique(physicsManager.TechniqueTrace.Classify(true));
                 }
@@ -1139,7 +1142,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             if (matchHud)
             {
-                hitCntSelf = Mathf.Clamp(hitCntSelf + cnt, 0, hitTarget);
+                hitCntSelf = PoolPlayer.mainPlayer.DisplayedHitCount;
                 matchHud.SetScore(0, hitCntSelf);
                 return;
             }
@@ -1219,7 +1222,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             if (matchHud)
             {
-                hitCntOther = Mathf.Clamp(hitCntOther + cnt, 0, hitTarget);
+                hitCntOther = PoolPlayer.otherPlayer.DisplayedHitCount;
                 matchHud.SetScore(1, hitCntOther);
                 return;
             }
@@ -1336,6 +1339,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void PoolCoach_OnMatchComplite()
         {
+            PoolCoach.Instance.InningScores.Finish();
             StopHudTimer();
             Assets.Scripts.Sight.Surface.Pavilion.CushionCountMotion.Hide();
             CloseCuePointPopup();

@@ -1,4 +1,4 @@
-﻿using Assets.TutorialInfo.Scripts.TableSet06.Often;
+using Assets.TutorialInfo.Scripts.TableSet06.Often;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -289,7 +289,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
             }
         }
 
-        public static void SetHitAdd(int playerId, int reward, bool isBall = true)
+        public static void SetHitAdd(int playerId, int reward, bool isBall = true, int points = 1)
         {
             //Debug.Log("PoolPlayer SetHitAdd playerId : " + playerId + ", reward : " + reward);
             foreach (PoolPlayer player in players)
@@ -299,8 +299,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
                     if (isBall)
                     {
                         player.hitTrain++;
-                        player.hitCnt++;
-                        player.hitInning++;  // 오류??? 연타와 일치?? 맞추면 이닝 추가 없는데??
+                        player.hitCnt += points;
+                        player.hitInning += points;  // 오류??? 연타와 일치?? 맞추면 이닝 추가 없는데??
                         player.hitGo++;
                     }
                     //player.coin += reward;

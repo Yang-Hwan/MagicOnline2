@@ -8,6 +8,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
 {
     public class PoolCoach
     {
+        public readonly Assets.Scripts.Often.InningScoreHistory InningScores = new Assets.Scripts.Often.InningScoreHistory();
         public void RestorePracticeTurn(float savedPlayTime, float savedMaxTime)
         {
             isMatchTimePlay = true;
@@ -246,6 +247,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
             PoolPlayer.inning = 0;
             PoolPlayer.ResetMatch();
             PoolPlayer.SetTurn(configuration.FirstSeat);
+            InningScores.Reset(configuration.FirstSeat);
             // Online input stays locked until the session/authority handshake is implemented.
             ShotCtrl.canControl = configuration.AllowsPracticeTools;
             hitReward = 100;
@@ -280,6 +282,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
         // 턴이 변경된후 처리 
         public void TurnChanged()
         {
+            InningScores.Activate(PoolPlayer.turnId);
 
             PoolPlayer.TurnHitReset( PoolPlayer.currentPlayer.playerId );  // 자신의 턴일때마다 초기화
 
@@ -603,6 +606,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
 
         public void ScoreChanged(bool isHit, int reward, RunPath runPath)
         {
+            InningScores.SetTotals(PoolPlayer.players[0].hitCnt,PoolPlayer.players[1].hitCnt);
             OnScoreChanged?.Invoke(PoolPlayer.turnId, isHit, reward, runPath);   // 몇점, 누적점수, 코인 
         }
 

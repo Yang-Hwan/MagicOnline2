@@ -9,6 +9,9 @@ namespace Assets.Scripts.Often
 
     public sealed class ThreeCushionShotTrace
     {
+        // Calibrated between practice slots 03/04, retaining the existing slot-20 cut.
+        const float NearCushionFraction = .175f;
+        const float NearNormalCosine = .9781476f; // within 12 degrees of the cushion normal
         public struct Contact
         {
             public int ball, rail; // rail: 0/1 = x ends, 2/3 = z ends; -1 for ball
@@ -23,7 +26,6 @@ namespace Assets.Scripts.Often
         int cue, first = -1;
         bool active, complete, earlySecond, overflow;
         float length;
-        bool horizontalLaunch;
         Vector2 start, last;
         public IReadOnlyList<Contact> Contacts => contacts;
         public IReadOnlyList<Vector2> Path => path;
@@ -35,10 +37,6 @@ namespace Assets.Scripts.Often
         public void Begin(int cueId, Vector3 origin, Bounds bounds, Vector3 launchImpulse = default)
         {
             cue = cueId; cloth = bounds; first = -1; complete = earlySecond = overflow = false;
-            var planar = Plane(launchImpulse);
-            float along = bounds.size.x >= bounds.size.z ? planar.x : planar.y;
-            float across = bounds.size.x >= bounds.size.z ? planar.y : planar.x;
-            horizontalLaunch = Mathf.Abs(across) < Mathf.Abs(along) * Mathf.Tan(20f * Mathf.Deg2Rad);
             active = true; contacts.Clear(); path.Clear(); length = 0; start = last = Plane(origin); path.Add(start);
         }
         public void Sample(Vector3 position)
@@ -81,6 +79,18 @@ namespace Assets.Scripts.Often
         }
         public ThreeCushionTechnique Classify(bool confirmedPoint)
         {
+            var technique=ClassifyBase(confirmedPoint);
+            if(technique==ThreeCushionTechnique.Side || technique==ThreeCushionTechnique.Back ||
+                technique==ThreeCushionTechnique.HorizontalHit)
+            {
+                // The trace freezes at the scoring object; later rail hits cannot upgrade the title.
+                int cushions=0;foreach(var contact in contacts)if(contact.rail>=0)cushions++;
+                if(cushions>=5)return ThreeCushionTechnique.Grand;
+            }
+            return technique;
+        }
+        ThreeCushionTechnique ClassifyBase(bool confirmedPoint)
+        {
             if (!confirmedPoint || !complete || earlySecond || overflow || cloth.size.x<=0 || cloth.size.z<=0) return ThreeCushionTechnique.None;
             var rails=new List<Contact>();int leading=0,firstIndex=-1;
             for(int i=0;i<contacts.Count;i++)
@@ -122,15 +132,26 @@ namespace Assets.Scripts.Often
             // Both equal-sized ball centres are one radius from their respective edges,
             // so the radius cancels against the recorded cue centre at cushion contact.
             float objectRailGap=Vector2.Dot(objectContact.target-a.position,InwardNormal(a.rail));
-            bool nearCushionCut=objectContact.radius>0 && objectRailGap>=-objectContact.radius &&
-                objectRailGap<Mathf.Min(cloth.size.x,cloth.size.z)*.18f &&
-                Mathf.Abs(Vector2.Dot(objectContact.incoming.normalized,(objectContact.target-objectContact.position).normalized))<.6f;
+            // Compare the struck side as seen along the incoming cue-ball heading with
+            // the turn around the cushions. Both signs reverse under reflection.
+            // A thin hit alone cannot distinguish a side shot from a cut shot.
+            float struckSide=Cross(objectContact.incoming.normalized,
+                (objectContact.position-objectContact.target).normalized);
+            float cushionTurn=Cross(InwardNormal(a.rail),InwardNormal(b.rail));
+            bool knownSide=objectContact.radius>0 && Mathf.Abs(struckSide)>.02f && adjacent;
+            bool oppositeSide=knownSide && struckSide*cushionTurn<0;
+            float shortWidth=Mathf.Min(cloth.size.x,cloth.size.z);
+            // A nearly perpendicular first leg reaches the projected cushion point even
+            // when the object is farther from the rail (practice slots 05 through 08).
+            // Keep this separate from the ordinary close-to-cushion distance rule.
+            bool nearNormal=Vector2.Dot((a.position-objectContact.position).normalized,
+                -InwardNormal(a.rail))>=NearNormalCosine;
+            bool nearCushionCut=oppositeSide && objectRailGap>=-objectContact.radius &&
+                (objectRailGap<shortWidth*NearCushionFraction || nearNormal);
             bool firstLong = cloth.size.x>=cloth.size.z ? a.rail>=2 : a.rail<2;
-            if(horizontalLaunch && !nearCushionCut && !firstLong && rails.Count==3 && a.rail/2!=b.rail/2 &&
-                a.rail/2==d.rail/2 && a.rail!=d.rail)
-                return ThreeCushionTechnique.HorizontalHit;
+            bool frontRoute=!firstLong && adjacent && b.rail/2==d.rail/2 && b.rail!=d.rail;
             // Left/right end, adjoining long rail, then the opposite long rail.
-            if(!firstLong && a.rail/2!=b.rail/2 && b.rail/2==d.rail/2 && b.rail!=d.rail)
+            if(!knownSide && frontRoute)
                 return ThreeCushionTechnique.Front;
             float diagonal=new Vector2(cloth.size.x,cloth.size.z).magnitude;
             // Bounding hits the same cushion again after curving back, without an intervening cushion.
@@ -159,16 +180,26 @@ namespace Assets.Scripts.Often
                         ? ThreeCushionTechnique.Cross : ThreeCushionTechnique.Lengthwise;
                 if(b.rail/2!=d.rail/2)return ThreeCushionTechnique.DoubleCushion;
             }
-            // A grand tour visits four successive adjacent, distinct cushions and has genuine table-scale travel.
+            if(!adjacent || a.rail==d.rail)return ThreeCushionTechnique.None;
+            if(nearCushionCut)
+                return ThreeCushionTechnique.Cut;
+            // Short -> long -> opposite long is Front even when the struck side
+            // agrees with the circuit. Check it before the short-first side-shot rule.
+            if(frontRoute)return ThreeCushionTechnique.Front;
+            // Matching struck side/circuit: long rail first is Side; short rail first
+            // and the opposite short rail third is HorizontalHit.
+            if(knownSide && !oppositeSide)
+                return firstLong ? ThreeCushionTechnique.Side : a.rail/2==d.rail/2 && a.rail!=d.rail
+                    ? ThreeCushionTechnique.HorizontalHit : ThreeCushionTechnique.None;
+            if(a.rail/2!=d.rail/2)return ThreeCushionTechnique.None;
+            if(knownSide)return ThreeCushionTechnique.Back;
+            // A full-table circuit must not replace a recognised base technique.
+            // Use Grand only when the struck-side evidence cannot identify that technique.
             if(rails.Count>=4 && length>diagonal*1.6f)
             {
                 bool tour=true;for(int i=1;i<4;i++)if(rails[i].rail/2==rails[i-1].rail/2)tour=false;
                 if(tour && a.rail!=d.rail && b.rail!=rails[3].rail)return ThreeCushionTechnique.Grand;
             }
-            if(!adjacent || a.rail==d.rail)return ThreeCushionTechnique.None;
-            if(nearCushionCut)
-                return ThreeCushionTechnique.Cut;
-            if(a.rail/2!=d.rail/2)return ThreeCushionTechnique.None;
             // Distinguish a draw/behind route from a side route using the actual object-ball approach,
             // outgoing heading and the side of the original approach line containing the first cushion.
             var approach=objectContact.incoming.normalized;
@@ -179,6 +210,7 @@ namespace Assets.Scripts.Often
                 return ThreeCushionTechnique.Back;
             return ThreeCushionTechnique.Side;
         }
+        static float Cross(Vector2 a,Vector2 b) => a.x*b.y-a.y*b.x;
         static Vector2 InwardNormal(int rail) =>
             rail==0?Vector2.right:rail==1?Vector2.left:rail==2?Vector2.up:Vector2.down;
         static bool AimsIntoCushionGap(Contact rail,Contact ball)

@@ -16,5 +16,19 @@
     "styleReference": "Back.png",
     "prompt": "Six separated horizontal rows of matching gold brush lettering: 비껴치기, 횡단샷, 종단샷, 더블쿠션, 넣어치기, 걸어치기. Same typography, palette, bevel, extrusion and slant. Exact Korean, no row labels. Transparent alpha.",
     "finalEditPrompt": "Remove only the gold/brown smoky backdrop and glows. Preserve all six Korean titles, gold/ivory faces, black/red outlines and extrusion, sharp gold scratches, position and size. Fully transparent gaps and background; keep only sharply defined sparks."
+  },
+  "HorizontalHit.png": {
+    "tool": "Built-in image_gen",
+    "styleReference": "Back.png",
+    "source": "C:/Users/oyh52/.codex/generated_images/01a1c0c5-d618-7a51-9fc1-be6de2e59d4e/exec-76938741-2cf2-4d4e-abf3-020c420e693c.png",
+    "prompt": "Use case: style-transfer / text-localization. Asset: single horizontal Korean billiards technique title for a Unity game. Input image 1 is the edit target, currently plain 세워치기 lettering. Input image 2 (뒤돌리기) is the exact visual STYLE reference. Redesign only the target title to match image 2 as a sibling in the same set: bold forward-leaning angular Korean brush/block strokes, ivory to warm gold textured painted-metal faces, bright sharp beveled edges, thick charcoal-black outline, deep oxblood-red extruded shadow down and right, tiny sharp gold flecks and a restrained thin gold brush swoosh. Exact text verbatim: \"세워치기\" (four Hangul syllables 세 / 워 / 치 / 기), all glyphs immediately legible, correct strokes, no extra text. Preserve the correct spelling from image 1 but replace its generic upright font with reference 2 brush style. One single line centered on a wide horizontal transparent canvas, approximately 3:1 aspect ratio, small even transparent margins, lettering occupies about 85% width and 70% height like reference 2. Background must be actual transparent alpha, including all letter counters. No smoke, no solid backdrop, no plate, no rectangular banner, no checkerboard graphic. Keep lighting and palette consistent with the reference. No other words.",
+    "date": "2026-11-18"
+  },
+  "OneBank.png": {
+    "tool": "Built-in image_gen",
+    "styleReference": "Back.png",
+    "source": "C:/Users/oyh52/.codex/generated_images/01a1c0c5-d618-7a51-9fc1-be6de2e59d4e/exec-f5f77709-992f-4dc6-8a16-777eb6c1bd53.png",
+    "prompt": "Use case: style-transfer / text-localization. Asset: single horizontal Korean billiards technique title for a Unity game. Input image 1 is the edit target, currently plain 원뱅크 lettering. Input image 2 (뒤돌리기) is the exact visual STYLE reference. Redesign only the target title to match image 2 as a sibling in the same set: bold forward-leaning angular Korean brush/block strokes, ivory to warm gold textured painted-metal faces, bright sharp beveled edges, thick charcoal-black outline, deep oxblood-red extruded shadow down and right, tiny sharp gold flecks and a restrained thin gold brush swoosh. Exact text verbatim: \"원뱅크\" (three Hangul syllables 원 / 뱅 / 크), all glyphs immediately legible, correct strokes, no extra text. Preserve the correct spelling from image 1 but replace its generic upright font with reference 2 brush style. One single line centered on a wide horizontal transparent canvas, approximately 3:1 aspect ratio, small even transparent margins, lettering occupies about 85% width and 70% height like reference 2. Background must be actual transparent alpha, including all letter counters. No smoke, no solid backdrop, no plate, no rectangular banner, no checkerboard graphic. Keep lighting and palette consistent with the reference. No other words.",
+    "date": "2026-11-18"
   }
 }

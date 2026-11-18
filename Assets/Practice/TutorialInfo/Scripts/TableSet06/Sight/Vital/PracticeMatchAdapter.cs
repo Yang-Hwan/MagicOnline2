@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using Assets.Scripts.Often;
 using Assets.Scripts.Exert.Network;
@@ -191,6 +191,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void SendResult(MatchResultMessage result)
         {
+            result.bank = result.kind == MatchResultKind.Shot && result.outcome == MatchShotOutcome.Point && contacts != null && contacts.IsBank;
             if(result.kind==MatchResultKind.Shot && result.outcome==MatchShotOutcome.Point &&
                 session.Configuration.BallCount==3 && session.Configuration.CushionCount==3)
                 result.technique=physics.TechniqueTrace.Classify(true);
@@ -209,6 +210,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void OnResult(MatchResultMessage result)
         {
+            result.bank = result.kind == MatchResultKind.Shot && result.outcome == MatchShotOutcome.Point && contacts != null && contacts.IsBank;
             if(result.kind==MatchResultKind.Shot && result.outcome==MatchShotOutcome.Point)
                 Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Show(result.technique);
             if (avatars && result.kind == MatchResultKind.Shot) avatars.Resolve(result.outcome);
@@ -236,7 +238,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             else physics.shotController.CuePutAside();
             ShowStatus();
             if (result.kind == MatchResultKind.Shot)
-                PoolCoach.Instance.SetMatchInfo(result.outcome == MatchShotOutcome.Point ? "득점 +1" :
+                PoolCoach.Instance.SetMatchInfo(result.outcome == MatchShotOutcome.Point ? (result.bank ? "득점 +2" : "득점 +1") :
                     result.outcome == MatchShotOutcome.Foul ? "파울 · 감점 (최저 0점)" : "득점 없음 · 차례 교체");
         }
 

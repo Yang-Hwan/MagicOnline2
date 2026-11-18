@@ -19,7 +19,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public const float RingDuration=.72f;
         public sealed class Counter
         {
-            public int Target=8, Desired, Displayed;
+            public int Target=8, Actual, Desired, Displayed;
             public int Moving=-1, FromScore, ToScore;
             public float Started;
             public float Progress(float time)=>Mathf.Clamp01((time-Started)/RingDuration);
@@ -76,6 +76,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             var t=player.Find(path).GetComponent<TMP_Text>();Place(t.rectTransform,x,y,w,h);t.enabled=true;Style(t,size,tint,align);return t;
         }
+        readonly TMP_Text[] scoreTotals = new TMP_Text[2];
         void Build()
         {
             root=Node("MatchHud",transform,0,0,DesignWidth,DesignHeight);root.anchorMin=root.anchorMax=new Vector2(.5f,1);root.pivot=new Vector2(.5f,1);root.anchoredPosition=Vector2.zero;root.SetAsFirstSibling();
@@ -112,6 +113,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 var timer=(RectTransform)p.Find("TimeInning");Place(timer,gx,GaugeTop,474,42);var hit=timer.GetComponent<Image>();if(!hit)hit=timer.gameObject.AddComponent<Image>();hit.enabled=true;hit.color=Color.clear;hit.raycastTarget=true;
                 coins[side]=Existing(p,"TxtMatchCoin",self?542:881,110,137,35,25,Gold,self?TextAlignmentOptions.MidlineRight:TextAlignmentOptions.MidlineLeft);
                 p.Find("HitCountBox/HitCnt").gameObject.SetActive(false);
+                scoreTotals[side]=Label("ActualScore",Node("ActualScore",p,self?344:1055,146,160,26),"",20,Gold,TextAlignmentOptions.Center);
                 if(!localPractice) series[side]=Existing(p,"TxtScore",self?669:835,15,56,43,26,Gold,TextAlignmentOptions.Center);
                 if(ShowLevels)
                 {
@@ -140,11 +142,13 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public void SetSeries(string self,string other){series[0].text=self??"";series[1].text=other??"";graphic.SetVerticesDirty();}
         public void ResetScores(int target)
         {
-            foreach(var counter in Counters){counter.Target=Mathf.Max(1,target);counter.Desired=counter.Displayed=0;counter.Moving=-1;}if(graphic)graphic.SetVerticesDirty();
+            foreach(var counter in Counters){counter.Target=Mathf.Max(1,target);counter.Actual=counter.Desired=counter.Displayed=0;counter.Moving=-1;}for(int i=0;i<2;i++)if(scoreTotals[i])scoreTotals[i].text="0 / "+Counters[i].Target;
+            if(graphic)graphic.SetVerticesDirty();
         }
         public void SetScore(int side,int score,bool animate=true)
         {
-            var counter=Counters[side];counter.Desired=Mathf.Clamp(score,0,counter.Target);
+            var counter=Counters[side];counter.Actual=Mathf.Max(0,score);counter.Desired=Mathf.Clamp(score,0,counter.Target);
+            if(scoreTotals[side])scoreTotals[side].text=counter.Actual+" / "+counter.Target;
             if(!animate){counter.Displayed=counter.Desired;counter.Moving=-1;}
             else if(counter.Moving<0)BeginRing(counter);
             if(graphic)graphic.SetVerticesDirty();

@@ -42,7 +42,8 @@ namespace Assets.Scripts.Exert.Match
 
         // The legacy rule engine also uses hitCnt for finish/sudden-death progression.
         // That progression must not extend the chart's score counter in the UI.
-        public int DisplayedHitCount => Mathf.Clamp(hitCnt, 0, PoolCoach.Instance.targetHit);
+        int scoredHitCount;
+        public int DisplayedHitCount => scoredHitCount;
         // A finish-mission foul loses the turn, but cannot undo the completed target.
         public bool ProtectsFinishScore => PoolCoach.Instance.targetHit > 0 &&
             hitCnt >= PoolCoach.Instance.targetHit &&
@@ -311,7 +312,10 @@ namespace Assets.Scripts.Exert.Match
                     if (player.ProtectsFinishScore) return;
                     if (player.hitCnt > 0)
                     {
+                        int before = player.hitCnt;
                         player.hitCnt += cnt;
+                        if (before <= PoolCoach.Instance.targetHit)
+                            player.scoredHitCount = Mathf.Max(0, player.scoredHitCount + cnt);
                         player.hitInning += cnt;
 
                         //player.hitGo++;
@@ -353,6 +357,8 @@ namespace Assets.Scripts.Exert.Match
                     if (cnt > 0)
                     {
                         int scoreBefore = player.hitCnt;
+                        if (scoreBefore < PoolCoach.Instance.targetHit)
+                            player.scoredHitCount += PoolCoach.Instance.matchBall == MatchBall.ThreeBall ? cnt : Mathf.Min(cnt, PoolCoach.Instance.targetHit - scoreBefore);
                         player.hitCnt += cnt;
                         player.hitInning += cnt;
                         if (Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var coinNetwork) &&
@@ -424,7 +430,7 @@ namespace Assets.Scripts.Exert.Match
             foreach (PoolPlayer player in players)
             {
                 player.matchCoin = 0;          //
-                player.hitCnt = 0;          //
+                player.hitCnt = 0; player.scoredHitCount = 0;          //
                 player.hitInning = 0;
                 player.hitHigh = 0;
                 player.finishStep = finish;
@@ -667,7 +673,7 @@ namespace Assets.Scripts.Exert.Match
             this.avatar = avatar;
             this.avatarURL = avatarURL;
             this.matchCoin = 0;
-            this.hitCnt = 0;
+            this.hitCnt = 0; this.scoredHitCount = 0;
             this.hitInning = 0;
             this.winCnt = 0;
             this.oneMore = OneMore.Enable;

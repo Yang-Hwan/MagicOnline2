@@ -98,7 +98,7 @@ public sealed class SettlementService
     });
 
     static ScoreCoinLedger ReadCoins(RegisteredMatch m, string events) => ScoreCoinLedger.Replay(
-        m.StartCoinA, m.StartCoinB, m.Registration.EntryCoin, m.Registration.Rules.TargetScore, events);
+        m.StartCoinA, m.StartCoinB, m.Registration.EntryCoin, m.Registration.Rules.TargetScore, events, m.Registration.Ball == 3);
 
     // Checkpoints persist the agreed round log only, never spendable wallet balances.
     // A disconnected client cannot claim unacknowledged winnings on behalf of its peer.

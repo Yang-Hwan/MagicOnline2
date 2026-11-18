@@ -428,7 +428,7 @@ namespace Assets.Scripts.Exert.Match
             // 원쿠션,쓰리쿠션 
             if (PoolCoach.Instance.matchBall == MatchBall.ThreeBall)
             {
-                if (PoolPlayer.currentPlayer.checkCushion == 3)
+                if (gameState.hitKinds.Count > 0)
                 {
                     if (gameState.hitKinds[0] == HitKind.Board_B ||
                         gameState.hitKinds[0] == HitKind.Board_T ||
@@ -456,7 +456,7 @@ namespace Assets.Scripts.Exert.Match
                 }
             }
 
-            int reward = PoolCoach.Instance.hitReward;
+            int reward = PoolCoach.Instance.hitReward * (PoolCoach.Instance.matchBall == MatchBall.ThreeBall ? cnt : 1);
             // 득점으로 유저의 포인트 이동
             PoolPlayer.SetHitAdd(PoolPlayer.currentPlayer.playerId, reward, cnt);
             RunPath runPath = GetRunPath();

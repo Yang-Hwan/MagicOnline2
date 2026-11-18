@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Assets.Scripts.Often;
 using Assets.Scripts.Prack.BackSys.ChartData;
 using UnityEngine;
@@ -23,10 +23,21 @@ public static class MatchResultProtocolValidation
             Require(contacts.Resolve() == MatchShotOutcome.Miss, "late cushions rescued missed three-ball shot");
             contacts = new MatchContactRecord(3, 1, 3);
             contacts.Ball(0); contacts.Cushion(); contacts.Cushion(); contacts.Cushion(); contacts.Ball(2);
-            Require(contacts.Resolve() == MatchShotOutcome.Point, "three-cushion point rejected");
+            Require(contacts.Resolve() == MatchShotOutcome.Point && !contacts.IsBank, "normal three-cushion point rejected");
+            for(int banks=1;banks<=3;banks++)
+            {
+                var bankContacts=new MatchContactRecord(3,0,3);
+                for(int i=0;i<banks;i++)bankContacts.Cushion();
+                bankContacts.Ball(1);
+                for(int i=banks;i<3;i++)bankContacts.Cushion();
+                bankContacts.Ball(2);
+                Require(bankContacts.Resolve()==MatchShotOutcome.Point && bankContacts.IsBank,"leading bank contacts lost");
+            }
+            var missedBank=new MatchContactRecord(3,0,3);missedBank.Cushion();missedBank.Ball(1);missedBank.Ball(2);
+            Require(missedBank.Resolve()==MatchShotOutcome.Miss && !missedBank.IsBank,"missed bank awarded points");
         }
         var starts = new MatchStartSession[2]; var shots = new MatchShotSession[2]; var results = new MatchResultSession[2];
-        var hall = new SkillMatchData { HallIdx = 1, MatchBall = ballCount, TargetHit = ballCount == 4 ? 5 : 2,
+        var hall = new SkillMatchData { HallIdx = 1, MatchBall = ballCount, TargetHit = ballCount == 4 ? 5 : 7,
             MatchCushion = ballCount == 3 ? 3 : 0, MatchTotMin = 1 };
         var state = new MatchBallSnapshot { matchId = "result-test", frame = 0, settled = true, balls = new MatchBallState[ballCount] };
         for (int i = 0; i < ballCount; i++) state.balls[i].rotation = Quaternion.identity;
@@ -51,6 +62,9 @@ public static class MatchResultProtocolValidation
             }
             Require(results[0].Score0 == results[1].Score0 && results[0].Score1 == results[1].Score1 &&
                 results[0].Winner == results[1].Winner && shots[0].TurnSeat == shots[1].TurnSeat, "replicas diverged");
+            Require(JsonUtility.ToJson(results[0].InningScores.Capture())==JsonUtility.ToJson(results[1].InningScores.Capture()),"inning histories diverged");
+            foreach(var result in results)
+                Require(result.InningScores.Total(0)==result.Score0 && result.InningScores.Total(1)==result.Score1,"inning totals differ from authoritative score");
         }
         var rematch = new MatchRematchSession(starts[0], results[0]);
         Require(!rematch.Vote(11, state.matchId, 99), "rematch accepted before finish");
@@ -60,12 +74,15 @@ public static class MatchResultProtocolValidation
         ApplyBoth(results[0].Due(110)); ApplyBoth(results[0].Due(120));
         var stale = new MatchShotCommand { matchId = state.matchId, shotId = 1, seat = 0, power = .5f };
         Require(!shots[0].CanApprove(11, stale), "old turn input accepted after two idle timeouts");
-        void Shot(MatchShotOutcome outcome, double now)
+        void Shot(MatchShotOutcome outcome, double now, bool bank = false)
         {
             var shot = new MatchShotCommand { matchId = state.matchId, shotId = shots[0].ShotId + 1,
                 seat = shots[0].TurnSeat, turnRevision = shots[0].TurnRevision, power = .5f };
             foreach (var replica in shots) Require(replica.CommitShot(11, shot), "shot rejected");
             var message = results[0].Create(MatchResultKind.Shot, outcome, now);
+            message.bank = true;
+            if(ballCount != 3 || outcome != MatchShotOutcome.Point) Require(!results[0].Apply(11,message),"invalid bank award accepted");
+            message.bank = bank;
             Require(!results[0].Apply(11, message), "point awarded before terminal snapshot");
             Require(results[0].Due(161) == null, "match clock ended a moving shot");
             state.shotId = shot.shotId; state.frame = 0;
@@ -102,12 +119,18 @@ public static class MatchResultProtocolValidation
                 Require(results[0].Finished == (score == hall.TargetHit), "four-ball completed at the wrong chart target");
             }
         }
+        if(ballCount==3)
+        {
+            for(int score=3;score<=6;score++)Shot(MatchShotOutcome.Point,124+score);
+            Shot(MatchShotOutcome.Point,131,true);
+            Require(results[0].Score1==8 && results[1].Score1==8 && results[0].InningScores.Total(1)==8,"bank did not preserve 6 to 8 overshoot");
+        }
         Require(results[0].Finished && results[1].Finished && results[0].Winner == 1 &&
-            !results[0].CanShoot(128), "target win failed");
-        Require(!rematch.Vote(99, state.matchId, 127) && !rematch.Vote(11, "old", 127), "invalid rematch vote accepted");
-        Require(rematch.Vote(11, state.matchId, 127) && !rematch.Both &&
-            !rematch.Vote(11, state.matchId, 128), "single/duplicate vote started rematch");
-        Require(rematch.Vote(22, state.matchId, 128) && rematch.Both, "mutual rematch consent missing");
+            !results[0].CanShoot(141), "target win failed");
+        Require(!rematch.Vote(99, state.matchId, 140) && !rematch.Vote(11, "old", 140), "invalid rematch vote accepted");
+        Require(rematch.Vote(11, state.matchId, 140) && !rematch.Both &&
+            !rematch.Vote(11, state.matchId, 141), "single/duplicate vote started rematch");
+        Require(rematch.Vote(22, state.matchId, 141) && rematch.Both, "mutual rematch consent missing");
         var nextId = Guid.NewGuid().ToString("N");
         var next = new MatchStartSession(nextId, "next-rules", MatchConfiguration.Online(hall, "A", "B", 1, 0, 10), 11, 22, 200);
         var nextShots = new MatchShotSession(next); var nextResult = new MatchResultSession(next, nextShots);
@@ -123,8 +146,8 @@ public static class MatchResultProtocolValidation
         Require(!nextShots.ApplySnapshot(11, state) &&
             !nextResult.Apply(11, results[0].Create(MatchResultKind.Shot, MatchShotOutcome.Point, 201)), "old state/result altered rematch");
         var expired = new MatchRematchSession(starts[1], results[1]);
-        Require(expired.Vote(22, state.matchId, 127), "local guest vote failed");
-        Require(!expired.Vote(11, state.matchId, 157) && expired.Closed && !expired.Both, "expired vote revived rematch");
+        Require(expired.Vote(22, state.matchId, 140), "local guest vote failed");
+        Require(!expired.Vote(11, state.matchId, 171) && expired.Closed && !expired.Both, "expired vote revived rematch");
         rematch.Close(); Require(!rematch.Both, "closed rematch retained authorization");
         Require(!results[0].Apply(11, results[0].Create(MatchResultKind.MatchTimeout, MatchShotOutcome.Miss, 200)), "finished result overwritten");
     }

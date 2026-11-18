@@ -1,4 +1,4 @@
-﻿using Assets.TutorialInfo.Scripts.TableSet06.Often;
+using Assets.TutorialInfo.Scripts.TableSet06.Often;
 using Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital;
 using System;
 using System.Collections.Generic;
@@ -73,6 +73,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
 
     public class PoolLogic
     {
+        public int ShotPoints => PoolCoach.Instance.matchBall == MatchBall.ThreeBall && gameState.hitKinds.Count > 0 &&
+            (gameState.hitKinds[0] == HitKind.Board_B || gameState.hitKinds[0] == HitKind.Board_T ||
+             gameState.hitKinds[0] == HitKind.Board_L || gameState.hitKinds[0] == HitKind.Board_R) ? 2 : 1;
         public static void RestorePracticeState(PoolState state) => _gameState = state.Copy();
 
         private static PoolState _gameState;
@@ -271,9 +274,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
                         if (!PoolCoach.Instance.isBallStopAfterJudge)
                         {
                             isHit = true;
-                            reward = PoolCoach.Instance.hitReward;
+                            reward = PoolCoach.Instance.hitReward * ShotPoints;
                             // 득점으로 유저의 포인트 이동
-                            PoolPlayer.SetHitAdd(PoolPlayer.currentPlayer.playerId, reward);
+                            PoolPlayer.SetHitAdd(PoolPlayer.currentPlayer.playerId, reward, points: ShotPoints);
                             // 득점명칭 
                             RunPath runPath = GetRunPath();
 
@@ -340,9 +343,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
                     // 득점명칭 
                    RunPath runPath = GetRunPath();
 
-                    reward = PoolCoach.Instance.hitReward;
+                    reward = PoolCoach.Instance.hitReward * ShotPoints;
                     // 득점으로 유저의 포인트 이동
-                    PoolPlayer.SetHitAdd(PoolPlayer.currentPlayer.playerId, reward);
+                    PoolPlayer.SetHitAdd(PoolPlayer.currentPlayer.playerId, reward, points: ShotPoints);
                     PoolCoach.Instance.ScoreChanged(true, reward, runPath);
             
                 }

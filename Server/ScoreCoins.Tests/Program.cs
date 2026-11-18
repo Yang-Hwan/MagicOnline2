@@ -84,13 +84,23 @@ static class Program
         streak.Add(1,0,1,1);streak.Add(2,0,2,1);streak.Add(3,0,3,1);
         Check(streak.NetA==1400,"three combo pays 200+400+800");
         streak.Add(5,0,1,1); Check(streak.NetA==1600,"new turn restarts combo");
+        var bank = new ScoreCoinLedger(10000,10000,1000,5);
+        bank.Add(1,0,1,2,true);Check(bank.NetA==400,"bank pays exactly twice the normal 200");
+        bank.Add(2,0,3,1);Check(bank.NetA==1200,"next streak follows two-point bank");
+        var replayBank=ScoreCoinLedger.Replay(10000,10000,1000,5,bank.Events);
+        Check(replayBank.NetA==bank.NetA && replayBank.Events==bank.Events,"bank event replay diverged");
+        var oldDouble=new ScoreCoinLedger(10000,10000,1000,5);oldDouble.Add(1,0,1,2);
+        Check(oldDouble.NetA==600,"legacy four-ball two-point coins changed");
+        Throws<ArgumentException>(()=>bank.Add(3,0,4,1,true),"bank with one point rejected");
+        var poor=new ScoreCoinLedger(10000,1250,1000,5);poor.Add(1,0,1,2,true);
+        Check(poor.NetA==250 && poor.BustWinner==0 && ScoreCoinLedger.Replay(10000,1250,1000,5,poor.Events).NetA==250,"bank bankruptcy replay incorrect");
         var large = new ScoreCoinLedger(100000000000,100000000000,10000000000,5);
         for(int i=1;i<=6 && large.BustWinner<0;i++) large.Add(i,0,i,1);
         Check(large.BalanceB==0 && large.BalanceA==180000000000,"large wallets saturate safely");
-        (SettlementService service,TestStore store,TestClock clock,string id) Start() {
+        (SettlementService service,TestStore store,TestClock clock,string id) Start(int target=5) {
             var store=new TestStore();store.Users["A"].Coin=10000;store.Users["B"].Coin=1800;
             var clock=new TestClock();var service=new SettlementService(store,clock);string id=Guid.NewGuid().ToString("N");
-            var rules=new MatchRulesContract { Version=MatchRulesContract.CurrentVersion,TargetScore=5,CoinPolicy=2,EntryCoin=1000 };
+            var rules=new MatchRulesContract { Version=MatchRulesContract.CurrentVersion,TargetScore=target,CoinPolicy=2,EntryCoin=1000 };
             service.Register(new(id,"A","B","Alice","Bob",3,1,1000,CoinPolicy.ScoreTransfer,"{}",rules));
             service.Ready(id,"A",rules);service.Ready(id,"B",rules);
             Check(store.Users["A"].Coin==10000 && store.Users["B"].Coin==1800,"start reserves without wallet mutation");
@@ -106,6 +116,12 @@ static class Program
         Check(t.store.Users["A"].Coin==11710 && t.store.Users["B"].Coin==0,"example settles 11710 / 0 with 90 fee");
         t.service.ConfirmResult(t.id,"A",report);t.service.Surrender(t.id,"B");
         Check(t.store.Users["A"].Coin==11710 && receipt.PlayerA.CoinDelta==1710,"duplicate settlement remains idempotent");
+        var over=Start(7);var overCoins=new ScoreCoinLedger(10000,1800,1000,7);
+        overCoins.Add(1,0,1,2,true);
+        var overReport=new ResultReport(8,0,0,overCoins.Events);
+        Check(over.service.ConfirmResult(over.id,"A",overReport)==null,"overshoot waits for both reports");
+        Check(over.service.ConfirmResult(over.id,"B",overReport)!=null && over.store.Users["B"].Coin==516,"8/7 settlement preserves full bank reward");
+        Throws<ArgumentException>(()=>ScoreCoinLedger.Replay(10000,1800,1000,7,overCoins.Events,false),"four-ball cannot claim bank bonus");
         t=Start();var one="1,0,1,1;";
         t.service.CheckpointCoins(t.id,"A",new(one));t.service.CheckpointCoins(t.id,"B",new(one));
         t.service.ConfirmResult(t.id,"A",new(1,1,-1,one));t.service.ConfirmResult(t.id,"B",new(1,1,-1,one));

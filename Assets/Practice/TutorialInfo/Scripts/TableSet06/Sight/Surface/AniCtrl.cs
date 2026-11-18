@@ -71,12 +71,14 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         {
             int ownerPlayerId = PoolPlayer.currentPlayer.playerId;
             var session = physicsManager.Items;
-            long displayedReward = cnt_coin * 10L + Math.Max(0, scoreReward);
+            int bonusMultiplier = scoreReward > 0 && PoolCoach.Instance.matchBall == MatchBall.ThreeBall ? PoolLogic.Instance.ShotPoints : 1;
+            int achievementBonus = cnt_coin * 10 * bonusMultiplier;
+            long displayedReward = achievementBonus + Math.Max(0, scoreReward);
             var display = physicsManager.BeginCoinDisplay(ownerPlayerId, displayedReward);
             bool dispatched = false;
             try {
                 // Achievement bonus is gameplay, independent of delayed coin presentation.
-                if (!session.AwardBonus(ownerPlayerId, cnt_coin * 10)) return;
+                if (!session.AwardBonus(ownerPlayerId, achievementBonus)) return;
 
                 for (int i = 0; i < cnt_coin; i++)
                 {

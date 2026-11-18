@@ -13,6 +13,8 @@ namespace Assets.Scripts.Exert.Match
 {
     public class PoolCoach
     {
+        public readonly InningScoreHistory InningScores = new InningScoreHistory();
+        bool inningScoresStarted;
         public event System.Action<int> OnAvatarShotStarted;
 
         // 
@@ -202,6 +204,8 @@ namespace Assets.Scripts.Exert.Match
             PoolPlayer.ResetMatch(finishMission != FinishMission.None ? FinishStep.Task : FinishStep.None, checkCushion);
             PoolPlayer.ResetOneMore();
             PoolPlayer.SetTurn(PoolPlayer.turnId);
+            InningScores.Reset(PoolPlayer.turnId);
+            inningScoresStarted=false;
             OnSetPlayer?.Invoke(PoolPlayer.mainPlayer);
             OnSetPlayer?.Invoke(PoolPlayer.otherPlayer);
             isMatchTimePlay = false;                    // true일때 실제 시작 .. 초구뿌리기 완료후 참
@@ -215,6 +219,8 @@ namespace Assets.Scripts.Exert.Match
         // 턴 변경직후 선수 활성화 
         public void ActivePlayer()
         {
+            if(!inningScoresStarted){InningScores.Reset(PoolPlayer.turnId);inningScoresStarted=true;}
+            else InningScores.Activate(PoolPlayer.turnId);
 
             //_shotCtrl.SetCueBall();
             calculateTime = true;
@@ -603,6 +609,8 @@ namespace Assets.Scripts.Exert.Match
 
         public void ScoreChanged(int cnt, int reward, RunPath runPath)
         {
+            if(!inningScoresStarted){InningScores.Reset(PoolPlayer.turnId);inningScoresStarted=true;}
+            InningScores.SetTotals(PoolPlayer.players[0].DisplayedHitCount,PoolPlayer.players[1].DisplayedHitCount);
             OnScoreChanged?.Invoke(PoolPlayer.turnId, cnt, reward, runPath);   // 몇점, 누적점수, 코인 
         }
 

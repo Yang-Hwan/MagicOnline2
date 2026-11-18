@@ -13,6 +13,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Often
         public static string CoinNumToStr(long _coin, sbyte grp = 2)
         {
             if (_coin == 0) return "0";
+            if (_coin < 0) return _coin == long.MinValue
+                ? _coin.ToString("N0",System.Globalization.CultureInfo.InvariantCulture)
+                : "-" + CoinNumToStr(-_coin,grp);
             string vUnitNum, vFourNum, vHanAmt, vPartAmt;
  
             byte iNumIdx, iFourType, iCnt, iAmtLen;

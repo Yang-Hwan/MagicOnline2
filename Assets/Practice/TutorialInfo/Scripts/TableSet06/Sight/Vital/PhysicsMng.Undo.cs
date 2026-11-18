@@ -25,6 +25,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             public Vector2 point;
             public UnityEngine.Random.State random;
             public int practiceAttempts, practiceStreak;
+            public Assets.Scripts.Often.InningScoreSnapshot innings;
         }
         UndoSnapshot undoSnapshot;
         int undoVersion;
@@ -49,6 +50,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 random = UnityEngine.Random.state
             };
             undoSnapshot.practiceAttempts = coach.practiceAttempts;
+            undoSnapshot.innings = coach.InningScores.Capture();
             undoSnapshot.practiceStreak = coach.practiceStreak;
             foreach (var view in itemViews.Values) undoSnapshot.lifetimes.Add(view.SpawnId, view.RemainingLifetime);
             var pointPanel = FindAnyObjectByType<BallPointBig>(FindObjectsInactive.Include);
@@ -60,6 +62,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             if (!CanUndoShot) return false;
             ExitPracticeReplay();
             var saved = undoSnapshot;
+            PoolCoach.Instance.InningScores.Restore(saved.innings);
             undoVersion++;
             ConfigureItemSession(Guid.NewGuid().ToString("N"), true);
             externalItemSession = false;

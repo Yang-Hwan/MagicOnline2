@@ -11,6 +11,20 @@ using UnityEngine.UI;
 [InitializeOnLoad]
 public static class ThreeCushionTechniqueValidation
 {
+    [Serializable] sealed class PracticeSamples { public PracticeSample[] samples; }
+    [Serializable] sealed class PracticeSample
+    {
+        public int slot, cue;
+        public string expected;
+        public float[] start;
+        public PracticeContact[] contacts;
+    }
+    [Serializable] sealed class PracticeContact
+    {
+        public int ball, rail, frame;
+        public float[] position, incoming, outgoing, target;
+        public float spin, radius;
+    }
     const string Root="Logs/Techniques/";
     static ThreeCushionTechniqueValidation(){EditorApplication.update+=Tick;}
     static void Tick()
@@ -35,6 +49,7 @@ public static class ThreeCushionTechniqueValidation
     public static void Run()
     {
         Directory.CreateDirectory(Root);int checks=0;
+        ValidatePracticeSamples(Check);
         foreach(string name in new[]{"Back","Brush","Titles","ExtraTitles"})
         {
             string path="Assets/Resources/Gameplay/Techniques/"+name+".png";
@@ -54,7 +69,7 @@ public static class ThreeCushionTechniqueValidation
         void Finish(ThreeCushionShotTrace t,Vector3 end=default)=>t.Hit(2,-1,end,Vector3.forward,Vector3.zero,0);
         void Expect(ThreeCushionShotTrace t,ThreeCushionTechnique kind,Vector3 launch=default)
         {
-            Check(t.Classify(true)==kind,"classifies "+kind+" (got "+t.Classify(true)+")");
+            Check(t.Classify(true)==kind,"classifies "+kind+" (got "+t.Classify(true)+") first="+t.Contacts[0].position+" target="+t.Contacts[0].target+" incoming="+t.Contacts[0].incoming);
             Check(t.Classify(false)==ThreeCushionTechnique.None,"miss suppressed "+kind);
             // Further contacts after the second object must never change the title.
             Rail(t,0);Check(t.Classify(true)==kind,"frozen at score "+kind);
@@ -91,10 +106,20 @@ public static class ThreeCushionTechniqueValidation
             {
                 var launch=P((end==0?-1:1)*Mathf.Cos(degrees*Mathf.Deg2Rad),Mathf.Sin(degrees*Mathf.Deg2Rad));
                 var shot=new ThreeCushionShotTrace();shot.Begin(0,Vector3.zero,bounds,launch);
-                shot.Hit(1,-1,P(.1f,.1f),Vector3.forward,Vector3.right,0);
+                var n1=end==0?Vector2.right:Vector2.left;
+                var n2=adjacent==2?Vector2.up:Vector2.down;
+                float turn=n1.x*n2.y-n1.y*n2.x;
+                shot.Hit(1,-1,P(.1f,.1f),Vector3.forward,Vector3.right,0,P(.1f+turn*.05f,.1f),.03f);
                 Rail(shot,end);Rail(shot,adjacent);Rail(shot,1-end);Finish(shot);
-                if(degrees<20)Expect(shot,ThreeCushionTechnique.HorizontalHit,launch);
-                else Check(shot.Classify(true)!=ThreeCushionTechnique.HorizontalHit,"launch outside horizontal range");
+                Expect(shot,ThreeCushionTechnique.HorizontalHit,launch);
+                var frontRoute=new ThreeCushionShotTrace();frontRoute.Begin(0,Vector3.zero,bounds,launch);
+                frontRoute.Hit(1,-1,P(.1f,.1f),Vector3.forward,Vector3.right,0,P(.1f+turn*.05f,.1f),.03f);
+                Rail(frontRoute,end);Rail(frontRoute,adjacent);Rail(frontRoute,5-adjacent);Finish(frontRoute);
+                Expect(frontRoute,ThreeCushionTechnique.Front,launch);
+                var opposite=new ThreeCushionShotTrace();opposite.Begin(0,Vector3.zero,bounds,launch);
+                opposite.Hit(1,-1,P(.1f,.1f),Vector3.forward,Vector3.right,0,P(.1f-turn*.05f,.1f),.03f);
+                Rail(opposite,end);Rail(opposite,adjacent);Rail(opposite,1-end);Finish(opposite);
+                Expect(opposite,ThreeCushionTechnique.Cut,launch);
             }
         }
         var extraRail=new ThreeCushionShotTrace();extraRail.Begin(0,Vector3.zero,bounds,Vector3.left);
@@ -105,6 +130,20 @@ public static class ThreeCushionTechniqueValidation
         Check(oldFront.Classify(true)!=ThreeCushionTechnique.Front,"long rail first excludes front");
         var reverse=Trace(Vector3.forward);Rail(reverse,3,P(1,1),P(-.3f,-1),-2);Rail(reverse,2);Rail(reverse,1);Finish(reverse);Expect(reverse,ThreeCushionTechnique.Reverse);
         var grand=Trace(Vector3.forward);foreach(int r in new[]{3,1,2,0})Rail(grand,r);Finish(grand);Expect(grand,ThreeCushionTechnique.Grand);
+        foreach(var kind in new[]{ThreeCushionTechnique.Side,ThreeCushionTechnique.Back,ThreeCushionTechnique.HorizontalHit,ThreeCushionTechnique.Cut})
+        foreach(int railCount in new[]{4,5,6})
+        {
+            bool shortFirst=kind==ThreeCushionTechnique.HorizontalHit;
+            bool opposite=kind==ThreeCushionTechnique.Back || kind==ThreeCushionTechnique.Cut;
+            var shot=new ThreeCushionShotTrace();shot.Begin(0,P(-.5f,-.5f),bounds);
+            var position=kind==ThreeCushionTechnique.Cut?P(-.25f,.94f):P(-.25f,.2f);
+            var target=position+(shortFirst?P(.05f,0):P(0,opposite?-.05f:.05f));
+            shot.Hit(1,-1,position,shortFirst?Vector3.forward:Vector3.right,Vector3.forward,0,target,.03f);
+            var circuit=shortFirst?new[]{1,3,0,2}:new[]{3,1,2,0};
+            for(int i=0;i<railCount;i++)Rail(shot,circuit[i%4]);
+            Finish(shot);
+            Expect(shot,railCount>=5 && kind!=ThreeCushionTechnique.Cut?ThreeCushionTechnique.Grand:kind);
+        }
         foreach(int n in new[]{2,3})
         {
             var bank=new ThreeCushionShotTrace();bank.Begin(0,P(0,0),bounds);
@@ -130,7 +169,38 @@ public static class ThreeCushionTechniqueValidation
             if(angle>=5f) Expect(shallow,ThreeCushionTechnique.Bounding);
             else Check(shallow.Classify(true)!=ThreeCushionTechnique.Bounding,"below five degrees: "+angle);
         }
-        var cut=Trace(Vector3.right,P(0,.9f),P(0,.94f),.03f);Rail(cut,3);Rail(cut,1);Rail(cut,2);Finish(cut);Expect(cut,ThreeCushionTechnique.Cut);
+        var cut=Trace(Vector3.right,P(0,.94f),P(0,.9f),.03f);Rail(cut,3);Rail(cut,1);Rail(cut,2);Finish(cut);Expect(cut,ThreeCushionTechnique.Cut);
+        var closeSide=Trace(Vector3.right,P(0,.9f),P(0,.94f),.03f);Rail(closeSide,3);Rail(closeSide,1);Rail(closeSide,2);Finish(closeSide);Expect(closeSide,ThreeCushionTechnique.Side);
+        // Distance only separates opposite-side contacts, and the cutoff scales with table width.
+        foreach(float gap in new[]{.349f,.351f})
+        {
+            var shot=Trace(Vector3.right,P(-.25f,1-gap+.04f),P(-.25f,1-gap),.03f);
+            Rail(shot,3);Rail(shot,1);Rail(shot,2);Finish(shot);
+            Expect(shot,gap<.35f?ThreeCushionTechnique.Cut:ThreeCushionTechnique.Back);
+        }
+        foreach(float degrees in new[]{11.9f,12.1f})
+        {
+            var shot=Trace(Vector3.right,P(0,.64f),P(0,.6f),.03f);
+            shot.Hit(-1,3,P(.36f*Mathf.Tan(degrees*Mathf.Deg2Rad),1),Vector3.forward,Vector3.back,0);
+            Rail(shot,1);Rail(shot,2);Finish(shot);
+            Expect(shot,degrees<12?ThreeCushionTechnique.Cut:ThreeCushionTechnique.Back);
+        }
+        foreach(float gap in new[]{.449f,.451f,1.2f})
+        {
+            var shot=Trace(Vector3.right,P(0,1-gap+.04f),P(0,1-gap),.03f);
+            Rail(shot,3);Rail(shot,1);Rail(shot,2);Finish(shot);
+            Expect(shot,ThreeCushionTechnique.Cut);
+            var oblique=Trace(Vector3.right,P(-.5f,1-gap+.04f),P(-.5f,1-gap),.03f);
+            Rail(oblique,3);Rail(oblique,1);Rail(oblique,2);Finish(oblique);
+            Expect(oblique,ThreeCushionTechnique.Back);
+        }
+        // A cut can start on a short rail too, including a route otherwise classified as front.
+        foreach(int third in new[]{0,2})
+        {
+            var shot=Trace(Vector3.forward,P(1.98f,0),P(1.94f,0),.03f);
+            Rail(shot,1);Rail(shot,3);Rail(shot,third);Finish(shot);
+            Expect(shot,ThreeCushionTechnique.Cut);
+        }
         // Slot 20 (2026-11-18): first contact reconstructed between replay frames 54/55.
         // Scale the 2.64 x 1.32 table uniformly to this fixture's 4 x 2 bounds.
         float replayScale=4f/2.64f;
@@ -151,7 +221,7 @@ public static class ThreeCushionTechniqueValidation
             shot.Hit(-1,3,ReplayPoint(.2063f,.4688f),P(-1,1),P(-1,-1),0);
             shot.Hit(-1,0,ReplayPoint(-1.302f,-.0976f),P(-1,-1),P(1,-1),0);
             Finish(shot,ReplayPoint(-.45f,-.688f));
-            Expect(shot,thick?(recordedLaunch?ThreeCushionTechnique.HorizontalHit:ThreeCushionTechnique.Side):ThreeCushionTechnique.Cut,launch);
+            Expect(shot,thick?ThreeCushionTechnique.Side:ThreeCushionTechnique.Cut,launch);
         }
         var farCut=Trace(Vector3.up,P(1,.2f),P(1.05f,.2f),.03f);
         Rail(farCut,1);Rail(farCut,3);Rail(farCut,0);Finish(farCut);
@@ -213,5 +283,69 @@ public static class ThreeCushionTechniqueValidation
                 }
             }finally{EditorSceneManager.ClosePreviewScene(scene);}
         }
+    }
+    static void ValidatePracticeSamples(Action<bool,string> check)
+    {
+        var data=JsonUtility.FromJson<PracticeSamples>(File.ReadAllText("Assets/Editor/TechniquePracticeSamples.json"));
+        check(data.samples.Length==10,"ten labelled practice samples");
+        foreach(var sample in data.samples)
+        foreach(float scale in new[]{.5f,1f,2f})
+        foreach(int orientation in new[]{0,1,2,3,4})
+        {
+            // Localise the recorded table centre before rotating/reflection/scaling.
+            Vector3 Map(float[] p,bool position)
+            {
+                float x=p[0],z=p[1]+(position?.16f:0);
+                if(orientation==1 || orientation==3)x=-x;
+                if(orientation==2 || orientation==3)z=-z;
+                if(orientation==4){float old=x;x=z;z=-old;}
+                return new Vector3(x*scale,0,z*scale);
+            }
+            int MapRail(int r)
+            {
+                if(r<0)return r;
+                if((orientation==1 || orientation==3) && r<2)r=1-r;
+                if((orientation==2 || orientation==3) && r>=2)r=5-r;
+                return orientation==4?new[]{3,2,0,1}[r]:r;
+            }
+            var bounds=new Bounds(Vector3.zero,(orientation==4?new Vector3(1.32f,.01f,2.64f):new Vector3(2.64f,.01f,1.32f))*scale);
+            var trace=new ThreeCushionShotTrace();
+            trace.Begin(sample.cue,Map(sample.start,true),bounds,Map(sample.contacts[0].incoming,false));
+            foreach(var c in sample.contacts)
+                trace.Hit(c.ball,MapRail(c.rail),Map(c.position,true),Map(c.incoming,false),Map(c.outgoing,false),
+                    c.spin*(orientation==1 || orientation==2?-1:1),Map(c.target,true),c.radius*scale);
+            var expected=(ThreeCushionTechnique)Enum.Parse(typeof(ThreeCushionTechnique),sample.expected);
+            check(trace.Classify(true)==expected,$"practice slot {sample.slot:00}, orientation {orientation}, scale {scale}: expected {expected}, got {trace.Classify(true)}");
+            check(trace.Classify(false)==ThreeCushionTechnique.None,"practice miss remains suppressed");
+            if(sample.slot==9)
+            {
+                check(sample.contacts.Count(c=>c.rail>=0)==4,"slot 09 retains the two separate corner contacts");
+                check(trace.TravelLength>new Vector2(bounds.size.x,bounds.size.z).magnitude*1.6f,
+                    "slot 09 exercises the former Grand distance override");
+            }
+            if(sample.contacts.Length==5)
+            {
+                var extended=new ThreeCushionShotTrace();
+                extended.Begin(sample.cue,Map(sample.start,true),bounds,Map(sample.contacts[0].incoming,false));
+                for(int i=0;i<sample.contacts.Length;i++)
+                {
+                    if(i==sample.contacts.Length-1)
+                    {
+                        int second=sample.contacts[2].rail;
+                        int fourth=second<2?1-second:5-second;
+                        if(fourth==sample.contacts[3].rail)fourth=sample.contacts[1].rail;
+                        float[] extra=fourth==0?new[]{-1.2915f,-.16f}:fourth==1?new[]{1.2915f,-.16f}:
+                            fourth==2?new[]{0f,-.7915f}:new[]{0f,.4715f};
+                        extended.Hit(-1,MapRail(fourth),Map(extra,true),Vector3.zero,Vector3.zero,0);
+                    }
+                    var c=sample.contacts[i];
+                    extended.Hit(c.ball,MapRail(c.rail),Map(c.position,true),Map(c.incoming,false),Map(c.outgoing,false),
+                        c.spin*(orientation==1 || orientation==2?-1:1),Map(c.target,true),c.radius*scale);
+                }
+                check(extended.Classify(true)==expected,"an extra fourth cushion preserves base technique for slot "+sample.slot);
+            }
+        }
+        File.WriteAllText(Root+"practice-samples-result.json",
+            "{\"passed\":true,\"slots\":[\"Side\",\"Cut\",\"Back\",\"Cut\",\"Cut\",\"Cut\",\"Cut\",\"Cut\",\"Back\",\"Front\"],\"orientations\":5,\"scales\":3,\"cases\":150,\"extraRailCases\":135}");
     }
 }

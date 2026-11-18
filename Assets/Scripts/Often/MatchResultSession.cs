@@ -13,6 +13,7 @@ namespace Assets.Scripts.Often
         public MatchShotOutcome outcome;
         public double time;
         public ThreeCushionTechnique technique;
+        public bool bank;
     }
 
     // Collision facts only. Scoring is deferred until the authoritative terminal snapshot.
@@ -21,7 +22,8 @@ namespace Assets.Scripts.Often
         readonly int balls, cue, requiredCushions;
         bool first, second, opponent;
         int firstId = -1, cushions;
-        bool threePoint;
+        bool threePoint, bank;
+        public bool IsBank => balls == 3 && threePoint && bank;
         public int BallContacts { get; private set; }
         public MatchContactRecord(int balls, int cue, int requiredCushions)
         { this.balls = balls; this.cue = cue; this.requiredCushions = requiredCushions; }
@@ -36,7 +38,7 @@ namespace Assets.Scripts.Often
                 if (id == 2) first = true;
                 if (id == 3) second = true;
             }
-            else if (firstId == -1) { firstId = id; first = true; }
+            else if (firstId == -1) { firstId = id; first = true; bank = cushions > 0; }
             else if (id != firstId && !second) { second = true; threePoint = cushions >= requiredCushions; }
         }
         public MatchShotOutcome Resolve()
@@ -59,6 +61,7 @@ namespace Assets.Scripts.Often
         public int Score0 { get; private set; }
         public int Score1 { get; private set; }
         public int Sequence { get; private set; }
+        public InningScoreHistory InningScores {get;} = new InningScoreHistory();
         public int Winner { get; private set; } = -1; // -1 ongoing, -2 draw
         public double MatchDeadline { get; private set; }
         public double TurnDeadline { get; private set; }
@@ -69,6 +72,8 @@ namespace Assets.Scripts.Often
             Score0 = checkpoint.score0; Score1 = checkpoint.score1; Sequence = checkpoint.sequence;
             Winner = -1; Initialized = true; lastTime = checkpoint.time;
             MatchDeadline = checkpoint.matchDeadline; TurnDeadline = checkpoint.turnDeadline;
+            if(checkpoint.innings!=null)InningScores.Restore(checkpoint.innings);
+            else InningScores.Reset(checkpoint.seat,Score0,Score1);
         }
         internal void NotifyRestored()
         {
@@ -101,6 +106,7 @@ namespace Assets.Scripts.Often
                 message.matchId != start.MatchId || message.sequence != Sequence + 1 || message.shotId != shots.ShotId ||
                 !Finite(message.time) || message.time < lastTime || Finished ||
                 !Enum.IsDefined(typeof(ThreeCushionTechnique),message.technique)) return false;
+            if (message.bank && (message.kind != MatchResultKind.Shot || message.outcome != MatchShotOutcome.Point || start.Configuration.BallCount != 3)) return false;
             if(message.technique!=ThreeCushionTechnique.None && (message.kind!=MatchResultKind.Shot ||
                 message.outcome!=MatchShotOutcome.Point || start.Configuration.BallCount!=3 || start.Configuration.CushionCount!=3))return false;
             if (message.kind == MatchResultKind.Begin)
@@ -110,6 +116,7 @@ namespace Assets.Scripts.Often
                 MatchDeadline = message.time + start.Configuration.MatchSeconds;
                 TurnDeadline = message.time + start.Configuration.TurnSeconds;
                 Initialized = true;
+                InningScores.Reset(shots.TurnSeat);
             }
             else
             {
@@ -121,7 +128,7 @@ namespace Assets.Scripts.Often
                     if (shots.Phase != MatchShotPhase.AwaitingResult ||
                         !Enum.IsDefined(typeof(MatchShotOutcome), message.outcome) ||
                         (start.Configuration.BallCount == 3 && message.outcome == MatchShotOutcome.Foul)) return false;
-                    int delta = message.outcome == MatchShotOutcome.Point ? 1 : message.outcome == MatchShotOutcome.Foul ? -1 : 0;
+                    int delta = message.outcome == MatchShotOutcome.Point ? (message.bank ? 2 : 1) : message.outcome == MatchShotOutcome.Foul ? -1 : 0;
                     if (seat == 0) score0 = Math.Max(0, score0 + delta); else score1 = Math.Max(0, score1 + delta);
                 }
                 else if (message.kind == MatchResultKind.TurnTimeout)
@@ -138,11 +145,14 @@ namespace Assets.Scripts.Often
                 int next = !idle && message.outcome == MatchShotOutcome.Point ? seat : 1 - seat;
                 if (!shots.ApplyResultTransition(sender, message.matchId, message.shotId, next, idle, winner != -1)) return false;
                 Score0 = score0; Score1 = score1; Winner = winner;
+                InningScores.SetTotals(score0,score1);
+                if(winner!=-1)InningScores.Finish();
+                else if(message.kind!=MatchResultKind.MatchTimeout)InningScores.Activate(next);
                 TurnDeadline = message.time + start.Configuration.TurnSeconds;
             }
             Sequence = message.sequence; lastTime = message.time;
             Applied?.Invoke(new MatchResultMessage { matchId = message.matchId, sequence = message.sequence,
-                shotId = message.shotId, kind = message.kind, outcome = message.outcome, time = message.time, technique=message.technique });
+                shotId = message.shotId, kind = message.kind, outcome = message.outcome, time = message.time, technique=message.technique, bank=message.bank });
             return true;
         }
     }
