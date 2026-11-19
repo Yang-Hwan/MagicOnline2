@@ -17,7 +17,7 @@ internal static class ShopTransfer
         new("content_assets","asset_key","content_hash,content_type,width,height"),
         new("products","id","kind,name,description,thumbnail,price_gem,sort_order,sale_starts_at,sale_ends_at,visible,purchasable"),
         new("gem_packs","product_id","amount,bonus"),
-        new("cues","product_id","visual,power_pct,follow_pct,tip_pct,shot_seconds"),
+        new("cues","product_id","visual,power_pct,follow_pct,tip_pct,shot_seconds,ability"),
         new("character_emotions","product_id,emotion","asset_key"),
         new("message_packs","product_id","personality"),
         new("messages","product_id,position","message")
@@ -58,11 +58,14 @@ internal static class ShopTransfer
                 if(!shop.TryGetProperty(part.Name,out var rows) || rows.ValueKind!=JsonValueKind.Array)
                     throw new ApiFault(400,$"상점 {part.Name} 목록이 없습니다.");
                 var columns=part.Columns.Split(',').ToHashSet(StringComparer.Ordinal);
-                foreach(var row in rows.EnumerateArray())
-                    if(row.ValueKind!=JsonValueKind.Object || !columns.SetEquals(row.EnumerateObject().Select(p=>p.Name)))
+                var incoming=JsonNode.Parse(rows.GetRawText())!.AsArray();
+                if(part.Name=="cues")foreach(var row in incoming)if(row is JsonObject obj && !obj.ContainsKey("ability"))
+                    obj["ability"]=JsonSerializer.SerializeToNode(new Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings(),Database.Json);
+                foreach(var row in incoming)
+                    if(row is not JsonObject fields || !columns.SetEquals(fields.Select(p=>p.Key)))
                         throw new ApiFault(400,$"상점 {part.Name} 항목의 필드 구성이 올바르지 않습니다.");
                 await Execute(c,$"CREATE TEMP TABLE incoming_{part.Name} ON COMMIT DROP AS SELECT {part.Columns} FROM {part.Table} WITH NO DATA");
-                await Execute(c,$"INSERT INTO {part.Stage} SELECT {part.Columns} FROM jsonb_populate_recordset(NULL::{part.Table},$1::jsonb)",rows.GetRawText());
+                await Execute(c,$"INSERT INTO {part.Stage} SELECT {part.Columns} FROM jsonb_populate_recordset(NULL::{part.Table},$1::jsonb)",incoming.ToJsonString());
             }
             // A product ID is also referenced by inventory, purchases and equipped slots.
             await using var changedKind=Database.Command(c,"SELECT EXISTS(SELECT FROM shop_products p JOIN pg_temp.incoming_products i USING(id) WHERE i.kind<>p.kind)");

@@ -362,8 +362,11 @@ namespace Assets.Scripts.Exert.Match
                         player.hitCnt += cnt;
                         player.hitInning += cnt;
                         if (Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var coinNetwork) &&
-                            coinNetwork is Assets.Scripts.Exert.Network.PunNetwork coinMatch && coinMatch.HasScoreCoins)
-                            coinMatch.AddScoringCoins(playerId, scoreBefore, player.hitInning - cnt + 1, cnt);
+                            coinNetwork is Assets.Scripts.Exert.Network.PunNetwork coinMatch)
+                        {
+                            if(coinMatch.HasScoreCoins)coinMatch.AddScoringCoins(playerId, scoreBefore, player.hitInning - cnt + 1, cnt);
+                            if(scoreBefore<PoolCoach.Instance.targetHit)coinMatch.RecordCasualCuePoint(playerId);
+                        }
 
                         if(player.hitInning > player.hitHigh)
                         {

@@ -599,6 +599,10 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var net) &&
                 net is Assets.Scripts.Exert.Network.PunNetwork pun && pun.BlockLegacyShots) return;
 
+            if (string.IsNullOrEmpty(impulse_str) &&
+                Assets.Scripts.Exert.Network.NetworkManager.TryGetExistingNetwork(out var quickNet) &&
+                quickNet is Assets.Scripts.Exert.Network.PunNetwork quickMatch)
+                quickMatch.CaptureQuickShotRelease();
             physicsManager.moveTime = 0;
             physicsManager.endFromNetwork = false;
 

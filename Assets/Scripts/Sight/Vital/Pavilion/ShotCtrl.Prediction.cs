@@ -85,7 +85,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 foreach(var line in targetBallLines)if(line)line.positionCount=0;
                 return;
             }
-            // Reference guide at 50% power; moving the power handle does not invalidate it.
+            // Preview and release use the same current controls and equipped capability.
             var impulse=BuildGuideImpulse();
             int physicsKey=PreviewPhysicsKey();
             if(previousPhysicsKey!=physicsKey)predictionDirty=true;

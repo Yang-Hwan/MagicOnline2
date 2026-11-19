@@ -49,6 +49,8 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 var result = await GameApiClient.Request<ShopCatalogData>("/api/me/inventory");
                 if (!InventoryCurrent(request, panel)) return;
                 inventoryItems = result?.Products ?? Array.Empty<ShopProductData>();
+                await Assets.Scripts.Exert.Network.MatchEquipmentRuntime.RefreshLocalAsync();
+                if (!InventoryCurrent(request, panel)) return;
                 DrawInventory();
             }
             catch (Exception)
@@ -83,7 +85,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 StartCoroutine(LoadShopImage(asset, image, placeholder));
                 if(p.Kind=="Cue")Assets.Scripts.Often.PremiumCuePreview.Attach(image,p.Visual);
                 Text("OwnedName", inventoryCards, p.Name, x + 12, 327, 346, 55, 29, Color.white, autoSize: true);
-                string detail = p.Kind == "Cue" ? $"파워 {p.Power:+0;-0;0}% · 팔로스루 {p.FollowThrough:+0;-0;0}%\n당점 {p.Tip:+0;-0;0}% · 준비시간 {p.ShotSeconds:+0;-0;0}초" :
+                string detail = p.Kind == "Cue" ? p.CueDetail :
                     p.Kind == "Character" ? "감정 " + (p.Emotions?.Length ?? 0) + "종\n" + string.Join(", ", (p.Emotions ?? Array.Empty<ShopEmotionData>()).Select(e => e.Code)) :
                     p.Personality + "\n" + string.Join("\n", p.Messages ?? Array.Empty<string>());
                 Text("OwnedDescription", inventoryCards, detail, x + 15, 389, 340, 138, 23, Color.white, TextAlignmentOptions.TopLeft, true);
@@ -120,6 +122,8 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 var result = await GameApiClient.Request<ShopCatalogData>("/api/me/inventory");
                 if (!InventoryCurrent(request, panel)) return;
                 inventoryItems = result?.Products ?? Array.Empty<ShopProductData>();
+                await Assets.Scripts.Exert.Network.MatchEquipmentRuntime.RefreshLocalAsync();
+                if (!InventoryCurrent(request, panel)) return;
                 inventorySaving = false;
                 DrawInventory();
                 inventoryStatus.text = desired ? "장착했습니다." : "장착을 해제했습니다.";

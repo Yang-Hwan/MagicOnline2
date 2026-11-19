@@ -6,7 +6,7 @@ namespace Assets.Scripts.Prack.BackSys.GameData
     [Serializable]
     public sealed class MatchRulesContract
     {
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 5;
         public const int Pavilion = 0, Practice = 1;
         // No version initializer: an omitted version must fail validation.
         public int Version, Runtime, HallId, Ball, TargetScore, Cushions, MatchSeconds, TurnSeconds;

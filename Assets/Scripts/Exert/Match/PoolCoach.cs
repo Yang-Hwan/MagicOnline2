@@ -226,12 +226,19 @@ namespace Assets.Scripts.Exert.Match
             calculateTime = true;
             maxPlayTime = MatchEquipmentRuntime.Shooter.TurnSeconds(30); // timeInningSec is a legacy mutable countdown.
             playTime = 0;
+            if (NetworkManager.TryGetExistingNetwork(out var quickNet) && quickNet is PunNetwork quickMatch)
+                quickMatch.BeginQuickShotWindow();
             OnStartTime?.Invoke();
 
             OnSetActivePlayer?.Invoke(PoolPlayer.currentPlayer.playerId);                                      // 시간 진행 시작
         }
 
 
+        public void StopTimerAtShotRelease()
+        {
+            calculateTime = false;
+            OnStopTime?.Invoke();
+        }
         readonly List<int> shotContacts = new List<int>();
         int[] remoteShotContacts;
         public int[] ShotContacts => shotContacts.ToArray();

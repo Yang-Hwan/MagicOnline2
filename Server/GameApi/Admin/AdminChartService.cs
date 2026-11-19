@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -47,9 +47,16 @@ public sealed partial class AdminChartService(Database db)
         await using (var audit = Database.Command(c, "INSERT INTO admin_audit_logs(admin_id,action,target,request_id,before_value,after_value,reason) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb,$7)", admin, "ChartRowDeleted", name, requestId, before, after, string.IsNullOrWhiteSpace(reason) ? "관리자 차트 삭제" : reason.Trim())) await audit.ExecuteNonQueryAsync();
         await tx.CommitAsync();
     }
+    static void ValidateCueRange(JsonArray rows)
+    {
+        var cueRows=rows.Where(r=>r?["GrpCd"]?.ToString()=="Cue" && r?["ComCd"]?.ToString()=="Sec").ToArray();
+        if(cueRows.Length!=1 || cueRows[0]!["IsUse"]?.ToString()!="Y" || !int.TryParse(cueRows[0]!["ComVal"]?.ToString(),out var cueMin) || !int.TryParse(cueRows[0]!["ComVal2"]?.ToString(),out var cueMax) || cueMin<1 || cueMin>cueMax || cueMax>300)
+            throw new ApiFault(400,"Cue/Sec는 사용 상태로 유지하고 최저·최고 시간을 1~300초 범위로 설정해 주세요.");
+    }
     static async Task CheckReferencedCodes(Npgsql.NpgsqlConnection connection, string name, JsonArray rows)
     {
         if(name!="CommonCode") return;
+        ValidateCueRange(rows);
         await using var query=Database.Command(connection,"SELECT rows::text FROM charts WHERE name='PostReward'");
         if(await query.ExecuteScalarAsync() is string rewards)
             PostRewardChart.Validate(JsonNode.Parse(rewards)!.AsArray(),rows);

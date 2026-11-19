@@ -127,10 +127,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             // A missing catalog image must not leave a white rectangle over the card.
             cue.color=Color.white;
             Text("CueImageFallback",card,"큐대 이미지 미등록",48,671,804,30,18,Muted).gameObject.AddComponent<CueImageFallback>().Image=cue;
-            Stat("Power","파워",info.Equipment.Power,"%",36,740);
-            Stat("Follow","팔로스루",info.Equipment.FollowThrough,"%",468,740);
-            Stat("Tip","당점 범위",info.Equipment.Tip,"%",36,791);
-            Stat("ShotSeconds","제한시간",info.Equipment.ShotSeconds,"초",468,791);
+            Stat("Power","파워",info.Equipment.Ability?.Percent(info.Equipment.Power)??info.Equipment.Power,"%",36,740);
+            Stat("Follow","팔로스루",info.Equipment.Ability?.Percent(info.Equipment.FollowThrough)??info.Equipment.FollowThrough,"%",468,740);
+            Stat("Tip","당점 범위",info.Equipment.Ability?.Percent(info.Equipment.Tip)??info.Equipment.Tip,"%",36,791);
+            Stat("ShotSeconds","제한시간",(int)info.Equipment.TurnSeconds(30),"초",468,791);
         }
         void Record(string name,string caption,PlayerRecord record,float y)
         {
@@ -144,7 +144,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             var box=Node(name,card,x,y,396,42); Fill(box,new Color32(34,41,53,255),false);
             Text("Caption",box,caption,14,0,210,42,26,Gold,TextAlignmentOptions.MidlineLeft);
-            Text("Value",box,value.ToString("+0;-0;0",CultureInfo.InvariantCulture)+unit,217,0,162,42,29,Color.white,TextAlignmentOptions.MidlineRight);
+            Text("Value",box,value.ToString("0",CultureInfo.InvariantCulture)+unit,217,0,162,42,29,Color.white,TextAlignmentOptions.MidlineRight);
         }
         public void Close()
         {

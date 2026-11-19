@@ -183,6 +183,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         private void OnDestroy()
         {
+            DisposeCueAppearance();
             prediction?.Dispose();
             InputOutput.OnMouseState -= InputOutput_OnMouseState;
         }
@@ -450,24 +451,29 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         public Impulse BuildShotImpulse() => BuildImpulseForPower(force);
 
-        public Impulse BuildGuideImpulse() => BuildImpulseForPower(.5f);
+        // Before a power is selected, show the collision/rail continuation with
+        // a reference stroke. Selected power always uses the actual shot builder.
+        public Impulse BuildGuideImpulse() => BuildImpulseForPower(force > 0f ? force : .5f);
 
         Impulse BuildImpulseForPower(float power)
         {
+            var equipment=Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter;
+            power=Mathf.Clamp01(power)*equipment.PowerScale;
+            float follow=equipment.EffectiveFollow(pull);
             Vector3 forward = Vector3.ProjectOnPlane(cueSlider.forward, Vector3.up).normalized;
             Vector3 impulse = power * (maxVelocity * cueBall.body.mass) * forward;
             Vector3 centre = cueBall.body.worldCenterOfMass;
             Vector3 offset = cueDisplacement.position - centre;
             float radius = cueBall.GetComponent<SphereCollider>().radius * cueBall.transform.lossyScale.x;
             float contactAmount = Mathf.Clamp01(Vector3.ProjectOnPlane(offset, forward).magnitude / Mathf.Max(radius, .001f));
-            float blend = pull <= DefaultFollowThrough ? pull / DefaultFollowThrough :
-                (pull - DefaultFollowThrough) / (1f - DefaultFollowThrough);
+            float blend = follow <= DefaultFollowThrough ? follow / DefaultFollowThrough :
+                (follow - DefaultFollowThrough) / (1f - DefaultFollowThrough);
             float spinScale = FollowThroughProfile.SpinLeverScale(power);
-            float speedScale = pull <= DefaultFollowThrough ? Mathf.Lerp(1.04f, 1f, blend) : Mathf.Lerp(1f, .92f, blend);
+            float speedScale = follow <= DefaultFollowThrough ? Mathf.Lerp(1.04f, 1f, blend) : Mathf.Lerp(1f, .92f, blend);
             // Effective lever arm is an arcade impact model, not a moved aiming point.
             // Its torque scales independently of the linear impulse; centre hits gain no spin.
             Vector3 effectivePoint = centre + offset * (spinScale / speedScale);
-            return new Impulse(effectivePoint, impulse * speedScale, Vector3.zero, pull, FollowThroughProfile.Persistence(power,contactAmount,pull));
+            return new Impulse(effectivePoint, impulse * speedScale, Vector3.zero, follow, FollowThroughProfile.Persistence(power,contactAmount,follow));
         }
 
         void OnSlidePull(MouseState mouseState)
@@ -581,6 +587,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
                 // Strike at contact, then extend from that fixed position, independently of shot power.
                 await AnimateCueSlide(cueSlider.localPosition.z, 0f, .08f, token);
+                StrikeCueAppearance();
                 WaitAndStartShotAsync().Forget();
                 await AnimateCueSlide(0f, endZ, .12f, token);
                 await UniTask.Delay(500, cancellationToken: token);

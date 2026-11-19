@@ -11,3 +11,4 @@ PostRewardType,파산,3,0,Mail reward type,Y
 PostRewardType,연승,4,0,Mail reward type,Y
 PostRewardType,레벨,5,0,Mail reward type,Y
 PostRewardType,점검,6,0,Mail reward type,Y
+Cue,Sec,20,40,큐대 제한시간 최저·최고 (초),Y

@@ -1,0 +1,55 @@
+using System.Text.Json;
+using System.Reflection;
+using Assets.Scripts.Prack.BackSys.GameData;
+using MagicOnline.GameApi;
+using MagicOnline.MatchSettlement;
+using Microsoft.Extensions.Configuration;
+using Npgsql;
+int checks=0;void Check(bool ok,string text){if(!ok)throw new Exception(text);Console.WriteLine("PASS "+text);checks++;}
+var ability=new CueAbilitySettings{Grade="B",Initial=[60,70,55,55],Maximum=[62,71,56,57],Reach=2};
+Check(ability.Valid(),"valid B cue settings");Check(ability.Percent(60)==54 && ability.Percent(55)==50,"grade and midpoint rounding");
+var levels=ability.Levels(5);Check(levels.SequenceEqual(new[]{62,71,56,57}),"four levels grow independently and cap at maxima");
+var profile=new MatchEquipmentProfile{Ability=ability,Power=60,FollowThrough=70,Tip=55,ShotSeconds=55,CueTimeMin=20,CueTimeMax=40};
+Check(Math.Abs(profile.PowerScale-.54f)<.00001 && Math.Abs(profile.EffectiveFollow(1)-.63f)<.00001,"power and follow maximum capability");
+Check(profile.TipScale==.5f && profile.TurnSeconds(30)==30,"tip radius and Cue/Sec interpolation");
+Check(new CueAbilitySettings{Grade="C"}.Percent(60)==48,"C grade is 80 percent");
+Check(!new CueAbilitySettings{Grade="X"}.Valid() && !new CueAbilitySettings{Initial=[101,0,0,0]}.Valid() && !new CueAbilitySettings{Reach=0}.Valid(),"invalid grade/levels/reach rejected");
+var legacy=new MatchEquipmentProfile{Power=20,ShotSeconds=5};Check(Math.Abs(legacy.PowerScale-1.2f)<.00001 && legacy.TurnSeconds(30)==35,"legacy frozen equipment remains compatible");
+var config=new ConfigurationBuilder().AddUserSecrets<Database>().Build();var cs=new NpgsqlConnectionStringBuilder(config.GetConnectionString("GameDb"));
+if(cs.Host is not ("localhost" or "127.0.0.1"))throw new Exception("Local database only");
+await using var root=NpgsqlDataSource.Create(cs.ConnectionString);string schema="cue_abilities_test_"+Guid.NewGuid().ToString("N");
+await using(var q=root.CreateCommand("CREATE SCHEMA "+schema))await q.ExecuteNonQueryAsync();
+try {
+ cs.SearchPath=schema;await using var source=NpgsqlDataSource.Create(cs.ConnectionString);var db=new Database(source);await db.Migrate();
+ await using var c=await source.OpenConnectionAsync();
+ async Task<object?> Sql(string sql,params object[] args){object? result=null;foreach(var statement in sql.Split(';',StringSplitOptions.RemoveEmptyEntries)){var used=System.Text.RegularExpressions.Regex.Matches(statement,@"\$(\d+)").Select(m=>int.Parse(m.Groups[1].Value)).DefaultIfEmpty(0).Max();await using var cmd=Database.Command(c,statement,args.Take(used).ToArray());result=await cmd.ExecuteScalarAsync();}return result;}
+ Check(CueProgress.TimeRange(c)==(20,40),"fresh schema receives Cue/Sec seed");
+ var a=Guid.NewGuid();var b=Guid.NewGuid();foreach(var user in new[]{a,b})await Sql("INSERT INTO users(id,login_id,normalized_login,password_hash,nickname) VALUES($1,$2,$2,'test','test');INSERT INTO wallets(user_id,coin) VALUES($1,100000);INSERT INTO user_stats(user_id) VALUES($1)",user,user.ToString());
+ await Sql("INSERT INTO shop_content_assets(asset_key) VALUES('cue-test') ON CONFLICT DO NOTHING");
+ var cue=(long)(await Sql("INSERT INTO shop_products(kind,name,price_gem,visible,purchasable) VALUES('Cue','cue-test',0,true,true) RETURNING id"))!;
+ await Sql("INSERT INTO shop_cues(product_id,visual,power_pct,follow_pct,tip_pct,shot_seconds,ability) VALUES($1,'cue-test',0,0,0,0,$2::jsonb)",cue,JsonSerializer.Serialize(ability,Database.Json));
+ foreach(var user in new[]{a,b})await Sql("INSERT INTO shop_user_inventory(user_id,product_id) VALUES($1,$2);INSERT INTO shop_user_equipment(user_id,slot,product_id) VALUES($1,'Cue',$2)",user,cue);
+ var service=new MatchEquipment(db);var id=Guid.NewGuid().ToString("N");var snapshot=await service.Freeze(id,a,b);
+ Check(snapshot.Players.All(p=>p.Power==60 && p.TurnSeconds(30)==30 && p.TipScale==.5f),"database cue config reaches immutable match snapshot");
+ var award=typeof(CueProgress).GetMethod("Award",BindingFlags.Static|BindingFlags.NonPublic)!;
+ award.Invoke(null,[c,a,cue,"practice-one",1]);award.Invoke(null,[c,a,cue,"practice-one",1]);
+ Check((long)(await Sql("SELECT shots FROM shop_cue_progress WHERE user_id=$1 AND product_id=$2",a,cue))! ==1,"point retry advances only once");
+ award.Invoke(null,[c,a,cue,"practice-two",1]);
+ var next=await service.Freeze(Guid.NewGuid().ToString("N"),a,b);
+ Check(next.Players[0].Power==61 && next.Players[0].FollowThrough==71,"reach threshold upgrades owned cue on next match");
+ Check((await service.Read(id,a)).Players[0].Power==60,"ongoing match retains pre-growth power");
+ Check(next.Players[1].Power==60,"other member progression remains independent");
+ ability.Reach=100;await Sql("UPDATE shop_cues SET ability=$2::jsonb WHERE product_id=$1",cue,JsonSerializer.Serialize(ability,Database.Json));
+ var retained=await service.Freeze(Guid.NewGuid().ToString("N"),a,b);Check(retained.Players[0].Power==61,"changing reach preserves earned level increases");
+ // Exercise the actual first-settlement hook with one two-point bank event and one normal event.
+ var rules=new MatchRulesContract{Version=5,Runtime=0,TargetScore=5,EntryCoin=1000,CoinPolicy=2};
+ var store=new PostgresSettlementStore(db);var settlement=new SettlementService(store,new ServerClock());string match=Guid.NewGuid().ToString("N");
+ settlement.Register(new(match,a.ToString(),b.ToString(),"A","B",3,1,1000,CoinPolicy.ScoreTransfer,"{}",rules));
+ await service.Freeze(match,a,b);settlement.Ready(match,a.ToString(),rules);settlement.Ready(match,b.ToString(),rules);
+ var coins=new ScoreCoinLedger(100000,100000,1000,5);coins.Add(1,0,1,2,true);coins.Add(2,0,3,1);
+ var result=new ResultReport(5,0,0,coins.Events);settlement.ConfirmResult(match,a.ToString(),result);settlement.ConfirmResult(match,b.ToString(),result);settlement.ConfirmResult(match,a.ToString(),result);
+ Check((long)(await Sql("SELECT shots FROM shop_cue_progress WHERE user_id=$1 AND product_id=$2",a,cue))! ==4,"bank contributes one shot; settlement retries do not duplicate growth");
+ await Sql("UPDATE shop_cue_progress SET shots=100000,steps=100000,progress=0 WHERE user_id=$1 AND product_id=$2",a,cue);
+ var capped=await service.Freeze(Guid.NewGuid().ToString("N"),a,b);Check(capped.Players[0].Power==62 && capped.Players[0].Tip==56,"maximum levels enforced after many shots");
+ Console.WriteLine($"{checks} cue ability checks passed; live accounts unchanged");
+}finally {await using var q=root.CreateCommand("DROP SCHEMA "+schema+" CASCADE");await q.ExecuteNonQueryAsync();}

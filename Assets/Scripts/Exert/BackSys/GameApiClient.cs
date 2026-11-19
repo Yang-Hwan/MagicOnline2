@@ -56,7 +56,7 @@ namespace Assets.Scripts.Exert.BackSys
             if (started != generation) throw new InvalidOperationException("AccountChanged");
             tokens = reply; LoginId = login;
         }
-        public static void Clear() { generation++; tokens = null; LoginId = ""; }
+        public static void Clear() { generation++; tokens = null; LoginId = ""; Assets.Scripts.Exert.Network.MatchEquipmentRuntime.ClearLocal(); }
         public static async Task Logout()
         {
             try { if (tokens != null) await Request<object>("/api/auth/logout", "POST"); }

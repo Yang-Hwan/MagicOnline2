@@ -30,6 +30,7 @@ namespace Assets.Scripts.Exert.BackSys
             var attendance = await Load<AttendanceData>("Attendance");
             if (halls.Count == 0) throw new InvalidOperationException("경기장 설정이 없습니다.");
             commonCodeData = codes; skillMatchData = halls; attendanceData = attendance;
+            await Assets.Scripts.Exert.Network.MatchEquipmentRuntime.RefreshLocalAsync();
         }
         public static async void LoadAllChart() { try { await LoadAllAsync(); } catch(Exception e) { Debug.LogWarning(e.Message); } }
         public static void LoadCommonCode() => LoadAllChart();

@@ -10,6 +10,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         ShotPrediction prediction;
         bool predictionDirty=true;
         Impulse previousPreviewImpulse;
+        Vector3 previousPreviewDirection;
         int previousPreviewCue=-1;
         Vector3[] previousPreviewPositions;
         float nextPreviewTime;
@@ -79,6 +80,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void LateUpdate()
         {
+            UpdateCueAppearance();
             UpdateGaugeValueLabels();
             UpdateOverlapPreview();
             // The contact-position ghost belongs to live aiming, not the recorded balls.
@@ -95,8 +97,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 foreach(var line in targetBallLines)if(line)line.positionCount=0;
                 return;
             }
-            // Reference guide at 50% power; moving the power handle does not invalidate it.
+            // Selected power uses the real stroke; idle aim uses a reference stroke with the same equipment.
             var impulse=BuildGuideImpulse();
+            // At zero power the impulse remains zero through every rotation, so
+            // track aim geometry separately from the physical shot impulse.
+            Vector3 previewDirection=Vector3.ProjectOnPlane(cueSlider.forward,Vector3.up).normalized;
+            if(previewDirection!=previousPreviewDirection)predictionDirty=true;
             int physicsKey=PreviewPhysicsKey();
             if(previousPhysicsKey!=physicsKey)predictionDirty=true;
             if(previousThicknessBlend!=physicsManager.blendFollowDrawByThickness)predictionDirty=true;
@@ -115,6 +121,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 prediction?.Cancel();pendingPreview=true;nextPreviewTime=Time.unscaledTime;
                 RenderQuickPreview();
                 previousPreviewImpulse=impulse;previousPreviewCue=cueBall.id;
+                previousPreviewDirection=previewDirection;
                 previousFollowProfile=physicsManager.FollowThroughProfileActive;
                 previousNaturalFollowDraw=physicsManager.useNaturalFollowDraw;
                 previousThicknessBlend=physicsManager.blendFollowDrawByThickness;
@@ -128,6 +135,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 previousPhysicsKey=physicsKey;predictionDirty=false;
                 return;
             }
+            // A cue with no effective power cannot produce a physical trajectory.
+            // Preserve its geometric approach line instead of an invisible path.
+            if(impulse.impulse.sqrMagnitude<=1e-12f) {
+                prediction?.Cancel();pendingPreview=false;
+                return;
+            }
             if(pendingPreview && Time.unscaledTime>=nextPreviewTime) {
                 if(prediction==null) {prediction=new ShotPrediction(physicsManager);PreviewSceneBuilds++;}
                 prediction.Begin(Array.IndexOf(physicsManager.ballcs,cueBall),previousPreviewImpulse,8,3+lineLength,true,lineLength);
@@ -138,7 +151,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 bool complete=prediction.Advance(8,64);
                 // Keep the already visible full approach line until the simulation reaches its endpoint.
                 if(!complete && prediction.targetIndex<0 && prediction.PathDistance<quickPreviewDistance)return;
-                if(prediction.cuePath.Count<2)return;
+                // Very small powers may stop within a fraction of a pixel; preserve
+                // the approach preview rather than publishing an invisible path.
+                if(prediction.cuePath.Count<2 || prediction.PathDistance<.0001f)return;
                 RenderPredictedPath(cueBallLines,cueBallLineMaterials,prediction.cuePath,3+lineLength);
                 RenderPredictedPath(targetBallLines,targetBallLineMaterials,prediction.targetPath,float.PositiveInfinity);
                 SetBallChecker(prediction.contactCentre,prediction.targetIndex<0 ? -1 : physicsManager.ballcs[prediction.targetIndex].id);

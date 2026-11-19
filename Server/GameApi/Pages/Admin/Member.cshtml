@@ -1,7 +1,7 @@
 @page "/admin/members/{id:guid}"
 @model MagicOnline.GameApi.Pages.Admin.MemberModel
 <div class="breadcrumb"><a href="/admin/members">회원 관리</a> / 회원 상세</div><div class="page-head"><div><h1>@Model.Data.Profile.Rows[0][2]</h1><p class="muted">@Model.Data.Profile.Rows[0][1] · @Model.Id</p></div><span class="badge">@Model.Data.Profile.Rows[0][3]</span></div>
-<nav class="tabs" aria-label="회원 상세">@foreach(var t in new[]{("profile","기본 정보"),("games","대전"),("wallet","재화"),("bust","파산"),("attendance","출석보상"),("mail","우편보상"),("payments","결제"),("access","접속·제재"),("notes","운영 메모")}){<a class="@(Model.Tab==t.Item1 ? "selected" : "")" href="/admin/members/@Model.Id?tab=@t.Item1">@t.Item2</a>}</nav>
+<nav class="tabs" aria-label="회원 상세">@foreach(var t in new[]{("profile","기본 정보"),("cues","큐대"),("games","대전"),("wallet","재화"),("bust","파산"),("attendance","출석보상"),("mail","우편보상"),("payments","결제"),("access","접속·제재"),("notes","운영 메모")}){<a class="@(Model.Tab==t.Item1 ? "selected" : "")" href="/admin/members/@Model.Id?tab=@t.Item1">@t.Item2</a>}</nav>
 @if(Model.SuccessMessage!=null){<p class="notice" role="status">@Model.SuccessMessage</p>}
 @if(Model.Tab=="profile") {
 <section class="panel"><h2>회원 정보</h2><dl class="details">@for(int i=0;i<Model.Data.Profile.Columns.Length;i++){<dt>@Model.Data.Profile.Columns[i]</dt><dd>@Model.Data.Profile.Rows[0][i]</dd>}</dl></section>
@@ -17,6 +17,35 @@
 </form><p class="hint">1~24자 · 앞뒤 공백은 제거됩니다. 변경 전후 값과 사유가 관리자 기록에 남습니다.</p>
 </section>}
 <section class="panel"><h2>종목별 전적</h2><partial name="_AdminTable" model="Model.Data.Stats" /></section>}
+else if(Model.Tab=="cues"){
+<section class="panel"><h2>보유 큐대 · @Model.Cues.Count 개</h2>
+@if(Model.EditError!=null){<p class="error" role="alert">@Model.EditError</p>}
+<p class="hint">정상 득점 샷마다 진도 +1 · 도달 진도마다 능력치가 최고 레벨까지 1씩 상승합니다. 유효 능력치는 등급을 반영한 값이며, 성장한 성능은 다음 경기부터 적용됩니다.</p>
+@if(Model.Cues.Count==0){<p class="empty">보유한 큐대가 없습니다.</p>}
+@foreach(var cue in Model.Cues){
+<article class="member-cue">
+<div class="panel-head"><h3>@cue.Name @if(cue.Equipped){<span class="badge">장착 중</span>}</h3><span class="badge">@cue.Grade 급</span></div>
+<div class="stats"><div class="stat"><span>누적 정상 득점 샷</span><strong>@cue.Shots.ToString("N0")</strong></div>
+<div class="stat"><span>레벨업 누적 횟수</span><strong>@cue.Steps.ToString("N0")</strong></div>
+<div class="stat"><span>@(cue.Maxed ? "성장 완료" : "다음 레벨까지 진도")</span>
+<strong>@(cue.Maxed ? "MAX" : $"{cue.Pending:N0} / {cue.Reach:N0}")</strong>
+@if(!cue.Maxed){<progress value="@cue.Pending" max="@cue.Reach" aria-label="@cue.Name 레벨 진도"></progress><small>정상 득점 @(cue.Reach-cue.Pending)회 남음</small>}
+</div></div>
+<div class="table-scroll"><table><thead><tr><th>능력치</th><th>초기 레벨</th><th>현재 레벨</th><th>최고 레벨</th><th>등급 반영 능력치</th><th>상태</th></tr></thead><tbody>
+@for(int i=0;i<4;i++){<tr><th>@(new[]{"파워","팔로스루","당점","시간"}[i])</th><td>@cue.Initial[i]</td><td><strong>@cue.Levels[i]</strong></td><td>@cue.Maximum[i]</td><td>@cue.Effective[i]%</td><td>@(cue.Levels[i]>=cue.Maximum[i] ? "최고 레벨" : "성장 중")</td></tr>}
+</tbody></table></div>
+@if(Model.CanEdit){
+<details class="cue-reset"><summary>이 큐대 초기화 · 상점 최신 설정 적용</summary>
+<p class="hint">이 회원의 해당 큐대에만 상점의 최신 등급·초기/최고 레벨·도달 진도를 적용합니다. 현재 레벨은 최신 초기 레벨로 돌아가고 누적 득점 샷·레벨업 횟수·진도는 0이 됩니다. 보유·장착 상태와 다른 큐대는 유지됩니다.</p>
+<form method="post" asp-page-handler="ResetCue" asp-route-id="@Model.Id" class="filters">
+<input type="hidden" name="cueId" value="@cue.Id"><input type="hidden" name="operation" value="@Guid.NewGuid()">
+<label class="search">초기화 사유 (선택)<input name="reason" maxlength="200"></label>
+<label class="cue-reset-confirm"><input type="checkbox" name="confirmReset" value="true" required>레벨·진도가 초기화됨을 확인했습니다</label>
+<button type="submit">이 큐대 초기화</button>
+</form></details>}
+</article>
+}
+</section>}
 else if(Model.Tab=="games"){<section class="panel"><h2>최근 대전</h2><partial name="_AdminTable" model="Model.Data.Matches" /><a class="button" href="/admin/matches?q=@Model.Id">전체 대전 조회</a></section>}
 else if(Model.Tab=="wallet"){
 @if (Model.CanEdit) {

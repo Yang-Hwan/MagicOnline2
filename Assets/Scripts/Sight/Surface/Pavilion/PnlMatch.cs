@@ -1028,6 +1028,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             }
         }
 
+        public void ShowQuickShotBonus(int playerId,long bonus)
+        {
+            if(matchHud)matchHud.ShowQuickShotBonus(playerId==PoolPlayer.mainPlayer.playerId?0:1,bonus);
+        }
         void StopHudTimer() { if (matchHud) matchHud.StopTimer(); }
 
         void PoolCoach_OnUpdateTime(float timeProc)

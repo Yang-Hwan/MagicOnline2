@@ -84,6 +84,7 @@ MonoBehaviour:
   - SentimentMotionRPC
   - EquippedChatRPC
   - TableReadyRPC
+  - QuickShotReleaseRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

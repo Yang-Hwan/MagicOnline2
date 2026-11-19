@@ -25,15 +25,16 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             return new Impulse(shot.point, shot.impulse, Vector3.zero, cueBall.id, shot.followThrough, shot.spinPersistence);
         }
 
-        public PreviewImpulse BuildGuideImpulse() => BuildImpulseForPower(.5f);
+        public PreviewImpulse BuildGuideImpulse() => BuildImpulseForPower(force);
 
         PreviewImpulse BuildImpulseForPower(float power) => BuildImpulseForPower(power, Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter);
 
         PreviewImpulse BuildImpulseForPower(float power, Assets.Scripts.Prack.BackSys.GameData.MatchEquipmentProfile equipment)
         {
             float follow = equipment.EffectiveFollow(pull);
+            power = Mathf.Clamp01(power)*equipment.PowerScale;
             Vector3 forward = Vector3.ProjectOnPlane(cueSlider.forward, Vector3.up).normalized;
-            Vector3 impulse = power * equipment.PowerScale * (maxVelocity * cueBall.body.mass) * forward;
+            Vector3 impulse = power * (maxVelocity * cueBall.body.mass) * forward;
             Vector3 centre = cueBall.body.worldCenterOfMass;
             Vector3 offset = cueDisplacement.position - centre;
             float radius = cueBall.GetComponent<SphereCollider>().radius * Mathf.Abs(cueBall.transform.lossyScale.x);

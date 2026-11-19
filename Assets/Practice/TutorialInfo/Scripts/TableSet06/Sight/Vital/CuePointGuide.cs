@@ -53,6 +53,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             go.GetComponent<CuePointGuide>().raycastTarget=false;
         }
 
+        protected override void OnEnable(){base.OnEnable();SetAllDirty();}
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
             mesh.Clear();var rect=GetPixelAdjustedRect();

@@ -89,6 +89,7 @@ public sealed partial class AdminChartService
             incoming.Add(name,rows);
         }
         PostRewardChart.Validate(incoming["PostReward"],incoming["CommonCode"]);
+        ValidateCueRange(incoming["CommonCode"]);
 
         await using var connection = await db.Source.OpenConnectionAsync();
         await using var tx = await connection.BeginTransactionAsync();

@@ -57,7 +57,7 @@ public sealed class GuidePredictionValidation : MonoBehaviour
         var cost=new CostReport(); var guideImpulse=shot.BuildGuideImpulse();
         typeof(ShotCtrl).GetProperty("force").SetValue(shot,.8f);
         var changedPowerGuide=shot.BuildGuideImpulse();
-        if(guideImpulse.impulse!=changedPowerGuide.impulse || guideImpulse.point!=changedPowerGuide.point) throw new Exception("Power slider changed fixed reference guide");
+        if(guideImpulse.impulse==changedPowerGuide.impulse) throw new Exception("Power slider did not update guide");
         typeof(ShotCtrl).GetProperty("force").SetValue(shot,.32f);
         var timer=System.Diagnostics.Stopwatch.StartNew();
         using(var full=new ShotPrediction(manager)) { full.Calculate(0,guideImpulse); cost.fullFrames=full.timedCuePath.Count; }

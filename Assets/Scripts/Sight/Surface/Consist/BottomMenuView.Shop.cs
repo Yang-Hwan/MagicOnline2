@@ -113,7 +113,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         void ShowShopProduct(ShopProductData p)
         {
             if(p.Kind=="Cue" && PremiumCueDesign.Style(p.Visual)!=PremiumCueStyle.None){ShowPremiumCueProduct(p);return;}
-            string detail = p.Kind == "Cue" ? $"파워 {p.Power:+0;-0;0}% · 팔로스루 {p.FollowThrough:+0;-0;0}%\n당점 {p.Tip:+0;-0;0}% · 준비시간 {p.ShotSeconds:+0;-0;0}초" :
+            string detail = p.Kind == "Cue" ? p.CueDetail :
                 p.Kind == "GemPack" ? $"기본 보석 {p.GemAmount:N0}개 + 추가 {p.GemBonus:N0}개" :
                 p.Kind == "Character" ? "감정: " + string.Join(", ", (p.Emotions ?? Array.Empty<ShopEmotionData>()).Select(e => e.Code)) :
                 "성격: " + p.Personality + "\n" + string.Join("\n", p.Messages ?? Array.Empty<string>());
@@ -135,7 +135,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             var image=Art("PremiumPreview",panel,null,45,115,1150,210);image.color=Color.clear;
             var placeholder=Text("Loading",panel,"큐대를 불러오는 중…",45,170,1150,55,27,Color.gray);
             StartCoroutine(LoadShopImage(p.Visual,image,placeholder));PremiumCuePreview.Attach(image,p.Visual);
-            Text("Description",panel,p.Description+$"\n파워 {p.Power:+0;-0;0}% · 팔로스루 {p.FollowThrough:+0;-0;0}% · 당점 {p.Tip:+0;-0;0}% · 준비시간 {p.ShotSeconds:+0;-0;0}초\n"+(p.Owned?"보유 중":$"보석 {p.PriceGem:N0}개"),40,338,1160,135,27,Color.white,TextAlignmentOptions.TopLeft,true);
+            Text("Description",panel,p.Description+"\n"+p.CueDetail+"\n"+(p.Owned?"보유 중":$"보석 {p.PriceGem:N0}개"),40,338,1160,135,27,Color.white,TextAlignmentOptions.TopLeft,true);
             if(!p.Owned && p.Purchasable)SolidButton(shopBuying?"구매 처리 중…":"보석으로 구매",panel,420,484,400,55,()=>ConfirmShopPurchase(p),true);
             SolidButton("닫기",panel,420,566,400,55,CloseModal);
         }

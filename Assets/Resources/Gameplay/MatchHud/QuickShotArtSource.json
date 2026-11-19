@@ -1,0 +1,6 @@
+{
+  "generator": "built-in image_gen",
+  "asset": "QuickShot.png",
+  "transparent_background": true,
+  "prompt": "Create a single production-ready Korean billiards game UI title sprite reading exactly '퀵샷!' in Korean, and NOTHING ELSE. Real transparent background, isolated cutout, no opaque panel, no checkerboard baked in. Very wide landscape crop approx 3:1 aspect, centered text filling most width with safe small margins. Premium dramatic bold hand-painted Korean brush lettering, slightly italic forward lean, beautifully legible complete Hangul syllables 퀵 샷 then exclamation point. Raised luminous warm metallic GOLD faces with ivory highlights on upper-left edges, rich amber-gold bevels, narrow dark oxblood underside/extrusion and near-black thin outline for readability against green billiard cloth. Match an elegant black-and-gold sports game HUD. A restrained tapered gold lightning slash below the lettering, a few tiny gold specks near brush ends, no giant particle cloud, no other symbols, no numbers, no '가능', no English text. The text must be the focal point and sharply crisp, realistic metallic grain within strokes, energetic brush ends. Transparency everywhere outside letterforms, underline and subtle outline."
+}

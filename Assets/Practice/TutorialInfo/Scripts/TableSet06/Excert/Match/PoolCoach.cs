@@ -264,7 +264,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
             practiceAttempts = 0;
             practiceStreak = 0;
 
-            maxPlayTime = timeInningSec;
+            Assets.Scripts.Exert.Network.MatchEquipmentRuntime.BeginPracticeRun();
+            maxPlayTime = isRulePractice && Assets.Scripts.Often.PracticeSceneFlow.SelectedMode!=Assets.Scripts.Often.PracticeSceneFlow.Mode.Stage && !(_physicsMng && _physicsMng.IsStage) ? Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter.TurnSeconds(timeInningSec) : timeInningSec;
             //Debug.Log(".... CallOnSetPlayer OnSetPlayer " + (OnSetPlayer==null?"xxx" : player.playerId.ToString()));
             OnSetPlayer?.Invoke(PoolPlayer.mainPlayer);
             OnSetPlayer?.Invoke(PoolPlayer.otherPlayer);

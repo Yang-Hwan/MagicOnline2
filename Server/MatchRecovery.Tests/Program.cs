@@ -1,4 +1,4 @@
-﻿using MagicOnline.GameApi;
+using MagicOnline.GameApi;
 using MagicOnline.MatchSettlement;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
@@ -18,6 +18,7 @@ try
     await Sql(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Migrations", "001_initial.sql")));
     await Sql(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Migrations", "006_registration_reward.sql")));
     await Sql(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Migrations", "008_user_post_reward.sql")));
+    await Sql("CREATE TABLE match_equipment_snapshots(match_id text PRIMARY KEY,data jsonb NOT NULL)");
     string a = Guid.NewGuid().ToString(), b = Guid.NewGuid().ToString();
     foreach (var id in new[] { a, b })
         await Sql($"INSERT INTO users(id,login_id,normalized_login,password_hash,nickname) VALUES('{id}','{id}','{id}','unused-test-hash','test'); INSERT INTO wallets(user_id,coin) VALUES('{id}',100); INSERT INTO user_stats(user_id) VALUES('{id}');");

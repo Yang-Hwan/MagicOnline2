@@ -12,6 +12,8 @@ public sealed class MatchEquipment(Database db)
     {
         var group = app.MapGroup("/api/matches/{id}/equipment").RequireAuthorization();
         group.MapGet("", (string id, ClaimsPrincipal user, MatchEquipment service) => service.Read(id, Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!)));
+        app.MapGet("/api/me/cue", (ClaimsPrincipal user, MatchEquipment service) => service.CurrentProfile(Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!))).RequireAuthorization();
+        CueProgress.Map(app);
         // Friendly matches have no settlement registration but use the same immutable equipment contract.
         group.MapPost("", (string id, Opponent input, ClaimsPrincipal user, MatchEquipment service) =>
             Guid.TryParse(input.OpponentUserId, out var opponent) ? service.Freeze(id, Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!), opponent, true) : throw new ApiFault(400, "InvalidOpponent"));
@@ -43,7 +45,8 @@ public sealed class MatchEquipment(Database db)
         { int count = 0; while (await r.ReadAsync()) count++; if (count != 2) throw new ApiFault(404, "UserNotFound"); }
         await using (var products = Database.Command(c, "SELECT p.id FROM shop_products p WHERE EXISTS(SELECT FROM shop_user_inventory i WHERE i.product_id=p.id AND i.user_id IN ($1,$2)) ORDER BY p.id FOR SHARE", a, b))
         await using (var r = await products.ExecuteReaderAsync()) while (await r.ReadAsync()) { }
-        var snapshot = new MatchEquipmentSnapshot { MatchId = id, Players = new[] { await Profile(c, a), await Profile(c, b) } };
+        var range=CueProgress.TimeRange(c);
+        var snapshot = new MatchEquipmentSnapshot { MatchId = id, Players = new[] { await Profile(c, a,range), await Profile(c, b,range) } };
         await using (var save = Database.Command(c, "INSERT INTO match_equipment_snapshots(match_id,user_a,user_b,data,friendly) VALUES($1,$2,$3,$4::jsonb,$5) ON CONFLICT DO NOTHING", id, a, b, JsonSerializer.Serialize(snapshot, Database.Json), friendly)) await save.ExecuteNonQueryAsync();
         var result = (await Existing())!;
         await tx.CommitAsync();
@@ -56,11 +59,12 @@ public sealed class MatchEquipment(Database db)
         profile.Messages=Array.Empty<string>();profile.MessagePacks=Array.Empty<MatchMessagePack>();
         return profile;
     }
-    static async Task<MatchEquipmentProfile> Profile(NpgsqlConnection c, Guid user)
+    static async Task<MatchEquipmentProfile> Profile(NpgsqlConnection c, Guid user,(int Min,int Max)? frozenRange=null)
     {
         await using var cmd = Database.Command(c, ShopCatalog.Query, user, true);
         using var doc = JsonDocument.Parse((string)(await cmd.ExecuteScalarAsync())!);
-        var profile = new MatchEquipmentProfile { UserId = user.ToString() };
+        var range=frozenRange??CueProgress.TimeRange(c);
+        var profile = new MatchEquipmentProfile { UserId = user.ToString(), Ability=new CueAbilitySettings(), Power=100, FollowThrough=100, Tip=100, ShotSeconds=50, CueTimeMin=range.Min,CueTimeMax=range.Max };
         var messages = new List<string>();
         var packs = new List<MatchMessagePack>();
         foreach (var p in doc.RootElement.GetProperty("Products").EnumerateArray())
@@ -71,8 +75,11 @@ public sealed class MatchEquipment(Database db)
             {
                 case "Cue":
                     profile.CueVisual = p.GetProperty("Visual").GetString() ?? "";
-                    profile.CueId = p.GetProperty("Id").GetInt64(); profile.Power = p.GetProperty("Power").GetInt32();
-                    profile.FollowThrough = p.GetProperty("FollowThrough").GetInt32(); profile.Tip = p.GetProperty("Tip").GetInt32(); profile.ShotSeconds = p.GetProperty("ShotSeconds").GetInt32(); break;
+                    profile.CueId = p.GetProperty("Id").GetInt64();
+                    profile.Ability=JsonSerializer.Deserialize<CueAbilitySettings>(p.GetProperty("CueAbility").GetRawText(),Database.Json)!;
+                    profile.CueProgress=p.GetProperty("CueProgress").GetInt64();profile.CueSteps=p.GetProperty("CueSteps").GetInt64();profile.CuePending=p.GetProperty("CuePending").GetInt64();
+                    var levels=profile.Ability.LevelsFromSteps(profile.CueSteps+profile.CuePending/profile.Ability.Reach);
+                    profile.Power=levels[0];profile.FollowThrough=levels[1];profile.Tip=levels[2];profile.ShotSeconds=levels[3];break;
                 case "Character":
                     profile.CharacterId = p.GetProperty("Id").GetInt64();
                     profile.Emotions = JsonSerializer.Deserialize<MatchEquipmentEmotion[]>(p.GetProperty("Emotions").GetRawText(), Database.Json)!; break;

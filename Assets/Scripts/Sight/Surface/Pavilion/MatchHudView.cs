@@ -38,6 +38,19 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         int generation;
         string loadedMatch;
         bool localPractice;
+        QuickShotBonusMotion quickMotion;
+        float quickPulse = -10; int quickPulseSide;
+        public bool QuickShotEnabled => !localPractice && NetworkManager.TryGetExistingNetwork(out var n) &&
+            n is PunNetwork p && p.HasQuickShotBonus;
+        // Preview/validation can use the same renderer without creating a paid match.
+        internal bool QuickShotPreview;
+        public bool DrawQuickShot => QuickShotEnabled || QuickShotPreview;
+        public void ShowQuickShotBonus(int side,long bonus)
+        {
+            if(bonus<=0)return;
+            if(!quickMotion)quickMotion=QuickShotBonusMotion.Install(root,this);
+            quickMotion.Show(side,bonus);quickPulse=VisualTime;quickPulseSide=side;
+        }
         public bool ShowLevels => !localPractice;
         public int ActiveSide {get;private set;}
         public float RemainingRatio {get;private set;}=1;
@@ -142,6 +155,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public void SetSeries(string self,string other){series[0].text=self??"";series[1].text=other??"";graphic.SetVerticesDirty();}
         public void ResetScores(int target)
         {
+            if(quickMotion)quickMotion.Hide();quickPulse=-10;
             foreach(var counter in Counters){counter.Target=Mathf.Max(1,target);counter.Actual=counter.Desired=counter.Displayed=0;counter.Moving=-1;}for(int i=0;i<2;i++)if(scoreTotals[i])scoreTotals[i].text="0 / "+Counters[i].Target;
             if(graphic)graphic.SetVerticesDirty();
         }
@@ -176,7 +190,14 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public void StopTimer(){TimerRunning=false;}
         public void AdvanceVisual(float time,float delta)
         {
-            VisualTime=time;TurnBlend=Mathf.Lerp(TurnBlend,ActiveSide==0?1:0,1-Mathf.Exp(-Mathf.Max(0,delta)*4));
+            VisualTime=time;
+            for(int side=0;side<2;side++)if(coins[side])
+            {
+                float age=time-quickPulse;
+                float pop=side==quickPulseSide && age>.7f && age<1.45f ? Mathf.Sin((age-.7f)/.75f*Mathf.PI)*.16f : 0;
+                coins[side].rectTransform.localScale=Vector3.one*(1+pop);
+            }
+            TurnBlend=Mathf.Lerp(TurnBlend,ActiveSide==0?1:0,1-Mathf.Exp(-Mathf.Max(0,delta)*4));
             portraitGlows[ActiveSide].SetTime(time);
             foreach(var n in Counters)if(n.Moving>=0 && time-n.Started>=RingDuration+.48f){n.Displayed=n.ToScore;n.Moving=-1;BeginRing(n);}
             if(graphic)graphic.SetVerticesDirty();

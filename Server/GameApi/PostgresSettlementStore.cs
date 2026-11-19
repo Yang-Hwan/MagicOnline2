@@ -112,6 +112,7 @@ public sealed class PostgresSettlementStore(Database db) : ISettlementStore
         {
             var receipt = context.Receipt;
             GuildLeague.Apply(c,receipt);
+            CueProgress.Settle(c,match,receipt);
             if (receipt.ResultA is "Win" or "Lose" or "Draw" && receipt.ResultB is "Win" or "Lose" or "Draw")
             {
                 var rewards=MemberRewards.Load(c);

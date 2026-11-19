@@ -41,7 +41,9 @@ namespace Assets.Scripts.Exert.Network
             if (historyOffer.match.MatchBall != 3) points = Math.Min(points, Math.Max(0, historyOffer.match.Rules.TargetScore - scoreBefore));
             if (points <= 0 || scoreBefore >= historyOffer.match.Rules.TargetScore) return; // Finish missions do not award scoring coins.
             int seat = playerId == PoolPlayer.mainPlayer.playerId ? historyPlayer.SeatNo : 1 - historyPlayer.SeatNo;
-            scoreCoins.Add(legacyShotSerial, seat, firstStreak, points, historyOffer.match.MatchBall == 3 && points == 2);
+            scoreCoins.Add(legacyShotSerial, seat, firstStreak, points, historyOffer.match.MatchBall == 3 && points == 2,
+                QuickShotElapsedForAward, QuickShotTurnForAward);
+            PresentQuickShotBonus(playerId, scoreCoins.LastQuickBonus);
             previewScoreCoins = null;
             BackendMatchHistory.Instance.QueueCoinCheckpoint(LegacyMatchId, scoreCoins.Events);
         }
@@ -104,6 +106,7 @@ namespace Assets.Scripts.Exert.Network
         {
             Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Hide();
             legacyShotSerial++;
+            LatchQuickShotTiming(legacyShotSerial);
             sentimentMask=0;
             sentimentShotAuthority=PoolLogic.controlInNetwork;
             previewScoreCoins = null;
@@ -189,14 +192,16 @@ namespace Assets.Scripts.Exert.Network
             // Immediate opponent UI only; settlement still waits for contact replay.
             var scorer = PoolPlayer.otherPlayer;
             int points = streak - scorer.hitInning;
-            if (HasScoreCoins && scoreCoins.LastShot < serial && scoreCoins.BustWinner < 0 && points > 0 && points <= 2)
+            if (HasScoreCoins && scorer.hitCnt < historyOffer.match.Rules.TargetScore && scoreCoins.LastShot < serial && scoreCoins.BustWinner < 0 && points > 0 && points <= 2)
             {
                 try {
                     // Reconstruct initial balances from the current net movement.
                     long entry = historyOffer.match.Rules.EntryCoin;
                     previewScoreCoins = ScoreCoinLedger.Replay(scoreCoins.BalanceA - scoreCoins.NetA + entry,
                         scoreCoins.BalanceB + scoreCoins.NetA + entry, entry, historyOffer.match.Rules.TargetScore, scoreCoins.Events);
-                    previewScoreCoins.Add(serial, 1 - historyPlayer.SeatNo, scorer.hitInning + 1, points, historyOffer.match.MatchBall == 3 && points == 2);
+                    previewScoreCoins.Add(serial, 1 - historyPlayer.SeatNo, scorer.hitInning + 1, points, historyOffer.match.MatchBall == 3 && points == 2,
+                        QuickShotElapsedForAward, QuickShotTurnForAward);
+                    PresentQuickShotBonus(scorer.playerId, previewScoreCoins.LastQuickBonus);
                 } catch (ArgumentException) { previewScoreCoins = null; }
             }
             ApplyThreeBallScore(streak, (ThreeCushionTechnique)technique, Math.Max(1, Math.Min(2, award)));
@@ -240,12 +245,12 @@ namespace Assets.Scripts.Exert.Network
         {
             if (!HasLegacyMatch || !PoolLogic.controlInNetwork) return false;
             view.RPC(nameof(LegacyShotEndRPC), RpcTarget.Others, LegacyMatchId, legacyShotSerial,
-                seconds, PoolCoach.Instance.ShotContacts);
+                seconds, PoolCoach.Instance.ShotContacts, quickShotElapsedMs, quickShotTurnMs);
             Debug.Log($"[ShotContacts] sent match={LegacyMatchId} shot={legacyShotSerial} contacts={PoolCoach.Instance.ShotContacts.Length}");
             return true;
         }
 
-        [PunRPC] async void LegacyShotEndRPC(string id, int serial, float seconds, int[] contacts, PhotonMessageInfo info)
+        [PunRPC] async void LegacyShotEndRPC(string id, int serial, float seconds, int[] contacts, int quickElapsed, int quickTurn, PhotonMessageInfo info)
         {
             if (!HasLegacyMatch || historyEnded || id != LegacyMatchId ||
                 info.Sender.ActorNumber != (historyPlayer.SeatNo == 0 ? historyOffer.actor1 : historyOffer.actor0) ||
@@ -258,6 +263,7 @@ namespace Assets.Scripts.Exert.Network
             while (HasLegacyMatch && LegacyMatchId == id && !historyEnded && legacyShotSerial < serial)
                 await UniTask.Yield();
             if (!HasLegacyMatch || LegacyMatchId != id || historyEnded || legacyShotSerial != serial || !PoolLogic.controlFromNetwork) return;
+            ReceiveQuickShotTiming(serial, quickElapsed, quickTurn);
             PoolCoach.Instance.StageRemoteShotContacts(contacts);
             ApplyCushionMotion(0);
             var physics = UnityEngine.Object.FindFirstObjectByType<Assets.Scripts.Sight.Vital.Pavilion.PhysicsMng>();
@@ -461,6 +467,7 @@ namespace Assets.Scripts.Exert.Network
             PoolCoach.Instance.ApplyBallSkin(offer.match.MatchId);
             scoreCoins = previewScoreCoins = null;
             legacyShotSerial = receivedShotSerial = 0;
+            ResetQuickShot();
             scoreMotionSerial = -1;
             techniqueMotionSerial = -1;
             matchDeadline = 0;

@@ -15,7 +15,12 @@ public static class ShopCatalog
                         'Equipped',EXISTS(SELECT FROM shop_user_equipment WHERE user_id=$1 AND product_id=p.id AND slot=p.kind)
                             OR EXISTS(SELECT FROM shop_user_selected_message_packs WHERE user_id=$1 AND product_id=p.id),
                         'GemAmount',COALESCE(g.amount,0),'GemBonus',COALESCE(g.bonus,0),
-                        'Visual',COALESCE(c.visual,''),'Power',COALESCE(c.power_pct,0),
+                          'CueTimeMin',(SELECT (code->>'ComVal')::int FROM charts h,jsonb_array_elements(h.rows) code WHERE h.name='CommonCode' AND code->>'GrpCd'='Cue' AND code->>'ComCd'='Sec' LIMIT 1),
+                        'CueTimeMax',(SELECT (code->>'ComVal2')::int FROM charts h,jsonb_array_elements(h.rows) code WHERE h.name='CommonCode' AND code->>'GrpCd'='Cue' AND code->>'ComCd'='Sec' LIMIT 1),
+                         'CueSteps',COALESCE((SELECT steps FROM shop_cue_progress WHERE user_id=$1 AND product_id=p.id),0),
+                        'CuePending',COALESCE((SELECT progress FROM shop_cue_progress WHERE user_id=$1 AND product_id=p.id),0),
+                        'CueAbility',COALESCE((SELECT cue_ability FROM shop_user_inventory WHERE user_id=$1 AND product_id=p.id),c.ability),'CueProgress' ,COALESCE((SELECT shots FROM shop_cue_progress WHERE user_id=$1 AND product_id=p.id),0),
+                        'Visual',COALESCE(c.visual,''),'Power' ,COALESCE(c.power_pct,0),
                         'FollowThrough',COALESCE(c.follow_pct,0),'Tip',COALESCE(c.tip_pct,0),
                         'ShotSeconds',COALESCE(c.shot_seconds,0),'Personality',COALESCE(m.personality,''),
                         'Emotions',COALESCE((SELECT jsonb_agg(jsonb_build_object('Code',emotion,'Asset',asset_key) ORDER BY emotion)

@@ -31,6 +31,11 @@ public class ShopEditModel(Database db) : PageModel
         public int Follow { get; set; }
         public int Tip { get; set; }
         public int Seconds { get; set; }
+        public string Grade {get;set;}="A";
+        public int[] Initial {get;set;}=[100,100,100,50];
+        public int[] Maximum {get;set;}=[100,100,100,100];
+        public int Reach {get;set;}=100;
+        public Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings Ability()=>new(){Grade=Grade,Initial=Initial,Maximum=Maximum,Reach=Reach};
         public Dictionary<string,string> Faces { get; set; } = new();
         public string? Personality { get; set; }
         public string? Messages { get; set; }
@@ -52,7 +57,7 @@ public class ShopEditModel(Database db) : PageModel
                 p.sale_starts_at AT TIME ZONE 'Asia/Seoul',p.sale_ends_at AT TIME ZONE 'Asia/Seoul',p.revision,
                 g.amount,g.bonus,q.visual,q.power_pct,q.follow_pct,q.tip_pct,q.shot_seconds,m.personality,
                 (SELECT string_agg(message,chr(10) ORDER BY position) FROM shop_messages WHERE product_id=p.id),
-                (SELECT json_object_agg(emotion,asset_key)::text FROM shop_character_emotions WHERE product_id=p.id)
+                (SELECT json_object_agg(emotion,asset_key)::text FROM shop_character_emotions WHERE product_id=p.id),q.ability::text
             FROM shop_products p LEFT JOIN shop_gem_packs g ON g.product_id=p.id
             LEFT JOIN shop_cues q ON q.product_id=p.id LEFT JOIN shop_message_packs m ON m.product_id=p.id WHERE p.id=$1
             """,id.Value);
@@ -65,6 +70,10 @@ public class ShopEditModel(Database db) : PageModel
             Starts=r.IsDBNull(8)?null:r.GetDateTime(8),Ends=r.IsDBNull(9)?null:r.GetDateTime(9),Revision=Num(10),
             Amount=Num(11),Bonus=Num(12),Visual=Str(13),Power=Num(14),Follow=Num(15),Tip=Num(16),Seconds=Num(17),
             Personality=Str(18),Messages=Str(19),Faces=System.Text.Json.JsonSerializer.Deserialize<Dictionary<string,string>>(Str(20)??"{}")!};
+        if(Input.Kind=="Cue") {
+            var ability=System.Text.Json.JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(Str(21)!,Database.Json)!;
+            Input.Grade=ability.Grade;Input.Initial=ability.Initial;Input.Maximum=ability.Maximum;Input.Reach=ability.Reach;
+        }
         return Page();
     }
 
@@ -75,7 +84,7 @@ public class ShopEditModel(Database db) : PageModel
         if(!ShopModel.Kinds.ContainsKey(p.Kind)) return BadRequest();
         string? error=p.Kind switch {
             "GemPack" when p.Amount<=0 || p.Bonus<0 => "기본 보석은 1 이상, 추가 보석은 0 이상으로 입력해 주세요.",
-            "Cue" when string.IsNullOrWhiteSpace(p.Visual) || p.Power is <-40 or >20 || p.Follow is <-40 or >20 || p.Tip is <-10 or >10 || p.Seconds is <-5 or >5 => "큐대 리소스와 성능 범위를 확인해 주세요.",
+            "Cue" when string.IsNullOrWhiteSpace(p.Visual) || !p.Ability().Valid() => "큐대 스킨, 등급(A/B/C), 초기·최고 레벨(0~100), 도달 진도(1 이상)를 확인해 주세요.",
             "Character" when Emotions.Any(e=>!p.Faces.TryGetValue(e,out var key)||string.IsNullOrWhiteSpace(key)) => "감정 9종의 이미지 경로를 모두 입력해 주세요.",
             "MessagePack" when string.IsNullOrWhiteSpace(p.Personality) || p.Lines.Length==0 => "성격과 메시지를 한 줄 이상 입력해 주세요.",
             _ => null
@@ -120,9 +129,9 @@ public class ShopEditModel(Database db) : PageModel
             case "Cue":
                 await Asset(p.Visual);
                 await Run("""
-                    INSERT INTO shop_cues VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(product_id) DO UPDATE SET visual=excluded.visual,
-                    power_pct=excluded.power_pct,follow_pct=excluded.follow_pct,tip_pct=excluded.tip_pct,shot_seconds=excluded.shot_seconds
-                    """,product,p.Visual!.Trim(),p.Power,p.Follow,p.Tip,p.Seconds);
+                    INSERT INTO shop_cues(product_id,visual,power_pct,follow_pct,tip_pct,shot_seconds,ability) VALUES($1,$2,0,0,0,0,$3::jsonb) ON CONFLICT(product_id) DO UPDATE SET visual=excluded.visual,
+                    ability=excluded.ability
+                    """,product,p.Visual!.Trim(),System.Text.Json.JsonSerializer.Serialize(p.Ability(),Database.Json));
                 break;
             case "Character":
                 foreach(var emotion in Emotions){
