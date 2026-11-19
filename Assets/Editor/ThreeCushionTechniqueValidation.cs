@@ -131,18 +131,20 @@ public static class ThreeCushionTechniqueValidation
         var reverse=Trace(Vector3.forward);Rail(reverse,3,P(1,1),P(-.3f,-1),-2);Rail(reverse,2);Rail(reverse,1);Finish(reverse);Expect(reverse,ThreeCushionTechnique.Reverse);
         var grand=Trace(Vector3.forward);foreach(int r in new[]{3,1,2,0})Rail(grand,r);Finish(grand);Expect(grand,ThreeCushionTechnique.Grand);
         foreach(var kind in new[]{ThreeCushionTechnique.Side,ThreeCushionTechnique.Back,ThreeCushionTechnique.HorizontalHit,ThreeCushionTechnique.Cut})
-        foreach(int railCount in new[]{4,5,6})
+        foreach(int railCount in new[]{3,4,5,6})
         {
             bool shortFirst=kind==ThreeCushionTechnique.HorizontalHit;
             bool opposite=kind==ThreeCushionTechnique.Back || kind==ThreeCushionTechnique.Cut;
             var shot=new ThreeCushionShotTrace();shot.Begin(0,P(-.5f,-.5f),bounds);
-            var position=kind==ThreeCushionTechnique.Cut?P(-.25f,.94f):P(-.25f,.2f);
+            var position=kind==ThreeCushionTechnique.Cut?P(0,.94f):P(-.25f,.2f);
             var target=position+(shortFirst?P(.05f,0):P(0,opposite?-.05f:.05f));
             shot.Hit(1,-1,position,shortFirst?Vector3.forward:Vector3.right,Vector3.forward,0,target,.03f);
             var circuit=shortFirst?new[]{1,3,0,2}:new[]{3,1,2,0};
             for(int i=0;i<railCount;i++)Rail(shot,circuit[i%4]);
             Finish(shot);
-            Expect(shot,railCount>=5 && kind!=ThreeCushionTechnique.Cut?ThreeCushionTechnique.Grand:kind);
+            int grandThreshold=kind==ThreeCushionTechnique.HorizontalHit?4:5;
+            var extendedKind=kind==ThreeCushionTechnique.HorizontalHit?ThreeCushionTechnique.FrontGrand:ThreeCushionTechnique.Grand;
+            Expect(shot,railCount>=grandThreshold && kind!=ThreeCushionTechnique.Cut?extendedKind:kind);
         }
         foreach(int n in new[]{2,3})
         {
@@ -171,12 +173,12 @@ public static class ThreeCushionTechniqueValidation
         }
         var cut=Trace(Vector3.right,P(0,.94f),P(0,.9f),.03f);Rail(cut,3);Rail(cut,1);Rail(cut,2);Finish(cut);Expect(cut,ThreeCushionTechnique.Cut);
         var closeSide=Trace(Vector3.right,P(0,.9f),P(0,.94f),.03f);Rail(closeSide,3);Rail(closeSide,1);Rail(closeSide,2);Finish(closeSide);Expect(closeSide,ThreeCushionTechnique.Side);
-        // Distance only separates opposite-side contacts, and the cutoff scales with table width.
-        foreach(float gap in new[]{.349f,.351f})
+        // Being close to a cushion must never bypass the mandatory near-normal angle.
+        foreach(float gap in new[]{.1f,.349f,.351f})
         {
             var shot=Trace(Vector3.right,P(-.25f,1-gap+.04f),P(-.25f,1-gap),.03f);
             Rail(shot,3);Rail(shot,1);Rail(shot,2);Finish(shot);
-            Expect(shot,gap<.35f?ThreeCushionTechnique.Cut:ThreeCushionTechnique.Back);
+            Expect(shot,ThreeCushionTechnique.Back);
         }
         foreach(float degrees in new[]{11.9f,12.1f})
         {
@@ -231,6 +233,17 @@ public static class ThreeCushionTechniqueValidation
         var dbl=Trace(Vector3.forward);foreach(int r in new[]{3,2,1})Rail(dbl,r);Finish(dbl);Expect(dbl,ThreeCushionTechnique.DoubleCushion);
         var objectFirst=Trace(Vector3.right,P(0,.98f),P(0,.93f),.03f);foreach(int r in new[]{3,1,2})Rail(objectFirst,r);Finish(objectFirst);Expect(objectFirst,ThreeCushionTechnique.Cut);
         var kick=new ThreeCushionShotTrace();kick.Begin(0,Vector3.zero,bounds);Rail(kick,3);kick.Hit(1,-1,P(.5f,.5f),Vector3.right,Vector3.forward,0);Rail(kick,1);Rail(kick,2);Finish(kick);Expect(kick,ThreeCushionTechnique.OneBank);
+        foreach(int bank in new[]{0,1,2,3})
+        foreach(bool adjacent in new[]{false,true})
+        foreach(bool extra in new[]{false,true})
+        {
+            var shot=new ThreeCushionShotTrace();shot.Begin(0,Vector3.zero,bounds);
+            Rail(shot,bank);shot.Hit(1,-1,Vector3.zero,Vector3.right,Vector3.forward,0);
+            Rail(shot,adjacent?(bank<2?3:1):(bank<2?1-bank:5-bank));Rail(shot,bank);
+            if(extra)Rail(shot,bank<2?2:0);
+            Finish(shot);
+            Expect(shot,adjacent?ThreeCushionTechnique.OneBankReturn:ThreeCushionTechnique.OneBank);
+        }
         ThreeCushionShotTrace AfterOneRail(Vector3 position,Vector3 target,Vector3 approach=default)
         {
             var trace=new ThreeCushionShotTrace();trace.Begin(0,Vector3.zero,bounds);Rail(trace,3);
@@ -249,8 +262,24 @@ public static class ThreeCushionTechniqueValidation
         var kiss=Trace(Vector3.forward);kiss.Hit(1,-1,P(0,.5f),Vector3.forward,Vector3.right,0);foreach(int r in new[]{3,1,2})Rail(kiss,r);Finish(kiss);Check(kiss.Classify(true)==ThreeCushionTechnique.None,"ambiguous kiss suppressed");
         side.Clear();Check(side.Classify(true)==ThreeCushionTechnique.None,"new shot clears old classification");
         Check(ThreeCushionShotTrace.Label(ThreeCushionTechnique.Cut)=="비껴치기","single display name for spelling variants");
+        Check(ThreeCushionShotTrace.Label(ThreeCushionTechnique.FrontGrand)=="앞돌리기 대회전","four-plus cushion horizontal hit display name");
+        Check(ThreeCushionShotTrace.Label(ThreeCushionTechnique.OneBankReturn)=="원뱅크 되돌아오기","one-bank return display name");
+        Check(ThreeCushionShotTrace.Label(ThreeCushionTechnique.ThreeBankReturn)=="쓰리뱅크 되돌아오기","three-bank return display name");
+        foreach(int firstRail in new[]{0,1,2,3})
+        foreach(bool adjacent in new[]{false,true})
+        foreach(bool extra in new[]{false,true})
+        {
+            var shot=new ThreeCushionShotTrace();shot.Begin(0,Vector3.zero,bounds);
+            Rail(shot,firstRail);
+            Rail(shot,adjacent?(firstRail<2?3:1):(firstRail<2?1-firstRail:5-firstRail));
+            Rail(shot,firstRail);
+            shot.Hit(1,-1,Vector3.zero,Vector3.right,Vector3.forward,0);
+            if(extra)Rail(shot,firstRail<2?2:0);
+            Finish(shot);
+            Expect(shot,adjacent?ThreeCushionTechnique.ThreeBankReturn:ThreeCushionTechnique.ThreeBank);
+        }
         Render();
-        File.WriteAllText(Root+"validation.json","{\"Ok\":true,\"Checks\":"+checks+",\"TechniqueKinds\":17,\"Renders\":20}");
+        File.WriteAllText(Root+"validation.json","{\"Ok\":true,\"Checks\":"+checks+",\"TechniqueKinds\":20,\"Renders\":23}");
         void Check(bool ok,string detail){if(!ok)throw new Exception(detail);checks++;}
         void Render()
         {
@@ -346,6 +375,6 @@ public static class ThreeCushionTechniqueValidation
             }
         }
         File.WriteAllText(Root+"practice-samples-result.json",
-            "{\"passed\":true,\"slots\":[\"Side\",\"Cut\",\"Back\",\"Cut\",\"Cut\",\"Cut\",\"Cut\",\"Cut\",\"Back\",\"Front\"],\"orientations\":5,\"scales\":3,\"cases\":150,\"extraRailCases\":135}");
+            "{\"passed\":true,\"slots\":[\"Side\",\"Back\",\"Back\",\"Back\",\"OneBankReturn\",\"ThreeBankReturn\",\"Cut\",\"Cut\",\"Back\",\"Front\"],\"orientations\":5,\"scales\":3,\"cases\":150,\"extraRailCases\":135}");
     }
 }

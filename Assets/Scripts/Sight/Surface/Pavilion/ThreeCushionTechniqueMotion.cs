@@ -12,13 +12,14 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         static ThreeCushionTechniqueMotion current;
         RectTransform rect,canvasRect;
         CanvasGroup opacity;
-        RawImage brush,title;
+        RawImage brush,title,grandTitle;
         TechniqueSparkGraphic sparks;
-        Material brushMaterial,titleMaterial;
+        Material brushMaterial,titleMaterial,grandTitleMaterial;
         Behaviour owner;
         Transform cloth;
         float elapsed=Duration;
         float titleWidth;
+        bool IsCompound => Technique==ThreeCushionTechnique.FrontGrand || Technique==ThreeCushionTechnique.OneBankReturn || Technique==ThreeCushionTechnique.ThreeBankReturn;
         public ThreeCushionTechnique Technique {get;private set;}
         public float Elapsed=>elapsed;
         public RawImage Title=>title;
@@ -36,6 +37,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             v.opacity=go.GetComponent<CanvasGroup>();v.opacity.alpha=0;v.opacity.blocksRaycasts=false;v.opacity.interactable=false;
             v.brush=v.Art("Oxblood brush",Resources.Load<Texture2D>("Gameplay/Techniques/Brush"));
             v.title=v.Art("Gold brush title",Resources.Load<Texture2D>("Gameplay/Techniques/Back"));
+            v.grandTitle=v.Art("Grand tour suffix",Resources.Load<Texture2D>("Gameplay/Techniques/Titles"));
+            v.grandTitleMaterial=v.grandTitle.material;v.grandTitle.gameObject.SetActive(false);
             var fx=new GameObject("Impact embers",typeof(RectTransform),typeof(TechniqueSparkGraphic));fx.layer=go.layer;fx.transform.SetParent(go.transform,false);
             v.sparks=fx.GetComponent<TechniqueSparkGraphic>();v.sparks.raycastTarget=false;
             v.brushMaterial=v.brush.material;v.titleMaterial=v.title.material;
@@ -55,8 +58,20 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public bool Play(ThreeCushionTechnique kind)
         {
-            if(kind<ThreeCushionTechnique.Side || kind>ThreeCushionTechnique.HorizontalHit)return false;
+            if(kind<ThreeCushionTechnique.Side || kind>ThreeCushionTechnique.ThreeBankReturn)return false;
             Technique=kind;
+            bool compound=IsCompound;
+            grandTitle.gameObject.SetActive(compound);
+            if(compound)
+            {
+                // Compose existing gold lettering for each compound technique.
+                bool bankReturn=kind==ThreeCushionTechnique.OneBankReturn || kind==ThreeCushionTechnique.ThreeBankReturn;
+                kind=kind==ThreeCushionTechnique.ThreeBankReturn?ThreeCushionTechnique.ThreeBank:
+                    bankReturn?ThreeCushionTechnique.OneBank:ThreeCushionTechnique.Front;
+                var suffixUV=bankReturn?new Rect(0,1-1540f/1774,1,220f/1774):new Rect(0,1-909f/1774,1,217f/1774);
+                grandTitle.uvRect=suffixUV;
+                grandTitleMaterial.SetVector("_UVBounds",new Vector4(suffixUV.xMin,suffixUV.yMin,suffixUV.xMax,suffixUV.yMax));
+            }
             Rect uv=new Rect(0,0,1,1);
             if(kind==ThreeCushionTechnique.Back)title.texture=Resources.Load<Texture2D>("Gameplay/Techniques/Back");
             else if(kind==ThreeCushionTechnique.HorizontalHit)title.texture=Resources.Load<Texture2D>("Gameplay/Techniques/HorizontalHit");
@@ -104,10 +119,13 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             }
             rect.anchoredPosition=center;
             // Approved preview: lettering reduced to 80%, with the brush backing at the original size.
-            titleWidth=width*.58f;
+            bool compound=IsCompound;
+            titleWidth=width*(compound?.75f:.58f);
             float brushWidth=width*.855f;
             brush.rectTransform.sizeDelta=new Vector2(brushWidth,brushWidth*brush.texture.height/brush.texture.width);
-            title.rectTransform.sizeDelta=new Vector2(titleWidth,titleWidth*title.texture.height*title.uvRect.height/title.texture.width);
+            float wordWidth=compound?titleWidth*.5f:titleWidth;
+            title.rectTransform.sizeDelta=new Vector2(wordWidth,wordWidth*title.texture.height*title.uvRect.height/title.texture.width);
+            if(compound)grandTitle.rectTransform.sizeDelta=new Vector2(wordWidth,wordWidth*grandTitle.texture.height*grandTitle.uvRect.height/grandTitle.texture.width);
             sparks.rectTransform.sizeDelta=new Vector2(brushWidth,brush.rectTransform.sizeDelta.y);
         }
         static float EaseOut(float t)=>1-Mathf.Pow(1-Mathf.Clamp01(t),3);
@@ -124,6 +142,17 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             title.rectTransform.localScale=Vector3.one*scale;
             title.color=new Color(1,1,1,enter*(1-exit));
             titleMaterial.SetFloat("_Blur",8*(1-enter)+8*exit);
+            bool compound=IsCompound;
+            // Atlas rows contain transparent side padding; bring the visible words closer.
+            float compoundOffset=titleWidth*.19f*scale;
+            title.rectTransform.anchoredPosition=compound?new Vector2(-compoundOffset,0):Vector2.zero;
+            if(compound)
+            {
+                grandTitle.rectTransform.anchoredPosition=new Vector2(compoundOffset,0);
+                grandTitle.rectTransform.localScale=title.rectTransform.localScale;
+                grandTitle.color=title.color;
+                grandTitleMaterial.SetFloat("_Blur",8*(1-enter)+8*exit);
+            }
             sparks.SetTime(elapsed);
         }
         void Update()
@@ -135,7 +164,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public static void Hide(){if(current)current.HideLocal();}
         void HideLocal(){elapsed=Duration;if(opacity)opacity.alpha=0;}
         void OnDisable()=>HideLocal();
-        void OnDestroy(){if(current==this)current=null;if(brushMaterial)Destroy(brushMaterial);if(titleMaterial)Destroy(titleMaterial);}
+        void OnDestroy(){if(current==this)current=null;if(brushMaterial)Destroy(brushMaterial);if(titleMaterial)Destroy(titleMaterial);if(grandTitleMaterial)Destroy(grandTitleMaterial);}
     }
 
     public sealed class TechniqueSparkGraphic:MaskableGraphic

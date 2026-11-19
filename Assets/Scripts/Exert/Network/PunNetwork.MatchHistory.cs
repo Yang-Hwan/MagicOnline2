@@ -178,7 +178,7 @@ namespace Assets.Scripts.Exert.Network
         [PunRPC] async void ThreeBallScoreMotionRPC(string id, int serial, int streak, int technique, int award, PhotonMessageInfo info)
         {
             if (!HasLegacyMatch || historyEnded || id != LegacyMatchId || historyOffer.match.MatchBall != 3 ||
-                streak < 1 || streak > 4096 || technique < 0 || technique > (int)ThreeCushionTechnique.HorizontalHit ||
+                streak < 1 || streak > 4096 || technique < 0 || technique > (int)ThreeCushionTechnique.ThreeBankReturn ||
                 info.Sender.ActorNumber != (historyPlayer.SeatNo == 0 ? historyOffer.actor1 : historyOffer.actor0) ||
                 serial < legacyShotSerial || serial > legacyShotSerial + 1) return;
             float deadline = Time.realtimeSinceStartup + 5;

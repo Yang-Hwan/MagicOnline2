@@ -5,12 +5,10 @@ namespace Assets.Scripts.Often
 {
     // Presentation classification, independent of score/coin/turn rules. Values are sent on the wire.
     public enum ThreeCushionTechnique { None, Side, Back, Front, Reverse, Grand, TwoBank, ThreeBank, Return, Bounding,
-        Cut, Cross, Lengthwise, DoubleCushion, Ticky, Kick, OneBank, HorizontalHit }
+        Cut, Cross, Lengthwise, DoubleCushion, Ticky, Kick, OneBank, HorizontalHit, FrontGrand, OneBankReturn, ThreeBankReturn }
 
     public sealed class ThreeCushionShotTrace
     {
-        // Calibrated between practice slots 03/04, retaining the existing slot-20 cut.
-        const float NearCushionFraction = .175f;
         const float NearNormalCosine = .9781476f; // within 12 degrees of the cushion normal
         public struct Contact
         {
@@ -85,6 +83,7 @@ namespace Assets.Scripts.Often
             {
                 // The trace freezes at the scoring object; later rail hits cannot upgrade the title.
                 int cushions=0;foreach(var contact in contacts)if(contact.rail>=0)cushions++;
+                if(technique==ThreeCushionTechnique.HorizontalHit && cushions>=4)return ThreeCushionTechnique.FrontGrand;
                 if(cushions>=5)return ThreeCushionTechnique.Grand;
             }
             return technique;
@@ -101,7 +100,9 @@ namespace Assets.Scripts.Often
                 else if(i!=contacts.Count-1)return ThreeCushionTechnique.None; // kiss/extra object contact: ambiguous
             }
             if(leading==2)return ThreeCushionTechnique.TwoBank;
-            if(leading>=3)return ThreeCushionTechnique.ThreeBank;
+            if(leading>=3)
+                return rails[0].rail/2!=rails[1].rail/2 && rails[0].rail==rails[2].rail
+                    ? ThreeCushionTechnique.ThreeBankReturn : ThreeCushionTechnique.ThreeBank;
             if(firstIndex<0 || rails.Count<3)return ThreeCushionTechnique.None;
             var objectContact=contacts[firstIndex];
             if(leading==1)
@@ -122,6 +123,10 @@ namespace Assets.Scripts.Often
                         Vector2.Dot(objectContact.position-objectContact.target,inward)<-.25f*radius)
                         return ThreeCushionTechnique.Ticky;
                 }
+                // Include the leading bank cushion: bank -> object -> adjacent rail -> bank rail.
+                // As with Return, later cushions before the scoring object do not erase the route.
+                if(rails[0].rail/2!=rails[1].rail/2 && rails[0].rail==rails[2].rail)
+                    return ThreeCushionTechnique.OneBankReturn;
                 return ThreeCushionTechnique.OneBank;
             }
             if(leading!=0)return ThreeCushionTechnique.None;
@@ -140,14 +145,11 @@ namespace Assets.Scripts.Often
             float cushionTurn=Cross(InwardNormal(a.rail),InwardNormal(b.rail));
             bool knownSide=objectContact.radius>0 && Mathf.Abs(struckSide)>.02f && adjacent;
             bool oppositeSide=knownSide && struckSide*cushionTurn<0;
-            float shortWidth=Mathf.Min(cloth.size.x,cloth.size.z);
-            // A nearly perpendicular first leg reaches the projected cushion point even
-            // when the object is farther from the rail (practice slots 05 through 08).
-            // Keep this separate from the ordinary close-to-cushion distance rule.
+            // Near-normal travel from the first object to the first cushion is mandatory.
+            // Proximity alone also accepts oblique back shots (practice slot 04, 2026-11-19).
             bool nearNormal=Vector2.Dot((a.position-objectContact.position).normalized,
                 -InwardNormal(a.rail))>=NearNormalCosine;
-            bool nearCushionCut=oppositeSide && objectRailGap>=-objectContact.radius &&
-                (objectRailGap<shortWidth*NearCushionFraction || nearNormal);
+            bool nearCushionCut=oppositeSide && objectRailGap>=-objectContact.radius && nearNormal;
             bool firstLong = cloth.size.x>=cloth.size.z ? a.rail>=2 : a.rail<2;
             bool frontRoute=!firstLong && adjacent && b.rail/2==d.rail/2 && b.rail!=d.rail;
             // Left/right end, adjoining long rail, then the opposite long rail.
@@ -235,6 +237,9 @@ namespace Assets.Scripts.Often
         {
             switch(kind){case ThreeCushionTechnique.Side:return "옆돌리기";case ThreeCushionTechnique.Back:return "뒤돌리기";
                 case ThreeCushionTechnique.Front:return "앞돌리기";case ThreeCushionTechnique.Reverse:return "리버스";
+                case ThreeCushionTechnique.FrontGrand:return "앞돌리기 대회전";
+                case ThreeCushionTechnique.OneBankReturn:return "원뱅크 되돌아오기";
+                case ThreeCushionTechnique.ThreeBankReturn:return "쓰리뱅크 되돌아오기";
                 case ThreeCushionTechnique.Grand:return "대회전";case ThreeCushionTechnique.TwoBank:return "투뱅크";
                 case ThreeCushionTechnique.ThreeBank:return "쓰리뱅크";case ThreeCushionTechnique.Return:return "되돌아오기";
                 case ThreeCushionTechnique.Bounding:return "바운딩샷";case ThreeCushionTechnique.Cut:return "비껴치기";
