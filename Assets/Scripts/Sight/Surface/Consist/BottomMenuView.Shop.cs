@@ -14,8 +14,8 @@ namespace Assets.Scripts.Sight.Surface.Consist
 {
     public sealed partial class BottomMenuView
     {
-        static readonly string[] ShopKinds = { "", "GemPack", "Cue", "Character", "MessagePack" };
-        static readonly string[] ShopTabs = { "전체", "보석", "큐대", "캐릭터", "메시지" };
+        static readonly string[] ShopKinds = { "GemPack", "CoinPack", "Cue", "Character", "MessagePack" };
+        static readonly string[] ShopTabs = { "보석", "코인", "큐대", "캐릭터", "메시지" };
         readonly List<Texture2D> shopTextures = new List<Texture2D>();
         ShopProductData[] shopProducts = Array.Empty<ShopProductData>();
         RectTransform shopCards;
@@ -72,7 +72,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             Clear(shopCards);
             ReleaseShopTextures();
-            var items = shopProducts.Where(p => shopFilter == 0 || p.Kind == ShopKinds[shopFilter]).ToArray();
+            var items = shopProducts.Where(p => p.Kind == ShopKinds[shopFilter]).ToArray();
             int pages = Mathf.Max(1, (items.Length + 2) / 3);
             shopPage = Mathf.Clamp(shopPage, 0, pages - 1);
             var pending = PendingShopPurchase();
@@ -94,10 +94,13 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 if (string.IsNullOrWhiteSpace(asset) && product.Kind == "Cue") asset = product.Visual;
                 if (string.IsNullOrWhiteSpace(asset) && product.Kind == "Character")
                     asset = product.Emotions?.FirstOrDefault(e => e.Code == "기본")?.Asset;
-                StartCoroutine(LoadShopImage(asset, image, placeholder));
+                if(string.IsNullOrWhiteSpace(asset) && product.Kind=="CoinPack")asset="Gameplay/level-up-Coin";
+                if(string.IsNullOrWhiteSpace(asset) && product.Kind=="GemPack")asset="Gameplay/level-up-Jem";
+                if(Application.isPlaying)StartCoroutine(LoadShopImage(asset,image,placeholder));
+                else {var local=Resources.Load<Texture2D>(asset??"");if(local)SetShopImage(local,image,placeholder);}
                 if(product.Kind=="Cue")PremiumCuePreview.Attach(image,product.Visual);
                 Text("ProductName", shopCards, product.Name, x + 12, 510, 318, 65, 30, Color.white, autoSize: true);
-                string price = product.Kind == "GemPack" ? $"보석 {product.GemAmount:N0} + {product.GemBonus:N0}\n현금 가격 준비 중" : $"보석 {product.PriceGem:N0}개";
+                string price = product.Kind == "CoinPack" ? $"코인 {product.CoinAmount+product.CoinBonus:N0}개\n보석 {product.PriceGem:N0}개" : product.Kind == "GemPack" ? $"보석 {product.GemAmount:N0} + {product.GemBonus:N0}\n현금 가격 준비 중" : $"보석 {product.PriceGem:N0}개";
                 Text("ProductPrice", shopCards, price, x + 12, 578, 318, 65, 26, Yellow, autoSize: true);
                 Text("SaleStatus", shopCards, product.Owned ? "보유 중" : !product.Purchasable ? "판매 중지" : product.Kind == "GemPack" ? "현금 결제 준비 중" : "보석으로 구매", x + 12, 649, 318, 35, 23, Color.white);
                 Hit("ProductDetails" + product.Id, shopCards, x, 290, 342, 410, () => ShowShopProduct(product));
@@ -114,6 +117,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             if(p.Kind=="Cue" && PremiumCueDesign.Style(p.Visual)!=PremiumCueStyle.None){ShowPremiumCueProduct(p);return;}
             string detail = p.Kind == "Cue" ? p.CueDetail :
+                p.Kind == "CoinPack" ? $"기본 코인 {p.CoinAmount:N0}개 + 추가 코인 {p.CoinBonus:N0}개\n총 {p.CoinAmount+p.CoinBonus:N0} 코인 지급 · 반복 구매 가능" :
                 p.Kind == "GemPack" ? $"기본 보석 {p.GemAmount:N0}개 + 추가 {p.GemBonus:N0}개" :
                 p.Kind == "Character" ? "감정: " + string.Join(", ", (p.Emotions ?? Array.Empty<ShopEmotionData>()).Select(e => e.Code)) :
                 "성격: " + p.Personality + "\n" + string.Join("\n", p.Messages ?? Array.Empty<string>());
@@ -137,7 +141,6 @@ namespace Assets.Scripts.Sight.Surface.Consist
             StartCoroutine(LoadShopImage(p.Visual,image,placeholder));PremiumCuePreview.Attach(image,p.Visual);
             Text("Description",panel,p.Description+"\n"+p.CueDetail+"\n"+(p.Owned?"보유 중":$"보석 {p.PriceGem:N0}개"),40,338,1160,135,27,Color.white,TextAlignmentOptions.TopLeft,true);
             if(!p.Owned && p.Purchasable)SolidButton(shopBuying?"구매 처리 중…":"보석으로 구매",panel,420,484,400,55,()=>ConfirmShopPurchase(p),true);
-            SolidButton("닫기",panel,420,566,400,55,CloseModal);
         }
 
         void ConfirmShopPurchase(ShopProductData p)
@@ -172,19 +175,22 @@ namespace Assets.Scripts.Sight.Surface.Consist
             try
             {
                 var receipt = await GameApiClient.Request<ShopPurchaseResult>("/api/shop/purchases", "POST", input);
+                if(owner!=GameApiClient.UserId)return;
                 if (receipt == null || receipt.ProductId != input.ProductId) throw new InvalidOperationException("InvalidPurchaseReceipt");
                 PlayerPrefs.DeleteKey(key); PlayerPrefs.Save();
                 var product = shopProducts.FirstOrDefault(p => p.Id == receipt.ProductId);
-                if (product != null) product.Owned = true;
+                if (product != null && product.Kind!="CoinPack") product.Owned = true;
+                if(receipt.GrantedCoin>0)BackendGame.Instance.UserMainData.Coin=receipt.BalanceCoin;
                 BackendGame.Instance.UserMainData.Jem = receipt.BalanceGem;
                 try { await BackendGame.Instance.LoadAsync(); } catch (Exception) { /* Receipt balance remains authoritative for this purchase. */ }
-                message = $"{(receipt.AlreadyProcessed ? "구매 내역을 확인했습니다." : "구매했습니다.")}\n사용 보석: {receipt.PaidGem:N0}개\n상품이 보유 목록에 추가되었습니다.";
+                message = receipt.GrantedCoin>0 ? $"{(receipt.AlreadyProcessed ? "구매 내역을 확인했습니다." : "코인을 구매했습니다.")}\n사용 보석: {receipt.PaidGem:N0}개\n지급 코인: {receipt.GrantedCoin:N0}개\n보유 코인: {receipt.BalanceCoin:N0}개" : $"{(receipt.AlreadyProcessed ? "구매 내역을 확인했습니다." : "구매했습니다.")}\n사용 보석: {receipt.PaidGem:N0}개\n상품이 보유 목록에 추가되었습니다.";
             }
             catch (GameApiException e)
             {
                 bool terminal = e.Status >= 400 && e.Status < 500 && e.Status != 401 && e.Status != 408 && e.Status != 429;
                 if (terminal) { PlayerPrefs.DeleteKey(key); PlayerPrefs.Save(); }
                 message = e.Message == "ShopInsufficientGems" ? "보석이 부족합니다." :
+                    e.Message == "ShopCoinLimit" ? "구매 후 코인이 보유 한도를 초과합니다." :
                     e.Message == "ShopAlreadyOwned" ? "이미 보유한 상품입니다." :
                     e.Message == "ShopNotForSale" ? "현재 판매하지 않는 상품입니다." :
                     e.Message == "ShopProductChanged" ? "상품 정보 또는 가격이 변경됐습니다. 새로고침한 후 다시 확인해 주세요." :

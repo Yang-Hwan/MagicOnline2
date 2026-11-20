@@ -12,10 +12,10 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             GuildCloseDialog();
             guildDialog=Node("GuildDialog",guildRoot,0,0,Width,Height);
-            Box("Shade",guildDialog,0,127,Width,710,new Color(0,0,0,.84f)).raycastTarget=true;
+            Box("Shade",guildDialog,0,0,Width,Height,new Color(0,0,0,.84f)).raycastTarget=true;
             var panel=GPanel("DialogCard",guildDialog,276,(Height-height)*.5f,1120,height);
+            Assets.Scripts.Often.ModalBackdrop.Attach(guildDialog.Find("Shade").GetComponent<UnityEngine.UI.Image>(),panel,GuildCloseDialog);
             Text("Title",panel,title,30,16,850,52,35,Color.white,TextAlignmentOptions.MidlineLeft);
-            GButton("닫기",panel,945,18,145,45,GuildCloseDialog);
             Text("Error",guildDialog,"",300,(Height+height)*.5f-32,1070,24,20,new Color(1,.66f,.35f),TextAlignmentOptions.MidlineLeft,true);
             return panel;
         }

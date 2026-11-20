@@ -66,6 +66,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             canvas = transform.parent.parent.parent.GetComponent<RectTransform>();
             blindBack = transform.parent.Find("BlindBack").gameObject;
+            var dim=blindBack.GetComponent<UnityEngine.UI.Image>()??blindBack.AddComponent<UnityEngine.UI.Image>();
+            Assets.Scripts.Often.ModalBackdrop.Attach(dim,(RectTransform)transform,ClosePopup);
             point_v = transform.Find("Point_V").GetComponent<RectTransform>();
             point = transform.Find("BallFrm/Point").GetComponent<RectTransform>();
             shotController = FindObjectOfType<ShotCtrl>();

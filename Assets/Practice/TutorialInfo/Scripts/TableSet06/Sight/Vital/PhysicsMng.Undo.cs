@@ -155,6 +155,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         public bool IsPointerOverUndoButton() => IsPointerOverUndoButton(Input.mousePosition);
         bool IsPointerOverUndoButton(Vector2 screenPosition) =>
+            Assets.Scripts.Often.ModalBackdrop.BlocksGameplayInput ||
             (stageBar && RectTransformUtility.RectangleContainsScreenPoint(stageBar,screenPosition)) ||
             (optionsRect && optionsRect.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(optionsRect, screenPosition)) ||
             undoButton && undoButton.gameObject.activeInHierarchy &&

@@ -132,7 +132,7 @@ public sealed class EquipmentMatchE2E : MonoBehaviour
             (panel.transform.Find(root+"TodayStreak")!=null)!=(expected.TodayStreak>=2))
             throw new Exception("live player information does not match server response");
         await Screenshot(self?"self-information":"other-information");
-        Click(root+"Close");
+        panel.GetComponent<MatchPlayerInfoWindow>().Close(); // Close button was replaced by shared outside-tap dismissal.
         if(MatchPlayerInfoWindow.IsOpen)throw new Exception("player information did not close");
         if(self)report.SelfInformation=true;else report.OtherInformation=true;Save();
     }

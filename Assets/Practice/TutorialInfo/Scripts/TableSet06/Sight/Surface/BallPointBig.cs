@@ -77,6 +77,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             RectTransform rectTransform = GetComponent<RectTransform>();
             radius = 0.5f * (bigBallFrm.sizeDelta.x - point.sizeDelta.x);
             CuePointGuide.Install(bigBallFrm);
+            if(blindBack){
+                var dim=blindBack.GetComponent<UnityEngine.UI.Image>()??blindBack.AddComponent<UnityEngine.UI.Image>();
+                Assets.Scripts.Often.ModalBackdrop.Attach(dim,(RectTransform)transform,ClosePopup);
+            }
             //Debug.Log($"rt.x : {bigBallFrm.sizeDelta.x}, po.x : {point.sizeDelta.x}");
 
         }
@@ -106,9 +110,16 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             canControl = false;
             ShotCtrl.canControl = true;
             InputOutput.OnMouseState -= InputOutput_OnMouseState;
+            if(blindBack)blindBack.SetActive(false);
             gameObject.SetActive(false);
         }
 
+
+        public void ClosePopup()
+        {
+            if(blindBack)blindBack.SetActive(false);
+            gameObject.SetActive(false);
+        }
 
         bool IsInSide(out float dist_v)
         {

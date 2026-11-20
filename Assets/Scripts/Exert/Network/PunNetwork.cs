@@ -46,7 +46,8 @@ namespace Assets.Scripts.Exert.Network
             if (!PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient) return;
             // Keep the existing pair for rematches; new matchmaking must use a fresh room.
             PhotonNetwork.CurrentRoom.IsOpen = false;
-            PhotonNetwork.CurrentRoom.IsVisible = false;
+            PhotonNetwork.CurrentRoom.IsVisible = !IsFriendly && !IsGuildWar && ArenaPopulation.TryHall(PhotonNetwork.CurrentRoom.Name,out _);
+            PublishArenaPopulation();
         }
 
         // Diagnostic context intentionally excludes user IDs, credentials and room names.
@@ -133,6 +134,7 @@ namespace Assets.Scripts.Exert.Network
         {
             base.Update();
             TickLegacyHistory();
+            TickArenaPopulation();
             if (friendlyRoom!=null && PhotonNetwork.InRoom && historyOffer == null && PhotonNetwork.CurrentRoom.PlayerCount == 1 &&
                 Time.realtimeSinceStartup >= matchRequestDeadline)
             {
@@ -163,8 +165,7 @@ namespace Assets.Scripts.Exert.Network
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             LogMatchContext("ConnectedToMaster");
             Debug.LogWarning("### PunNetwork OnConnectedToMaster ");
-            roomsLocal.Clear();
-            rooms.Clear();
+            ClearArenaPopulation();
             PhotonNetwork.JoinLobby();
         }
 
@@ -313,13 +314,13 @@ namespace Assets.Scripts.Exert.Network
             friendlyRoom = friendlyOpponent = null;
             guildWarMatchId=null;
             var properties = new ExitGames.Client.Photon.Hashtable {
-                { "hall", hall_idx }, { "rules", rules },
+                { "hall", hall_idx }, { "rules", rules }, {ArenaPopulation.OnlinePlayers,1},
                 { "protocol", Assets.Scripts.Often.PracticeMatchTestRoute.RoomProtocol }
             };
             var options = new RoomOptions {
                 MaxPlayers = 2, IsOpen = true, IsVisible = true,
                 CustomRoomProperties = properties,
-                CustomRoomPropertiesForLobby = new[] { "hall", "rules", "protocol" }
+                CustomRoomPropertiesForLobby = new[] { "hall", "rules", "protocol",ArenaPopulation.OnlinePlayers }
             };
             GetComponent<PracticeMatchSetupTransport>()?.AllowNewMatch();
             matchRequestCancelled = false;
@@ -411,6 +412,7 @@ namespace Assets.Scripts.Exert.Network
         /// <param name="roomsPun"></param>
         public override void OnRoomListUpdate(List<RoomInfo> roomsPun)
         {
+            roomPopulationReady=true;
             foreach (var room in roomsPun)
             {
                 // RoomInfo updates are new instances: identify entries by name.
@@ -427,23 +429,9 @@ namespace Assets.Scripts.Exert.Network
 
         public override void GetRoomsInfo()
         {
-            // 레벨기준 룸정보 초기화 
-            skillRoom.Keys.ToList().ForEach(key => skillRoom[key] = 0);
-            //Debug.Log("GetRoomsInfo  roomsLocal.Count : " + roomsLocal.Count);
-
-            for (int i = 0; i < roomsLocal.Count; i++)
-            {
-                string nm = roomsLocal[i].Name;
-                int lv = int.Parse(roomsLocal[i].Name.Split(';')[1]);
-                long coin = 0;// long.Parse(roomMemList[i].Name.Split(';')[2]);
-                int pc = roomsLocal[i].PlayerCount;
-                if (!skillRoom.ContainsKey(lv)) skillRoom.Add(lv, 0);
-                int cnt = skillRoom[lv];
-                cnt += pc;
-                skillRoom[lv] = cnt;
-            }
-
-            CallRoomUpdate(skillRoom);
+            var counts=ArenaPopulation.Count(roomsLocal,BackendChart.skillMatchData?.Select(h=>h.HallIdx),roomPopulationReady);
+            skillRoom.Clear();foreach(var pair in counts)skillRoom[pair.Key]=pair.Value;
+            CallRoomUpdate(new Dictionary<int,int>(skillRoom));
         }
 
         // ** 방정보 변경시 호출 **
@@ -660,6 +648,7 @@ namespace Assets.Scripts.Exert.Network
         // 방입장후 콜백.
         public override void OnJoinedRoom()
         {
+            PublishArenaPopulation();
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             matchRequestPending = false;
             if (matchRequestCancelled) { PhotonNetwork.LeaveRoom(); return; }
@@ -703,6 +692,7 @@ namespace Assets.Scripts.Exert.Network
         // 방장만 받음. 손님정보
         public override void OnPlayerEnteredRoom(Player newPlayer)
         {
+            PublishArenaPopulation();
             if (IgnoreCancelledTestMatchCallback) return;
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             if (historyOffer != null) { CloseMatchedRoom(); return; }
@@ -1087,6 +1077,7 @@ namespace Assets.Scripts.Exert.Network
 
         public override void OnDisconnected(DisconnectCause cause)
         {
+            ClearArenaPopulation();
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             matchRequestPending = false;
             LogMatchContext("Disconnected:" + cause);
@@ -1123,6 +1114,7 @@ namespace Assets.Scripts.Exert.Network
 
         public override void OnPlayerLeftRoom(Player otherPlayer)
         {
+            PublishArenaPopulation();
             if (Assets.Scripts.Often.PracticeSceneFlow.OnlineSession != null) return;
             OtherDisconnect++;
             AbortLegacyHistory(otherPlayer.IsInactive ? "OpponentDisconnected" : "OpponentLeft");

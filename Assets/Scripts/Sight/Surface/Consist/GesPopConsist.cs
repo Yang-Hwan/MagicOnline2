@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Assets.Scripts.Sight.Surface.Consist
@@ -56,6 +56,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             pop = p;
             pops[(int)pop].SetActive(true);
             bg.enabled = true;
+            Assets.Scripts.Often.ModalBackdrop.Attach(bg,(RectTransform)pops[(int)pop].transform,Close);
         }
 
         public void Close()

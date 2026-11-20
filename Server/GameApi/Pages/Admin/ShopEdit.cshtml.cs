@@ -26,6 +26,8 @@ public class ShopEditModel(Database db) : PageModel
         public DateTime? Ends { get; set; }
         public int Amount { get; set; }
         public int Bonus { get; set; }
+        public long CoinAmount {get;set;}
+        public long CoinBonus {get;set;}
         public string? Visual { get; set; }
         public int Power { get; set; }
         public int Follow { get; set; }
@@ -57,8 +59,8 @@ public class ShopEditModel(Database db) : PageModel
                 p.sale_starts_at AT TIME ZONE 'Asia/Seoul',p.sale_ends_at AT TIME ZONE 'Asia/Seoul',p.revision,
                 g.amount,g.bonus,q.visual,q.power_pct,q.follow_pct,q.tip_pct,q.shot_seconds,m.personality,
                 (SELECT string_agg(message,chr(10) ORDER BY position) FROM shop_messages WHERE product_id=p.id),
-                (SELECT json_object_agg(emotion,asset_key)::text FROM shop_character_emotions WHERE product_id=p.id),q.ability::text
-            FROM shop_products p LEFT JOIN shop_gem_packs g ON g.product_id=p.id
+                (SELECT json_object_agg(emotion,asset_key)::text FROM shop_character_emotions WHERE product_id=p.id),q.ability::text,cp.amount,cp.bonus
+            FROM shop_products p LEFT JOIN shop_coin_packs cp ON cp.product_id=p.id LEFT JOIN shop_gem_packs g ON g.product_id=p.id
             LEFT JOIN shop_cues q ON q.product_id=p.id LEFT JOIN shop_message_packs m ON m.product_id=p.id WHERE p.id=$1
             """,id.Value);
         await using var r=await cmd.ExecuteReaderAsync();
@@ -70,6 +72,7 @@ public class ShopEditModel(Database db) : PageModel
             Starts=r.IsDBNull(8)?null:r.GetDateTime(8),Ends=r.IsDBNull(9)?null:r.GetDateTime(9),Revision=Num(10),
             Amount=Num(11),Bonus=Num(12),Visual=Str(13),Power=Num(14),Follow=Num(15),Tip=Num(16),Seconds=Num(17),
             Personality=Str(18),Messages=Str(19),Faces=System.Text.Json.JsonSerializer.Deserialize<Dictionary<string,string>>(Str(20)??"{}")!};
+        if(Input.Kind=="CoinPack"){Input.CoinAmount=r.IsDBNull(22)?0:r.GetInt64(22);Input.CoinBonus=r.IsDBNull(23)?0:r.GetInt64(23);}
         if(Input.Kind=="Cue") {
             var ability=System.Text.Json.JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(Str(21)!,Database.Json)!;
             Input.Grade=ability.Grade;Input.Initial=ability.Initial;Input.Maximum=ability.Maximum;Input.Reach=ability.Reach;
@@ -84,12 +87,14 @@ public class ShopEditModel(Database db) : PageModel
         if(!ShopModel.Kinds.ContainsKey(p.Kind)) return BadRequest();
         string? error=p.Kind switch {
             "GemPack" when p.Amount<=0 || p.Bonus<0 => "기본 보석은 1 이상, 추가 보석은 0 이상으로 입력해 주세요.",
+            "CoinPack" when p.CoinAmount<=0 || p.CoinAmount>9_000_000_000_000_000L || p.CoinBonus<0 || p.CoinBonus>9_000_000_000_000_000L-p.CoinAmount => "기본 코인과 추가 코인의 합계는 1~9,000,000,000,000,000 범위로 입력해 주세요.",
             "Cue" when string.IsNullOrWhiteSpace(p.Visual) || !p.Ability().Valid() => "큐대 스킨, 등급(A/B/C), 초기·최고 레벨(0~100), 도달 진도(1 이상)를 확인해 주세요.",
             "Character" when Emotions.Any(e=>!p.Faces.TryGetValue(e,out var key)||string.IsNullOrWhiteSpace(key)) => "감정 9종의 이미지 경로를 모두 입력해 주세요.",
             "MessagePack" when string.IsNullOrWhiteSpace(p.Personality) || p.Lines.Length==0 => "성격과 메시지를 한 줄 이상 입력해 주세요.",
             _ => null
         };
         if(p.Kind!="GemPack" && p.Price is null or <0) error="보석 가격은 0 이상으로 입력해 주세요.";
+        if(p.Kind=="CoinPack" && p.Price is null or <1)error="코인 상품의 보석 가격은 1 이상으로 입력해 주세요.";
         if(p.Starts>=p.Ends) error="판매 종료 시각은 시작 시각보다 늦어야 합니다.";
         if(error!=null) ModelState.AddModelError("",error);
         if(!ModelState.IsValid) return Page();
@@ -126,6 +131,9 @@ public class ShopEditModel(Database db) : PageModel
             case "GemPack":
                 await Run("INSERT INTO shop_gem_packs VALUES($1,$2,$3) ON CONFLICT(product_id) DO UPDATE SET amount=excluded.amount,bonus=excluded.bonus",product,p.Amount,p.Bonus);
                 break;
+            case "CoinPack":
+                await Run("INSERT INTO shop_coin_packs(product_id,amount,bonus) VALUES($1,$2,$3) ON CONFLICT(product_id) DO UPDATE SET amount=excluded.amount,bonus=excluded.bonus",product,p.CoinAmount,p.CoinBonus);
+                break;
             case "Cue":
                 await Asset(p.Visual);
                 await Run("""
@@ -152,6 +160,6 @@ public class ShopEditModel(Database db) : PageModel
             $"ShopProduct/{product}",HttpContext.TraceIdentifier,System.Text.Json.JsonSerializer.Serialize(p));
         await tx.CommitAsync();
         TempData["ShopSaved"]=$"{p.Name} 상품을 저장했습니다.";
-        return RedirectToPage("Shop");
+        return RedirectToPage("Shop",new{kind=p.Kind});
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using Assets.Scripts.Often;
 using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Cysharp.Threading.Tasks;
@@ -202,6 +202,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         void OnStageAction()
         {
+            if(stageModalDismissed){RefreshStageComicUI();return;}
             switch(stagePhase)
             {
                 case StagePhase.Aim:

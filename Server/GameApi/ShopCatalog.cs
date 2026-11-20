@@ -15,6 +15,7 @@ public static class ShopCatalog
                         'Equipped',EXISTS(SELECT FROM shop_user_equipment WHERE user_id=$1 AND product_id=p.id AND slot=p.kind)
                             OR EXISTS(SELECT FROM shop_user_selected_message_packs WHERE user_id=$1 AND product_id=p.id),
                         'GemAmount',COALESCE(g.amount,0),'GemBonus',COALESCE(g.bonus,0),
+                        'CoinAmount',COALESCE(cp.amount,0),'CoinBonus',COALESCE(cp.bonus,0),
                           'CueTimeMin',(SELECT (code->>'ComVal')::int FROM charts h,jsonb_array_elements(h.rows) code WHERE h.name='CommonCode' AND code->>'GrpCd'='Cue' AND code->>'ComCd'='Sec' LIMIT 1),
                         'CueTimeMax',(SELECT (code->>'ComVal2')::int FROM charts h,jsonb_array_elements(h.rows) code WHERE h.name='CommonCode' AND code->>'GrpCd'='Cue' AND code->>'ComCd'='Sec' LIMIT 1),
                          'CueSteps',COALESCE((SELECT steps FROM shop_cue_progress WHERE user_id=$1 AND product_id=p.id),0),
@@ -27,7 +28,7 @@ public static class ShopCatalog
                             FROM shop_character_emotions WHERE product_id=p.id),'[]'::jsonb),
                         'Messages',COALESCE((SELECT jsonb_agg(message ORDER BY position)
                             FROM shop_messages WHERE product_id=p.id),'[]'::jsonb)) AS item
-                    FROM shop_products p LEFT JOIN shop_gem_packs g ON g.product_id=p.id
+                    FROM shop_products p LEFT JOIN shop_coin_packs cp ON cp.product_id=p.id LEFT JOIN shop_gem_packs g ON g.product_id=p.id
                     LEFT JOIN shop_cues c ON c.product_id=p.id LEFT JOIN shop_message_packs m ON m.product_id=p.id
                     WHERE ($2 AND EXISTS(SELECT FROM shop_user_inventory WHERE user_id=$1 AND product_id=p.id))
                        OR (NOT $2 AND p.visible AND (p.sale_starts_at IS NULL OR p.sale_starts_at<=now())

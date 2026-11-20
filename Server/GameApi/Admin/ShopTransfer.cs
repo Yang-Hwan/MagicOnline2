@@ -17,6 +17,7 @@ internal static class ShopTransfer
         new("content_assets","asset_key","content_hash,content_type,width,height"),
         new("products","id","kind,name,description,thumbnail,price_gem,sort_order,sale_starts_at,sale_ends_at,visible,purchasable"),
         new("gem_packs","product_id","amount,bonus"),
+        new("coin_packs","product_id","amount,bonus"),
         new("cues","product_id","visual,power_pct,follow_pct,tip_pct,shot_seconds,ability"),
         new("character_emotions","product_id,emotion","asset_key"),
         new("message_packs","product_id","personality"),
@@ -46,6 +47,9 @@ internal static class ShopTransfer
 
     public static async Task Replace(NpgsqlConnection c,JsonElement shop,Guid admin,string requestId)
     {
+        if(shop.ValueKind==JsonValueKind.Object && shop.EnumerateObject().Count()==Parts.Length-1 && !shop.TryGetProperty("coin_packs",out _)){
+            var legacy=JsonNode.Parse(shop.GetRawText())!.AsObject();legacy["coin_packs"]=new JsonArray();shop=JsonSerializer.SerializeToElement(legacy);
+        }
         if(shop.ValueKind!=JsonValueKind.Object || shop.EnumerateObject().Count()!=Parts.Length)
             throw new ApiFault(400,"상점 상품 파일 구성이 올바르지 않습니다.");
         await Execute(c,"LOCK TABLE shop_content_assets,shop_products IN SHARE ROW EXCLUSIVE MODE");
@@ -97,9 +101,11 @@ internal static class ShopTransfer
                 SELECT EXISTS(SELECT FROM shop_products p
                     LEFT JOIN shop_cues c ON c.product_id=p.id
                     LEFT JOIN shop_gem_packs g ON g.product_id=p.id
+                    LEFT JOIN shop_coin_packs cp ON cp.product_id=p.id
                     LEFT JOIN shop_message_packs m ON m.product_id=p.id
                     WHERE p.id<1 OR (p.kind='Cue')<>(c.product_id IS NOT NULL)
                     OR (p.kind='GemPack')<>(g.product_id IS NOT NULL)
+                    OR (p.kind='CoinPack')<>(cp.product_id IS NOT NULL)
                     OR (p.kind='MessagePack')<>(m.product_id IS NOT NULL)
                     OR (p.kind='MessagePack' AND (trim(m.personality)='' OR NOT EXISTS(SELECT FROM shop_messages WHERE product_id=p.id)))
                     OR (SELECT count(*) FROM shop_character_emotions WHERE product_id=p.id)<>CASE WHEN p.kind='Character' THEN 9 ELSE 0 END)

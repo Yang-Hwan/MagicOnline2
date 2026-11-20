@@ -6,7 +6,7 @@ namespace Assets.Scripts.Prack.BackSys.GameData
     [Serializable] public sealed class MatchPlayerInfo
     {
         public string UserId = "", Nickname = "", CueName = "", CueDescription = "", CueThumbnail = "";
-        public int Level, TodayStreak;
+        public int Level, LevelProgress, TodayStreak;
         public long TotalPrize;
         public PlayerRecord Total = new PlayerRecord(), FourBall = new PlayerRecord(), ThreeBall = new PlayerRecord();
         public MatchEquipmentProfile Equipment = new MatchEquipmentProfile();

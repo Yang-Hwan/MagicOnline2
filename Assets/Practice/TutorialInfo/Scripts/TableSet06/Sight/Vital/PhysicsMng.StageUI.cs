@@ -9,6 +9,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
     public partial class PhysicsMng
     {
         RectTransform stageShade, resultCard;
+        bool stageModalDismissed;
         TMP_Text resultDetail, resultRetryLabel;
         Button resultRetry;
         Image resultArtwork;
@@ -120,7 +121,16 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             resultDetail=StageLabel(resultCard,"Detail",new Vector2(0,-98),new Vector2(540,40),"",24);
             resultRetry=StageButton(resultCard,"StageRetry",new Vector2(-145,-145),new Vector2(260,60),"다시하기",true,RetryStage,out resultRetryLabel);
             StageButton(resultCard,"StageResultList",new Vector2(145,-145),new Vector2(260,60),"목록으로",false,LeaveStage,out _);
+            Assets.Scripts.Often.ModalBackdrop.Attach(dim,null,DismissStageModal);
+            Assets.Scripts.Often.ModalBackdrop.AttachSurface(introCard);
+            Assets.Scripts.Often.ModalBackdrop.AttachSurface(resultCard);
             resultCard.gameObject.SetActive(false);stageShade.gameObject.SetActive(false);
+        }
+        void DismissStageModal()
+        {
+            stageModalDismissed=true;
+            introCard.gameObject.SetActive(false);resultCard.gameObject.SetActive(false);stageShade.gameObject.SetActive(false);
+            stageAction.gameObject.SetActive(true);stageActionLabel.text=stagePhase==StagePhase.Intro?"시작 화면":"결과 보기";
         }
         void LeaveStage()
         {
@@ -133,6 +143,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         void RefreshStageComicUI()
         {
+            stageModalDismissed=false;
             bool intro=stagePhase==StagePhase.Intro;
             bool result=stagePhase==StagePhase.Won || stagePhase==StagePhase.Failed || stagePhase==StagePhase.Exhausted || stagePhase==StagePhase.Waiting || stagePhase==StagePhase.Error;
             introCard.gameObject.SetActive(intro);resultCard.gameObject.SetActive(result);

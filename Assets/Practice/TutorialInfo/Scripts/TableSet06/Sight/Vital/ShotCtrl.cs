@@ -190,6 +190,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void InputOutput_OnMouseState(MouseState mouseState)
         {
+            if(Assets.Scripts.Often.ModalBackdrop.BlocksGameplayInput){_targetEquip=TargetEquip.None;return;}
+
             if (Assets.Scripts.Often.PracticeMatchTestRoute.Enabled &&
                 (mouseState == MouseState.Down || mouseState == MouseState.Up))
                 Debug.Log($"[PracticeMatchInput] event={mouseState} control={canControl} canSubmit={physicsManager.OnlineAdapter?.CanSubmit} equip={InputOutput.targetEquip} blocked={physicsManager.IsPointerOverUndoButton()} power={force}");

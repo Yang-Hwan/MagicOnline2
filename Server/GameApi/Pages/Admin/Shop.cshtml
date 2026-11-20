@@ -9,8 +9,7 @@
 <div class="chart-actions">@foreach(var kind in ShopModel.Kinds){<a class="button" asp-page="ShopEdit" asp-route-kind="@kind.Key">@kind.Value 등록</a>}</div>
 }
 <nav class="tabs" aria-label="상점 상품 종류">
-<a asp-page="Shop" class="@(Model.Kind=="" ? "selected" : "")" aria-current="@(Model.Kind=="" ? "page" : null)">전체</a>
-@foreach(var tab in new[]{("GemPack","보석"),("Cue","큐대"),("Character","캐릭터"),("MessagePack","메시지")}){
+@foreach(var tab in new[]{("GemPack","보석"),("CoinPack","코인"),("Cue","큐대"),("Character","캐릭터"),("MessagePack","메시지")}){
 <a asp-page="Shop" asp-route-kind="@tab.Item1" class="@(Model.Kind==tab.Item1 ? "selected" : "")" aria-current="@(Model.Kind==tab.Item1 ? "page" : null)">@tab.Item2</a>
 }
 </nav>

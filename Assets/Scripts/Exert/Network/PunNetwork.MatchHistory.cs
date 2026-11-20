@@ -681,6 +681,7 @@ namespace Assets.Scripts.Exert.Network
 
         public override void OnMasterClientSwitched(Photon.Realtime.Player newMaster)
         {
+            PublishArenaPopulation();
             // The remaining player may be on the result/rematch screen already.
             // Authority changes must not make that room available to new opponents.
             if (historyOffer != null) CloseMatchedRoom();

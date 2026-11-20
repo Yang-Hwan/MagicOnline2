@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -42,7 +42,6 @@ namespace Assets.Scripts.Sight.Surface.Consist
         NetworkEngine subscribedNetwork;
         bool initialized;
         int selectedHall, rankFilter, shopFilter;
-        bool profileSaving;
         bool walletRefreshPending, bustCheckPending;
         RectTransform bustNotice;
         Coroutine bustNoticeAnimation;
@@ -116,8 +115,8 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 t.textWrappingMode = TextWrappingModes.NoWrap;
             }
             Hit("Profile", design, 50, 10, 550, 105, () => OpenPopup(GesPopConsist.Pop.NickCh));
-            Hit("GemStore", design, 1048, 16, 60, 75, () => { shopFilter = 1; SelectPage(4); });
-            Hit("CoinStore", design, 1470, 16, 60, 75, () => SelectPage(4));
+            Hit("GemStore", design, 1048, 16, 60, 75, () => { shopFilter = 0; shopPage=0; SelectPage(4); });
+            Hit("CoinStore", design, 1470, 16, 60, 75, () => {shopFilter=1;shopPage=0;SelectPage(4);});
             Hit("Settings", design, 1540, 10, 104, 98, Settings);
             body = Node("PageContent", design, 0, 127, Width, 710);
             // Body uses full-screen pixel coordinates so artists and code share the same measurements.
@@ -132,7 +131,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 float[] tx = { 195, 480, 810, 1170, 1490 };
                 float[] tw = { 100, 176, 183, 110, 110 };
                 navLabels.Add(Text("NavLabel" + i, design, Labels[i], tx[i], 860, tw[i], 55, 28, Color.white));
-                Hit("Nav" + i, design, i * Width / 5, 838, Width / 5, 103, () => SelectPage(page));
+                Hit("Nav" + i, design, i * Width / 5, 838, Width / 5, 103, () => {if(page==4){shopFilter=0;shopPage=0;}SelectPage(page);});
             }
             initialized = true;
             RefreshUser(); Resize(); Subscribe();
@@ -149,7 +148,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             bool enteringMultiplayer = page == 2 && CurrentPage != 2;
             CurrentPage = Mathf.Clamp(page, 0, 4);
             if (CurrentPage != 2 && bustNotice) HideBustNotice();
-            CloseModal(); Clear(body);
+            ClosePlayerPage();CloseModal(); Clear(body);
             backplate.texture = plates[CurrentPage];
             for (int i = 0; i < navLabels.Count; i++) navLabels[i].color = i == CurrentPage ? Yellow : Color.white;
             float[] ix = { 115, 404, 728, 1093, 1417 };
@@ -280,42 +279,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         }
 
         [Serializable] sealed class ProfileEdit { public string NickName; public int AvatarIdx; }
-        void Profile()
-        {
-            var panel = Dialog("프로필", "");
-            Text("ProfileHint", panel, "닉네임 (최대 24자)", 80, 100, 680, 37, 25, Color.white);
-            var background = Box("NicknameInput", panel, 100, 150, 640, 62, new Color(.15f, .17f, .21f));
-            background.raycastTarget = true;
-            var input = background.gameObject.AddComponent<TMP_InputField>(); input.targetGraphic = background;
-            var viewport = Node("Viewport", background.transform, 14, 3, 612, 56);
-            viewport.gameObject.AddComponent<RectMask2D>();
-            var value = (TextMeshProUGUI)Text("Value", viewport, "", 0, 0, 612, 56, 30, Color.white, TextAlignmentOptions.MidlineLeft);
-            input.textViewport = viewport; input.textComponent = value; input.fontAsset = font;
-            input.characterLimit = 24; input.lineType = TMP_InputField.LineType.SingleLine;
-            input.richText = false;
-            input.text = UserInfo.DisplayName ?? ""; input.interactable = !profileSaving;
-            var status = Text("ProfileStatus", panel, "", 60, 274, 720, 42, 23, Yellow);
-            var save = Hit("SaveProfile", panel, 270, 227, 300, 48, () => SaveProfile(input, status));
-            save.interactable = !profileSaving;
-            Text("SaveLabel", panel, profileSaving ? "저장 중…" : "저장", 270, 227, 300, 48, 30, Yellow);
-        }
-
-        async void SaveProfile(TMP_InputField input, TMP_Text status)
-        {
-            if (profileSaving) return;
-            string name = input.text.Trim();
-            if (name.Length == 0 || name.Any(char.IsControl)) { status.text = "올바른 닉네임을 입력해 주세요."; return; }
-            if (!Application.isPlaying || string.IsNullOrEmpty(GameApiClient.UserId)) { status.text = "로그인 후 이용할 수 있습니다."; return; }
-            profileSaving = true; input.interactable = false; status.text = "저장 중…";
-            try
-            {
-                await GameApiClient.Request<UserMainData>("/api/me/profile", "PATCH", new ProfileEdit { NickName = name, AvatarIdx = Mathf.Clamp(BackendGame.Instance.UserMainData.AvatarIdx, 1, 100) });
-                await BackendGame.Instance.LoadAsync();
-                if (this && status) { status.text = "저장했습니다."; RefreshUser(); }
-            }
-            catch (Exception) { if (this && status) status.text = "저장하지 못했습니다. 연결을 확인하고 다시 시도해 주세요."; }
-            finally { profileSaving = false; if (input) input.interactable = true; }
-        }
+        void Profile()=>OpenPlayerPage(0);
 
         void Settings()
         {
@@ -330,11 +294,11 @@ namespace Assets.Scripts.Sight.Surface.Consist
             modal = Node("Modal", design, 0, 0, Width, Height);
             Box("Shade", modal, 0, 0, Width, Height, new Color(0, 0, 0, .82f)).raycastTarget = true;
             var panel = Node("Panel", modal, 416, 260, 840, 410);
+            Assets.Scripts.Often.ModalBackdrop.Attach(modal.Find("Shade").GetComponent<UnityEngine.UI.Image>(),panel,CloseModal);
             Box("Border", panel, 0, 0, 840, 410, Yellow);
             Box("PanelBackground", panel, 4, 4, 832, 402, new Color(.035f, .04f, .055f));
             Text("Title", panel, title, 40, 30, 760, 62, 40, Yellow);
             Text("Message", panel, message, 55, 110, 730, 105, 28, Color.white, autoSize: true);
-            SolidButton("닫기", panel, 270, 325, 300, 57, CloseModal);
             return panel;
         }
 
@@ -377,7 +341,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             headerPortrait.SetProfile(new MatchEquipmentProfile { Emotions = new[] { new MatchEquipmentEmotion { Code = "기본", Asset = asset } } });
             headerPortrait.Show("기본", headerFallback);
         }
-        void UserDataChanged() { RefreshUser(); if (CurrentPage == 2) RefreshArenaCards(); else if (CurrentPage == 3) SelectPage(3); }
+        void UserDataChanged() { RefreshUser(); if(playerPage){DrawPlayerHeader();return;} if (CurrentPage == 2) RefreshArenaCards(); else if (CurrentPage == 3) SelectPage(3); }
         void RoomCountsChanged(Dictionary<int, int> counts)
         {
             roomCounts.Clear(); foreach (var pair in counts) roomCounts[pair.Key] = pair.Value;
@@ -397,6 +361,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         void OnEnable() { FriendSocial.Menu=this; if(FriendSocial.Instance){FriendSocial.Instance.FriendsChanged+=RefreshFriends;FriendSocial.Instance.GuildChanged+=RefreshGuild;} if (initialized) { RefreshUser(); Subscribe(); nextWalletRefresh = 0; if (CurrentPage == 2) CheckBustOnMultiplayerEntry(); RefreshWalletFromServer(); } }
         void OnDisable()
         {
+            ClosePlayerPage();
             headerRequest++;
             headerOwner = null;
             if(FriendSocial.Menu==this)FriendSocial.Menu=null;
@@ -416,6 +381,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         }
         void LateUpdate()
         {
+            if(playerPage && playerOwner!=GameApiClient.UserId)ClosePlayerPage();
             TickGuild();
             TickMailbox();
             Resize();

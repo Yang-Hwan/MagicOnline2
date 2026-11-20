@@ -183,6 +183,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 var rect = (RectTransform)replayFolderDialog.transform; rect.SetParent(replayPanel, false);
                 rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
                 rect.offsetMin = rect.offsetMax = Vector2.zero;
+                Assets.Scripts.Often.ModalBackdrop.Create(rect,()=>replayFolderDialog.SetActive(false));
                 replayFolderDialog.GetComponent<Image>().color = new Color(.025f, .07f, .085f, .99f);
                 replayFolderPrompt = CreateReplayTitleText(rect, "Prompt");
                 replayFolderPrompt.rectTransform.anchorMin = replayFolderPrompt.rectTransform.anchorMax = new Vector2(.5f, .5f);
@@ -197,9 +198,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 ((RectTransform)replayFolderName.transform).anchoredPosition = new Vector2(0, 0);
                 ((TMP_Text)replayFolderName.placeholder).text = "폴더 이름 (최대 40자)";
                 replayFolderConfirm = ReplayButton("Replay Folder Confirm", "추가", 0, ConfirmReplayFolderDialog);
-                var cancel = ReplayButton("Replay Folder Cancel", "취소", 0, () => replayFolderDialog.SetActive(false));
-                SizeReplayControl(replayFolderConfirm, rect, new Vector2(-76, -66), new Vector2(140, 36));
-                SizeReplayControl(cancel, rect, new Vector2(76, -66), new Vector2(140, 36));
+
+                SizeReplayControl(replayFolderConfirm, rect, new Vector2(0, -66), new Vector2(140, 36));
+
             }
             replayFolderDeleting = deleting; replayFolderDeleteId = selectedReplayFolder;
             replayFolderDialog.SetActive(true); replayFolderDialog.transform.SetAsLastSibling();

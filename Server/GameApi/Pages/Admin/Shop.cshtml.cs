@@ -7,17 +7,17 @@ public class ShopModel(Database db) : PageModel
 {
     public static readonly Dictionary<string,string> Kinds = new()
     {
-        ["GemPack"]="보석 팩", ["Cue"]="큐대", ["Character"]="캐릭터", ["MessagePack"]="메시지 묶음"
+        ["GemPack"]="보석 팩", ["CoinPack"]="코인 팩", ["Cue"]="큐대", ["Character"]="캐릭터", ["MessagePack"]="메시지 묶음"
     };
     public record Item(long Id,string Kind,string Name,int? Price,int Order,bool Visible,bool Purchasable);
-    public string Kind { get; private set; } = "";
+    public string Kind { get; private set; } = "GemPack";
     public List<Item> Items { get; } = [];
     public bool CanEdit => User.IsInRole("Owner") || User.IsInRole("Operator");
 
     public async Task OnGetAsync(string? kind)
     {
         ViewData["Title"]="상점 상품";
-        Kind = kind != null && Kinds.ContainsKey(kind) ? kind : "";
+        Kind = kind != null && Kinds.ContainsKey(kind) ? kind : "GemPack";
         await using var cmd=db.Source.CreateCommand("SELECT id,kind,name,price_gem,sort_order,visible,purchasable FROM shop_products WHERE ($1='' OR kind=$1) ORDER BY sort_order,id");
         cmd.Parameters.AddWithValue(Kind);
         await using var rows=await cmd.ExecuteReaderAsync();

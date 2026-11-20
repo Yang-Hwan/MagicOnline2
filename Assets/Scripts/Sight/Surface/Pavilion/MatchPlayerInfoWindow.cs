@@ -77,14 +77,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             overlay=Node("PlayerInformation",transform,0,0,0,0);
             overlay.anchorMin=Vector2.zero; overlay.anchorMax=Vector2.one; overlay.offsetMin=overlay.offsetMax=Vector2.zero;
             var shade=Fill(overlay,new Color(0,0,0,.7f));
-            var outside=overlay.gameObject.AddComponent<Button>(); outside.targetGraphic=shade; outside.transition=Selectable.Transition.None;
-            outside.onClick.AddListener(Close);
             card=Node("PlayerInfoCard",overlay,0,0,Width,Height);
             card.anchorMin=card.anchorMax=card.pivot=Vector2.one*.5f; card.anchoredPosition=Vector2.zero;
             var panel=card.gameObject.AddComponent<PlayerInfoFrame>(); panel.color=Ink;
             card.gameObject.AddComponent<Button>().transition=Selectable.Transition.None; // Consume clicks inside the card.
             Text("Title",card,"선수정보",80,14,740,64,44,Color.white).fontStyle=FontStyles.Bold;
-            Button("Close",card,"×",810,13,66,65,Close);
+            Assets.Scripts.Often.ModalBackdrop.Attach(shade,card,Close);
             Fill(Node("HeaderRule",card,28,86,844,2),Gold,false);
             overlay.SetAsLastSibling(); active=this; Resize();
         }

@@ -25,6 +25,11 @@ case "GemPack":
 <label>기본 지급 보석<input asp-for="Input.Amount" min="1" required></label>
 <label>추가 지급 보석<input asp-for="Input.Bonus" min="0"></label>
 break;
+case "CoinPack":
+<label>기본 지급 코인<input asp-for="Input.CoinAmount" min="1" max="9000000000000000" required></label>
+<label>추가 지급 코인<input asp-for="Input.CoinBonus" min="0" max="9000000000000000" required></label>
+<p class="hint">보석으로 구매하며 같은 상품을 반복 구매할 수 있습니다. 기본·추가 코인의 합계가 지갑에 지급됩니다.</p>
+break;
 case "Cue":
 <label>큐대 리소스 경로<input asp-for="Input.Visual" required></label>
 <label>큐대 등급<select asp-for="Input.Grade"><option value="A">A급 · 100%</option><option value="B">B급 · 90%</option><option value="C">C급 · 80%</option></select></label>

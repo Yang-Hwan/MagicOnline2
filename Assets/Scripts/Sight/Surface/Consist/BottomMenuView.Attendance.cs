@@ -24,11 +24,10 @@ namespace Assets.Scripts.Sight.Surface.Consist
             var opened = modal;
             Box("Shade", opened, 0, 0, Width, Height, new Color(0, 0, 0, .69f)).raycastTarget = true;
             var panel = Node("AttendancePanel", opened, 272, 78, 1126, 764);
+            Assets.Scripts.Often.ModalBackdrop.Attach(opened.Find("Shade").GetComponent<UnityEngine.UI.Image>(),panel,CloseModal);
             Art("Frame", panel, Resources.Load<Texture2D>("Menu/Attendance/CalendarPanel"), 0, 0, 1126, 764);
             Text("Title", panel, "출석부", 225, 65, 220, 70, 56, Color.white);
             Text("Subtitle", panel, "매일 쌓이는 즐거운 보상", 458, 84, 238, 40, 20, new Color(.85f, .93f, .85f));
-            Text("CloseLabel", panel, "×", 1046, 45, 54, 54, 40, Color.white);
-            Hit("닫기", panel, 1035, 37, 70, 70, CloseModal);
             Text("MailHint", panel, "출석 보상은 우편함에서 받을 수 있어요.", 65, 681, 735, 48, 24, AttendanceInk, TextAlignmentOptions.MidlineLeft);
             AttendancePaper("MailButton", panel, 848, 678, 225, 52, new Color(.07f, .38f, .31f), new Color(.18f, .49f, .38f), 26);
             Text("MailLabel", panel, "우편함 열기", 848, 678, 225, 52, 25, Color.white);

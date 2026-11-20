@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,8 +54,10 @@ namespace Assets.Scripts.Sight.Surface.Consist
             modal=Node("Friends",design,0,0,Width,Height);
             Box("Shade",modal,0,0,Width,Height,new Color(0,0,0,.70f)).raycastTarget=true;
             friendsPanel=Node("FriendsPanel",modal,272,78,1126,764);
-            Art("Frame",friendsPanel,Resources.Load<Texture2D>("Menu/Friends/Panel"),0,0,1126,764);
-            Hit("닫기",friendsPanel,1024,6,90,82,CloseModal);
+            Assets.Scripts.Often.ModalBackdrop.Attach(modal.Find("Shade").GetComponent<UnityEngine.UI.Image>(),friendsPanel,CloseModal);
+            var frame=Art("Frame",friendsPanel,Resources.Load<Texture2D>("Menu/Friends/Panel"),0,0,1126,764);
+            var header=Art("ContinuousHeader",friendsPanel,frame.texture,1038,14,58,51);
+            header.uvRect=new Rect(950f/1126,1-65f/764,58f/1126,51f/764);
             return friendsPanel;
         }
         IEnumerator FriendListTimer(RectTransform panel)

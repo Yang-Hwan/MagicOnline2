@@ -9,6 +9,7 @@ namespace Assets.Scripts.Exert.BackSys
     [Serializable] public sealed class ShopProductData
     {
         public long Id;
+        public long CoinAmount,CoinBonus;
         public string Kind, Name, Description, Thumbnail, Visual, Personality;
         public int PriceGem, Revision, GemAmount, GemBonus, Power, FollowThrough, Tip, ShotSeconds;
         public bool Purchasable, Owned, Equipped;
@@ -38,7 +39,7 @@ namespace Assets.Scripts.Exert.BackSys
     }
     [Serializable] public sealed class ShopPurchaseResult
     {
-        public long PurchaseId, ProductId;
+        public long PurchaseId, ProductId, GrantedCoin, BalanceCoin;
         public int PaidGem, BalanceGem;
         public bool AlreadyProcessed;
     }

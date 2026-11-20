@@ -85,14 +85,13 @@ namespace Assets.Scripts.Sight.Surface.Consist
             mailSessionRows.Clear(); mailReceived.Clear();
             const float panelWidth = 1340, topHeight = 130;
             var panel=Node("MailPanel",modal,(Width-panelWidth)/2,60,panelWidth,820);
+            Assets.Scripts.Often.ModalBackdrop.Attach(modal.Find("Shade").GetComponent<UnityEngine.UI.Image>(),panel,CloseModal);
             AttendancePaper("Shadow",panel,0,8,1340,816,new Color(0,0,0,.2f),Color.clear,32);
             AttendancePaper("Paper",panel,0,0,1340,816,new Color(1,.97f,.89f),new Color(.77f,.66f,.4f),32,2);
             AttendancePaper("Header",panel,5,5,1330,130,new Color(.035f,.32f,.26f),new Color(.14f,.43f,.33f),28);
             MailArt("Envelope",panel,24,-3,145,145);
             Text("Title",panel,"우편함",175,29,225,72,53,Color.white,TextAlignmentOptions.MidlineLeft);
             Text("Subtitle",panel,"도착한 선물을 확인하고 보상을 받아 보세요.",425,48,670,45,23,new Color(.88f,.94f,.84f));
-            Text("CloseLabel",panel,"×",1220,29,65,65,45,Color.white);
-            Hit("CloseMail",panel,1210,24,90,80,CloseModal);
             var viewport=Node("MailViewport",panel,45,topHeight+10,MailListWidth,MailListHeight);
             var surface=viewport.gameObject.AddComponent<Image>();
             surface.color=Color.clear; surface.raycastTarget=true;

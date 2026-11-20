@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Assets.Scripts.Often;
 using TMPro;
 using UnityEngine;
@@ -17,6 +17,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         [SerializeField] LevelNumberView levelNumberPrefab;
         RectTransform levelUpContent;
         RawImage resultArtwork;
+        ModalBackdrop resultBackdrop;
         Image[] legacyPanels;
         bool[] legacyPanelEnabled;
 
@@ -35,7 +36,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 for (int i = 0; i < legacyPanels.Length; i++) legacyPanelEnabled[i] = legacyPanels[i].enabled;
             }
             for (int i = 0; i < legacyPanels.Length; i++)
-                if (legacyPanels[i]) legacyPanels[i].enabled = !texture && legacyPanelEnabled[i];
+                if (legacyPanels[i] && !legacyPanels[i].GetComponent<ModalSurface>()) legacyPanels[i].enabled = !texture && legacyPanelEnabled[i];
             txtResult.enabled = !texture;
             txtBrief.enabled = !texture;
             if (!texture)
@@ -86,6 +87,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             txtResult.text = result;
             txtBrief.text = brief;
             ShowResultArtwork(result);
+            OpenResultBackdrop();
             //WaitAfterClose(10f).Forget();
         }
 
@@ -96,6 +98,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             txtResult.text = title;
             txtBrief.text = detail;
             ShowResultArtwork(title);
+            OpenResultBackdrop();
         }
 
         public void ShowLevelUp(Assets.Scripts.Exert.BackSys.BackendMatchHistory.LevelUpAward award)
@@ -236,8 +239,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             onlineStatus.text = rematchStatus() + "\n" + archiveStatus();
         }
 
+        void OpenResultBackdrop()
+        {
+            if(!resultBackdrop)resultBackdrop=ModalBackdrop.Create(rectTransform,MatchResultClose);
+            resultBackdrop.gameObject.SetActive(true);
+            ModalBackdrop.AttachSurface(rectTransform);
+        }
         public void MatchResultClose()
         {
+            if(resultBackdrop)resultBackdrop.gameObject.SetActive(false);
             ClearLevelUp();
             BindView();
             txtResult.text = string.Empty;

@@ -7,11 +7,15 @@ public sealed class MatchPlayerInformation(Database db, MatchEquipment equipment
 {
     public static void Map(WebApplication app)
     {
+        app.MapGet("/api/me/player-information",(ClaimsPrincipal user,MatchPlayerInformation service)=>
+            service.ReadSelf(Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!))).RequireAuthorization();
         app.MapGet("/api/matches/{id}/players/{seat:int}", (string id, int seat, ClaimsPrincipal user, MatchPlayerInformation service) =>
             service.Read(id, seat, Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!))).RequireAuthorization();
         app.MapGet("/api/guilds/{guild:guid}/members/{target:guid}/profile",(Guid guild,Guid target,ClaimsPrincipal user,MatchPlayerInformation service)=>
             service.ReadGuild(guild,target,Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!))).RequireAuthorization();
     }
+
+    public async Task<MatchPlayerInfo> ReadSelf(Guid caller)=>await Profile(await equipment.CurrentProfile(caller));
 
     public async Task<MatchPlayerInfo> Read(string id, int seat, Guid caller)
     {
@@ -47,7 +51,7 @@ public sealed class MatchPlayerInformation(Database db, MatchEquipment equipment
             SELECT u.nickname,u.level,s.ball_4_win,s.ball_4_lose,s.ball_4_draw,s.ball_3_win,s.ball_3_lose,s.ball_3_draw,s.legacy_win,s.legacy_lose,
                 (SELECT LEAST(COALESCE(sum(GREATEST(reward,0)),0),9223372036854775807)::bigint FROM counted WHERE result='Win'),
                 (SELECT count(*) FROM today WHERE result='Win' AND n < COALESCE((SELECT min(n) FROM today WHERE result<>'Win'),9223372036854775807)),
-                COALESCE(p.name,'기본 큐대'),COALESCE(p.description,''),COALESCE(p.thumbnail,'')
+                COALESCE(p.name,'기본 큐대'),COALESCE(p.description,''),COALESCE(p.thumbnail,''),u.level_progress
             FROM users u JOIN user_stats s ON s.user_id=u.id LEFT JOIN shop_products p ON p.id=$4 AND p.kind='Cue'
             WHERE u.id=$1 AND u.deleted_at IS NULL
             """);
@@ -58,7 +62,7 @@ public sealed class MatchPlayerInformation(Database db, MatchEquipment equipment
         var four = new PlayerRecord { Wins=row.GetInt32(2), Losses=row.GetInt32(3), Draws=row.GetInt32(4) };
         var three = new PlayerRecord { Wins=row.GetInt32(5), Losses=row.GetInt32(6), Draws=row.GetInt32(7) };
         return new MatchPlayerInfo {
-            UserId=gear.UserId, Nickname=row.GetString(0), Level=row.GetInt32(1), FourBall=four, ThreeBall=three,
+            UserId=gear.UserId, Nickname=row.GetString(0), Level=row.GetInt32(1), LevelProgress=row.GetInt32(15), FourBall=four, ThreeBall=three,
             Total=new PlayerRecord { Wins=four.Wins+three.Wins+row.GetInt32(8), Losses=four.Losses+three.Losses+row.GetInt32(9), Draws=four.Draws+three.Draws },
             TotalPrize=row.GetInt64(10), TodayStreak=checked((int)row.GetInt64(11)),
             CueName=row.GetString(12), CueDescription=row.GetString(13), CueThumbnail=row.GetString(14), Equipment=gear
