@@ -92,7 +92,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 Vector3 inputMousePosition = Input.mousePosition;
                 Vector3 viewportPoint = usedCamera.ScreenToViewportPoint(inputMousePosition);
 
-                if (0.0f < viewportPoint.x && viewportPoint.x < 0.07f && 0.64f < viewportPoint.y && viewportPoint.y < 0.84f)
+                if (Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.TryClassify(inputMousePosition, out var followControl))
+                {
+                    _targetEquip = followControl ? TargetEquip.SlidePull : TargetEquip.SlidePower;
+                }
+                else if (0.0f < viewportPoint.x && viewportPoint.x < 0.07f && 0.64f < viewportPoint.y && viewportPoint.y < 0.84f)
                 {
                     _targetEquip = TargetEquip.SlidePull;
                 }

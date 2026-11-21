@@ -169,6 +169,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             SetFollowThrough(DefaultFollowThrough);
             CreateGaugeValueLabels();
             CreateOverlapPreview();
+            Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.Install(this, forceHandle, pullBarHandle, powerValueLabel, followValueLabel, () => InputOutput.usedCamera);
         }
 
         private static Material[] CacheLineMaterials(LineRenderer[] lines)
@@ -487,7 +488,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             {
                 //Debug.Log($"pullSliderMinYPos : {pullSliderMinYPos}, pullSliderYPos : {pullSliderYPos}, speed : {InputOutput.mouseWorldSpeed.z}");
 
-                pullSliderYPos += InputOutput.mouseWorldSpeed.z * Time.deltaTime;
+                pullSliderYPos += InputOutput.mouseWorldSpeed.z * Time.deltaTime * Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.FollowDragScale;
                 if (pullSliderYPos > pullSliderMaxYPos)
                 {
                     pullSliderYPos = pullSliderMaxYPos;
@@ -518,7 +519,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             {
                 //Debug.Log($"forceSliderYPos : {forceSliderYPos}, speed : {InputOutput.mouseWorldSpeed.z}");
 
-                forceSliderYPos += InputOutput.mouseWorldSpeed.z * Time.deltaTime;
+                forceSliderYPos += InputOutput.mouseWorldSpeed.z * Time.deltaTime * Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.PowerDragScale;
                 if (forceSliderYPos <= forceSliderMaxYPos)
                 {
                     forceSliderYPos = forceSliderMaxYPos;

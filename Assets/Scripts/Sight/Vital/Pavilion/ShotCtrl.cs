@@ -238,6 +238,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             cueBallLineMaterials = Array.ConvertAll(cueBallLines, item => item.material);
             targetBallLineMaterials = Array.ConvertAll(targetBallLines, item => item.material);
             CreateGaugeValueLabels(); CreateOverlapPreview();
+            Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.Install(this, forceHandle, pullBarHandle, powerValueLabel, followValueLabel, () => InputOutput.usedCamera);
 
         }
 
@@ -505,7 +506,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             {
                 //Debug.Log($"pullSliderMinYPos : {pullSliderMinYPos}, pullSliderYPos : {pullSliderYPos}, speed : {InputOutput.mouseWorldSpeed.z}");
 
-                pullSliderYPos += InputOutput.mouseWorldSpeed.z * Time.deltaTime;
+                pullSliderYPos += InputOutput.mouseWorldSpeed.z * Time.deltaTime * Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.FollowDragScale;
                 if (pullSliderYPos > pullSliderMaxYPos)
                 {
                     pullSliderYPos = pullSliderMaxYPos;
@@ -540,7 +541,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             {
                 //Debug.Log($"forceSliderYPos : {forceSliderYPos}, speed : {InputOutput.mouseWorldSpeed.z}");
 
-                forceSliderYPos += InputOutput.mouseWorldSpeed.z * Time.deltaTime;
+                forceSliderYPos += InputOutput.mouseWorldSpeed.z * Time.deltaTime * Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.PowerDragScale;
                 if (forceSliderYPos <= forceSliderMaxYPos)
                 {
                     forceSliderYPos = forceSliderMaxYPos;
@@ -840,8 +841,9 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void TryCalculateShot(bool forceCalculate)
         {
-            // The shared prediction renderer detects aim/contact changes in LateUpdate.
-            if (forceCalculate) predictionDirty = true;
+            // LateUpdate compares the actual impulse and ball/physics state. A repeated
+            // input event is not a new shot: forcing dirty here cancels an unfinished
+            // preview even when the controls did not change (especially remote lerps).
         }
 
 
@@ -1128,31 +1130,30 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             //    Debug.Log($"UpdateFromNetwork cueChanged true");
             //}
 
-            cuePivot.localRotation = Quaternion.Lerp(cuePivot.localRotation, Quaternion.Euler(0.0f, cuePivotLocalRotationY, 0.0f), 5.0f * Time.deltaTime);
-            cueVertical.localRotation = Quaternion.Lerp(cueVertical.localRotation, Quaternion.Euler(cueVerticalLocalRotationX, 0.0f, 0.0f), 5.0f * Time.deltaTime);
-            cueDisplacement.localPosition = Vector3.Lerp(cueDisplacement.localPosition, new Vector3(cueDisplacementLocalPositionXY.x, cueDisplacementLocalPositionXY.y, 0.0f), 5.0f * Time.deltaTime);
-            //targeting2DManager.SetPointTargetingPosition(-cueDisplacement.localPosition / cueBallRadius);
-            cueSlider.localPosition = Vector3.Lerp(cueSlider.localPosition, new Vector3(0.0f, 0.0f, cueSliderLocalPositionZ), 5.0f * Time.deltaTime);
-            pullBarHandle.localPosition = Vector3.Lerp(pullBarHandle.localPosition, new Vector3(0.0f, pullBarHandleLocalPositionY, 0.0f), 5.0f * Time.deltaTime);
+            float blend=5.0f*Time.deltaTime;
+            cuePivot.localRotation = SettleNetworkRotation(cuePivot.localRotation, Quaternion.Euler(0, cuePivotLocalRotationY, 0), blend);
+            cueVertical.localRotation = SettleNetworkRotation(cueVertical.localRotation, Quaternion.Euler(cueVerticalLocalRotationX, 0, 0), blend);
+            cueDisplacement.localPosition = SettleNetworkPosition(cueDisplacement.localPosition, new Vector3(cueDisplacementLocalPositionXY.x, cueDisplacementLocalPositionXY.y, 0), blend);
+            cueSlider.localPosition = SettleNetworkPosition(cueSlider.localPosition, new Vector3(0, 0, cueSliderLocalPositionZ), blend);
+            pullBarHandle.localPosition = SettleNetworkPosition(pullBarHandle.localPosition, new Vector3(0, pullBarHandleLocalPositionY, 0), blend);
             pullSliderYPos = pullBarHandle.localPosition.y;
             pull = Normal(Mathf.Abs(pullSliderYPos), Mathf.Abs(pullSliderMaxYPos));         // 정규화(0~1)
 
 
-            float chGap = cuePivot.localRotation.eulerAngles.y - cuePivotLocalRotationY;
-            if(Mathf.Abs(chGap) > 0.05f)
-            {
-                TryCalculateShot(true);
-            }
+            // Quaternion comparison handles 0/360 wrap; LateUpdate detects the
+            // settled impulse without invalidating it on every network interpolation.
+        }
 
-            //Debug.Log($"shotController UpdateFromNetwork cuePivotLocalRotationY : {cuePivot.localRotation.eulerAngles.y - cuePivotLocalRotationY}");
-            //if (Mathf.Abs(cuePivot.localRotation.eulerAngles.y - cuePivotLocalRotationY) > 0.1f)
-            //{
-            //    TryCalculateShot(true);
-            //}
-            //if (Mathf.Abs(cuePivot.localRotation.eulerAngles.y - cuePivotLocalRotationY) < 0.1f && cuePivot.localRotation.eulerAngles.y != cuePivotLocalRotationY)
-            //{
-            //    TryCalculateShot(true);
-            //}
+        static Quaternion SettleNetworkRotation(Quaternion current, Quaternion target, float blend)
+        {
+            var next=Quaternion.Lerp(current,target,blend);
+            return Quaternion.Angle(next,target)<=.05f ? target : next;
+        }
+
+        static Vector3 SettleNetworkPosition(Vector3 current, Vector3 target, float blend)
+        {
+            var next=Vector3.Lerp(current,target,blend);
+            return (next-target).sqrMagnitude<=.00000001f ? target : next;
         }
 
         // 큐볼 변경과 큐대 큐볼위치로 변경

@@ -116,7 +116,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                     previousPreviewActive[i]=physicsManager.balls[i].gameObject.activeInHierarchy;
                 }
                 previousPhysicsKey=physicsKey;predictionDirty=false;
-                return;
+                // Start advancing in this frame. Waiting for an unchanged frame
+                // starves prediction while remote interpolation updates every tick.
             }
             if(pendingPreview && Time.unscaledTime>=nextPreviewTime) {
                 if(prediction==null) {prediction=new ShotPrediction(physicsManager);PreviewSceneBuilds++;}
@@ -128,7 +129,9 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 bool complete=prediction.Advance(8,64);
                 // Keep the already visible full approach line until the simulation reaches its endpoint.
                 if(!complete && prediction.targetIndex<0 && prediction.PathDistance<quickPreviewDistance)return;
-                if(prediction.cuePath.Count<2)return;
+                // A completed zero/sub-pixel path must not erase the visible approach
+                // line. Practice already applies this guard for very small powers.
+                if(prediction.cuePath.Count<2 || prediction.PathDistance<.0001f)return;
                 RenderPredictedPath(cueBallLines,cueBallLineMaterials,prediction.cuePath,3+lineLength);
                 RenderPredictedPath(targetBallLines,targetBallLineMaterials,prediction.targetPath,float.PositiveInfinity);
                 SetBallChecker(prediction.contactCentre,prediction.targetIndex<0 ? -1 : physicsManager.balls[prediction.targetIndex].id);

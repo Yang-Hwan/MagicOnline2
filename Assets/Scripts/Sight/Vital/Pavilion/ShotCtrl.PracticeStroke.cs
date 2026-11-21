@@ -25,7 +25,9 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             return new Impulse(shot.point, shot.impulse, Vector3.zero, cueBall.id, shot.followThrough, shot.spinPersistence);
         }
 
-        public PreviewImpulse BuildGuideImpulse() => BuildImpulseForPower(force);
+        // Aiming must remain visible before power is chosen and after a shot resets it.
+        // Match the practice guide default; BuildShotImpulse still uses the real power.
+        public PreviewImpulse BuildGuideImpulse() => BuildImpulseForPower(force > 0f ? force : .5f);
 
         PreviewImpulse BuildImpulseForPower(float power) => BuildImpulseForPower(power, Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter);
 
