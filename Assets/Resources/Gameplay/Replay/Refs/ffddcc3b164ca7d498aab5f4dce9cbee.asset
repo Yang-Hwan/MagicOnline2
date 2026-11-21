@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f693d012d8cf8e408e97b4b61bba137, type: 3}
+  m_Name: ffddcc3b164ca7d498aab5f4dce9cbee
+  m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.Often.ReplayAssetReference
+  objects:
+  - {fileID: 3700636391269163082, guid: ffddcc3b164ca7d498aab5f4dce9cbee, type: 3}
+  - {fileID: -1360991219368177298, guid: ffddcc3b164ca7d498aab5f4dce9cbee, type: 3}
+  - {fileID: 5020352622584337761, guid: ffddcc3b164ca7d498aab5f4dce9cbee, type: 3}

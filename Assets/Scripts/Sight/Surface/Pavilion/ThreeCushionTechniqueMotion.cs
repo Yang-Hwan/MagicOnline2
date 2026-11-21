@@ -170,6 +170,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
     public sealed class TechniqueSparkGraphic:MaskableGraphic
     {
         float time=ThreeCushionTechniqueMotion.Duration;
+        public float ReplayTime=>time;
         public void SetTime(float t){time=t;SetVerticesDirty();}
         static float Seed(int i)=>Mathf.Repeat(Mathf.Sin(i*78.13f+8.7f)*43758.54f,1);
         protected override void OnPopulateMesh(VertexHelper vh)

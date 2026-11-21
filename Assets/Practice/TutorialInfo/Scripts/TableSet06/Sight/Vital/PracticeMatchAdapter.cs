@@ -34,6 +34,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         float nextFrame, sampleStarted, pendingAt, lastReceived;
         MatchBallState[] from, target;
         public bool IsAuthority => session != null && session.LocalActor == session.AuthorityActor;
+        public bool IsOpponentTurn => initialized && session != null && session.Phase==MatchStartPhase.Started &&
+            shots != null && results != null && !results.Finished && shots.TurnSeat!=session.Configuration.LocalSeat;
         public bool CanSimulate => initialized && IsAuthority && session.Phase == MatchStartPhase.Started &&
             shots != null && shots.Phase == MatchShotPhase.Moving;
         public bool CanSubmit => initialized && session.Phase == MatchStartPhase.Started && shots != null &&
@@ -67,6 +69,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 avatars.Configure(session.MatchId, session.Configuration.LocalSeat);
             }
             initialized = true;
+            ReplayArchive.StartTimeline(this,Capture,()=>results!=null&&results.Finished,session.Configuration.LocalSeat,session.MatchId,()=>InputOutput.usedCamera);
             var transport = FindAnyObjectByType<PracticeMatchSetupTransport>();
             if (transport && transport.Session == session)
             {
@@ -210,6 +213,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void OnResult(MatchResultMessage result)
         {
+            ReplayArchive.RecordEvent("result",JsonUtility.ToJson(result));
+            if(results!=null&&results.Finished&&ReplayArchive.Presentation!=null){
+                var p=ReplayArchive.Presentation;p.winner=results.Winner;p.score0=results.Score0;p.score1=results.Score1;
+                p.result=results.Winner==-2?"무승부":results.Winner==session.Configuration.LocalSeat?"승리":"패배";
+            }
             result.bank = result.kind == MatchResultKind.Shot && result.outcome == MatchShotOutcome.Point && contacts != null && contacts.IsBank;
             if(result.kind==MatchResultKind.Shot && result.outcome==MatchShotOutcome.Point)
                 Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Show(result.technique);
@@ -296,6 +304,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public void OpenMatchReplaySaveDialogForPanel(GameObject resultPanel)
         {
             if (!CanSaveMatchReplay) return;
+            ReplayArchive.Seal();
             var finish = FindAnyObjectByType<Assets.Scripts.Sight.Surface.Pavilion.PopMatchFinish>();
             // PnlOutcome.OnDisable navigates away from the result page, so leave it active
             // underneath the save modal. PopMatchFinish has no such navigation side effect.

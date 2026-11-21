@@ -23,6 +23,23 @@ using Adapter = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.PracticeMatch
 // Opt-in development player integration runner. No production accounts or stored credentials.
 public sealed class LocalApiMatchE2E : MonoBehaviour
 {
+    // Hidden test players do not present their swap chain. Render the actual
+    // cameras and overlay canvases into a target for meaningful visual evidence.
+    static void CapturePresentation(string path)
+    {
+        var source=Camera.main;if(!source)throw new Exception("Presentation camera missing");
+        var go=new GameObject("E2E presentation camera");var camera=go.AddComponent<Camera>();camera.CopyFrom(source);camera.enabled=false;
+        var target=RenderTexture.GetTemporary(Screen.width,Screen.height,24);var previous=RenderTexture.active;
+        var canvases=FindObjectsByType<Canvas>(FindObjectsSortMode.None).Where(c=>c.isRootCanvas&&c.renderMode==RenderMode.ScreenSpaceOverlay).ToArray();
+        var distances=canvases.Select(c=>c.planeDistance).ToArray();var cameras=canvases.Select(c=>c.worldCamera).ToArray();Texture2D image=null;
+        try{
+            camera.targetTexture=target;foreach(var canvas in canvases){canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=camera;canvas.planeDistance=camera.nearClipPlane+1;camera.cullingMask|=1<<canvas.gameObject.layer;}
+            Canvas.ForceUpdateCanvases();camera.Render();RenderTexture.active=target;image=new Texture2D(target.width,target.height,TextureFormat.RGB24,false);image.ReadPixels(new Rect(0,0,target.width,target.height),0,0);image.Apply();File.WriteAllBytes(path,image.EncodeToPNG());
+            if(!image.GetPixels32().Any(p=>p.r>8||p.g>8||p.b>8))throw new Exception("Presentation image is empty");
+        }finally{for(int i=0;i<canvases.Length;i++){canvases[i].renderMode=RenderMode.ScreenSpaceOverlay;canvases[i].worldCamera=cameras[i];canvases[i].planeDistance=distances[i];}RenderTexture.active=previous;camera.targetTexture=null;RenderTexture.ReleaseTemporary(target);Destroy(go);if(image)Destroy(image);Canvas.ForceUpdateCanvases();}
+    }
+    static double ComparePresentation(string first,string second){var a=new Texture2D(2,2);var b=new Texture2D(2,2);try{a.LoadImage(File.ReadAllBytes(first));b.LoadImage(File.ReadAllBytes(second));var x=a.GetPixels32();var y=b.GetPixels32();if(x.Length!=y.Length)throw new Exception("Replay image dimensions changed");long difference=0;for(int i=0;i<x.Length;i++)difference+=Math.Abs(x[i].r-y[i].r)+Math.Abs(x[i].g-y[i].g)+Math.Abs(x[i].b-y[i].b);return difference/(double)(x.Length*765);}finally{Destroy(a);Destroy(b);}}
+    [Serializable] class ReplayEvidence {public bool Ok;public int Frames,Events,Winner;public string Result;public double ImageDifference;}
     [Serializable] public sealed class Round
     {
         public string MatchId, Scene, Phase, Reason, WinnerUserId;
@@ -153,6 +170,14 @@ public sealed class LocalApiMatchE2E : MonoBehaviour
             int hall = int.Parse(Arg("-e2e-hall"));
             if(publicTest)
             {
+                var bottomMenu=FindAnyObjectByType<BottomMenuView>();
+                if(bottomMenu){
+                    bottomMenu.SelectPage(2);int index=BackendChart.skillMatchData.FindIndex(h=>h.HallIdx==hall);
+                    var carousel=bottomMenu.GetComponentInChildren<ArenaSnapCarousel>();carousel.SnapTo(index);
+                    await Until(()=>carousel.Settled,15,"arena card settled");await Task.Delay(250);
+                    string hallName=BackendChart.skillMatchData[index].HallName;
+                    bottomMenu.GetComponentsInChildren<Button>().Single(b=>b.name.StartsWith("ArenaAction",StringComparison.Ordinal)&&b.transform.parent.GetComponentsInChildren<TMP_Text>().Any(t=>t.text==hallName)).onClick.Invoke();report.UsedPublicLobby=true;
+                }else{
                 var swipe=FindAnyObjectByType<RoomSwipe>(FindObjectsInactive.Include);
                 var menu=swipe.GetComponentInParent<MainComp>(true);
                 FindAnyObjectByType<MainSwipe>().SetScrollBarValue(4-menu.transform.GetSiblingIndex());
@@ -163,11 +188,15 @@ public sealed class LocalApiMatchE2E : MonoBehaviour
                 swipe.SetScrollBarValue(BackendChart.skillMatchData.FindIndex(h=>h.HallIdx == hall));
                 await Task.Delay(700);
                 findCard().transform.GetChild(0).GetComponent<Button>().onClick.Invoke(); report.UsedPublicLobby=true;
+                }
                 await Until(()=>SceneManager.GetActiveScene().name == "Pavilion",100,"public lobby to Pavilion");
                 var publicRound=new Round { MatchId=BackendMatchHistory.Instance.LastMatchId, Scene="Pavilion" };
                 report.Rounds.Add(publicRound); Save();
+                await Until(()=>PoolCoach.Instance!=null&&PoolCoach.Instance.isMatchTimePlay,45,"public gameplay initialized");
                 await BackendGame.Instance.LoadAsync();
-                if(BackendGame.Instance.UserMainData.Coin != report.InitialCoin - BackendChart.skillMatchData.Single(h=>h.HallIdx == hall).PrizeCoin ||
+                var publicRules=Assets.Scripts.Prack.BackSys.GameData.MatchRulesContract.FromHall(BackendChart.skillMatchData.Single(h=>h.HallIdx==hall),Assets.Scripts.Prack.BackSys.GameData.MatchRulesContract.Pavilion);
+                long expectedPublicCoin=report.InitialCoin-(publicRules.CoinPolicy==2?0:publicRules.EntryCoin);
+                if(BackendGame.Instance.UserMainData.Coin != expectedPublicCoin ||
                     PoolPlayer.mainPlayer.coin != BackendGame.Instance.UserMainData.Coin || NetworkManager.user_coin != BackendGame.Instance.UserMainData.Coin)
                     throw new Exception("public entry wallet display cache is stale");
                 if(report.Mode == "public-guard")
@@ -187,6 +216,18 @@ public sealed class LocalApiMatchE2E : MonoBehaviour
                 }
                 await Until(()=>FindAnyObjectByType<PnlOutcome>() != null,150,"public outcome screen");
                 report.SawOutcome=true;
+                if(Array.IndexOf(Environment.GetCommandLineArgs(),"-replay-performance")>=0&&Array.IndexOf(Environment.GetCommandLineArgs(),"-replay-recording-off")<0){
+                    await Task.Delay(1500);
+                    var panel=FindObjectsByType<PnlMatch>(FindObjectsInactive.Include).Single();panel.SealMatchReplay();
+                    CapturePresentation(output+".source-result.png");
+                    var archive=(MatchReplayArchive)typeof(PnlMatch).GetField("matchReplayArchive",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(panel);
+                    if(!archive.Ready)throw new Exception("Full match state replay unavailable: "+archive.FailureReason);
+                    if(!archive.SaveToSlot(output+".replay",0))throw new Exception("Full match replay save failed: "+archive.FailureReason);
+                    if(archive.Presentation.presentationVersion!=MatchReplayStateCapture.Format||!archive.Presentation.events.Any(e=>e.kind=="visual-state"))throw new Exception("Match did not record visual state events");
+                    using(var replay=new MatchReplayStateDisplay(panel.transform.parent,archive.Presentation,null)){replay.Apply(0);replay.Apply(archive.Presentation.frames.Count-1);Canvas.ForceUpdateCanvases();await Task.Delay(200);CapturePresentation(output+".replayed-result.png");await Task.Delay(250);replay.Apply(0);}
+                    double difference=ComparePresentation(output+".source-result.png",output+".replayed-result.png");if(difference>.01)throw new Exception("Replay result image differs from source: "+difference);
+                    File.WriteAllText(output+".replay-validation.json",JsonUtility.ToJson(new ReplayEvidence{Ok=true,Frames=archive.Presentation.frames.Count,Events=archive.Presentation.events.Count,Winner=archive.Presentation.winner,Result=archive.Presentation.result,ImageDifference=difference},true));
+                }
                 await Until(()=>BackendMatchHistory.Instance.IsSettled(publicRound.MatchId) && BackendMatchHistory.Instance.PendingWritesForDevelopmentTest == 0,20,"public settlement and durable queue acknowledgement");
                 var state=await BackendMatchHistory.Instance.GetState(publicRound.MatchId);
                 publicRound.Phase=state.Phase; publicRound.Reason=state.Receipt.Reason;
@@ -230,6 +271,7 @@ public sealed class LocalApiMatchE2E : MonoBehaviour
                     if(round.SawSuspended && session.Phase == MatchStartPhase.Started) round.SawRestored = true;
                     // One real physics shot through the normal adapter; never inject a score/result.
                     var adapter = FindAnyObjectByType<Adapter>(); var physics = FindAnyObjectByType<Physics>();
+                    if(adapter&&!string.IsNullOrEmpty(adapter.ReplayArchive.FailureReason))throw new Exception("Practice replay recording failed: "+adapter.ReplayArchive.FailureReason);
                     if(!submitted && session.Configuration.LocalSeat == 0 && adapter && adapter.CanSubmit && physics && !physics.shotController.IsShotAnimating)
                     {
                         var stroke = physics.shotController.CaptureOnlineStroke(); stroke.power=.25f;
@@ -296,6 +338,14 @@ public sealed class LocalApiMatchE2E : MonoBehaviour
                 }
                 if(round.Phase != "Applied") throw new TimeoutException("settlement: "+BackendMatchHistory.Instance.LastStatus);
                 await Until(()=>BackendMatchHistory.Instance.IsSettled(round.MatchId) && BackendMatchHistory.Instance.PendingWritesForDevelopmentTest == 0,20,"durable queue acknowledgement");
+                if(report.Mode=="rematch"&&n==0&&transport.Results?.Finished!=true)throw new Exception("Normal first round did not reach a completed result");
+                if(transport.Results?.Finished==true&&Array.IndexOf(Environment.GetCommandLineArgs(),"-replay-performance")>=0&&Array.IndexOf(Environment.GetCommandLineArgs(),"-replay-recording-off")<0){
+                    var replayAdapter=FindAnyObjectByType<Adapter>();var archive=replayAdapter.ReplayArchive;await Until(()=>archive.Ready||!string.IsNullOrEmpty(archive.FailureReason),10,"practice replay completion");await Task.Delay(1500);archive.Seal();
+                    if(!archive.Ready||!archive.SaveToSlot(output+".round"+n+".replay",0))throw new Exception("Practice replay save failed: "+archive.FailureReason);
+                    if(archive.Presentation.winner!=transport.Results.Winner||string.IsNullOrEmpty(archive.Presentation.result))throw new Exception("Practice replay lost final outcome");
+                    using(var replay=new MatchReplayStateDisplay(replayAdapter.transform,archive.Presentation,null)){replay.Apply(0);replay.Apply(archive.Presentation.frames.Count-1);replay.Apply(0);}
+                    File.WriteAllText(output+".round"+n+".replay-validation.json",JsonUtility.ToJson(new ReplayEvidence{Ok=true,Frames=archive.Presentation.frames.Count,Events=archive.Presentation.events.Count,Winner=archive.Presentation.winner,Result=archive.Presentation.result},true));
+                }
                 string expectedReason = report.Mode == "outage" ? "BothDisconnected" : report.Mode == "disconnect" ? "DisconnectForfeit" : report.Mode == "rematch" && n == 1 ? "Surrender" : "MutualConfirmation";
                 if(round.Reason != expectedReason) throw new Exception("unexpected settlement reason: "+round.Reason);
                 if(n == 0 && report.Mode != "disconnect" && !round.ShotSettled) throw new Exception("real physics shot was not observed");

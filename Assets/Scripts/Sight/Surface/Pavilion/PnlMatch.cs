@@ -348,6 +348,20 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             matchReplaySaved = false;
             PoolCoach.Instance.Initialize(physicsManager, shotController);
             PoolCoach.Instance.MatchReset();            // 시합정보 리셋
+            if(PoolCoach.Instance.playType==PlayType.Online){
+                var replayNetwork=NetworkManager.TryGetExistingNetwork(out var replayNet)?replayNet as PunNetwork:null;
+                matchReplayArchive.StartTimeline(this,CaptureLegacyMatchBalls,()=>{
+                    if(!PoolLogic.gameState.gameIsComplete)return false;
+                    string confirmed=replayNetwork?replayNetwork.ConfirmedResultText:null;
+                    if(replayNetwork&&replayNetwork.HasLegacyMatch&&confirmed==null)return false;
+                    int winner=PoolPlayer.GetHitWin();
+                    if(matchReplayArchive.Presentation!=null){
+                        var p=matchReplayArchive.Presentation;p.winner=winner;p.score0=PoolPlayer.mainPlayer?.DisplayedHitCount??0;p.score1=PoolPlayer.otherPlayer?.DisplayedHitCount??0;
+                        p.result=confirmed??(winner<0?"무승부":PoolPlayer.mainPlayer!=null&&PoolPlayer.mainPlayer.isWinner?"승리":"패배");
+                    }
+                    return true;
+                },replayNetwork?replayNetwork.LegacyLocalSeat:0,replayNetwork?replayNetwork.LegacyMatchId:"",()=>Assets.Scripts.Sight.Vital.Pavilion.InputOutput.usedCamera);
+            }
             if (NetworkManager.TryGetExistingNetwork(out var tableNetwork) && tableNetwork is PunNetwork tableMatch)
                 ArenaTableSkins.Apply(tableBackground, NetworkManager.hallIdx, tableMatch.BallSkinMatchId);
 
@@ -632,6 +646,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             catch (IOException) { return false; }
             catch (System.UnauthorizedAccessException) { return false; }
         }
+        public void SealMatchReplay()=>matchReplayArchive.Seal();
 
         void PoolCoach_OnSetPlayer(PoolPlayer player)
         {

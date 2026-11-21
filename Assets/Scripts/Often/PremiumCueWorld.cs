@@ -16,6 +16,15 @@ namespace Assets.Scripts.Often
         readonly List<Vector3> positions=new List<Vector3>(5000);
         float charge,flash=-100;
         Camera cameraView;
+        float visualTime;Vector3 visualNormal;Vector3? replayNormal;
+        [System.Serializable] public sealed class ReplayState {public Bounds bounds;public PremiumCueStyle style;public float time,charge,flash;public Vector3 normal;}
+        public Texture2D ReplayArtwork=>artwork;
+        public ReplayState CaptureReplayState()=>new ReplayState{bounds=bounds,style=style,time=visualTime,charge=charge,flash=flash,normal=visualNormal};
+        public static PremiumCueWorld CreateReplay(GameObject node,Texture2D artwork,ReplayState state)
+        {
+            var cue=node.AddComponent<PremiumCueWorld>();cue.enabled=false;cue.standard=node.transform.parent;cue.bounds=state.bounds;cue.style=state.style;cue.artwork=artwork;cue.CreateVisuals();return cue;
+        }
+        public void ApplyReplayState(ReplayState state){bounds=state.bounds;style=state.style;charge=state.charge;flash=state.flash;replayNormal=state.normal;UpdateGeometry(state.time);}
         public void SetCharge(float value){charge=Mathf.Clamp01(value);}
         public void Strike(){flash=Time.time;charge=0;}
         public static PremiumCueWorld Equip(Transform slider,string key)
@@ -25,10 +34,15 @@ namespace Assets.Scripts.Often
             if(style==PremiumCueStyle.None || !standard || !image || !shader)return null;
             var node=new GameObject("PremiumCue");node.layer=standard.gameObject.layer;node.transform.SetParent(standard,false);
             var cue=node.AddComponent<PremiumCueWorld>();cue.standard=standard;cue.bounds=standard.GetComponent<MeshFilter>().sharedMesh.bounds;cue.artwork=image;cue.style=style;
-            cue.body=new Mesh{name="Premium cue body"};cue.effects=new Mesh{name="Premium cue animated effects"};cue.effects.MarkDynamic();cue.body.MarkDynamic();
-            cue.bodyMaterial=new Material(shader){mainTexture=image};cue.effectMaterial=new Material(shader);cue.effectMaterial.SetFloat("_DstBlend",1);cue.effectMaterial.renderQueue=3001;
-            cue.Renderer("IllustratedBody",cue.body,cue.bodyMaterial);cue.Renderer("MovingEffects",cue.effects,cue.effectMaterial);
+            cue.CreateVisuals();
             standard.GetComponent<MeshRenderer>().enabled=false;cue.UpdateGeometry(0);return cue;
+        }
+        void CreateVisuals()
+        {
+            var shader=Resources.Load<Shader>("Gameplay/PremiumCues/PremiumCue");
+            body=new Mesh{name="Premium cue body"};effects=new Mesh{name="Premium cue animated effects"};effects.MarkDynamic();body.MarkDynamic();
+            bodyMaterial=new Material(shader){mainTexture=artwork};effectMaterial=new Material(shader);effectMaterial.SetFloat("_DstBlend",1);effectMaterial.renderQueue=3001;
+            Renderer("IllustratedBody",body,bodyMaterial);Renderer("MovingEffects",effects,effectMaterial);
         }
         void Renderer(string name,Mesh mesh,Material material)
         {
@@ -43,7 +57,7 @@ namespace Assets.Scripts.Often
             if(!cameraView)cameraView=Camera.main;
             else if(!cameraView.isActiveAndEnabled){var main=Camera.main;if(main)cameraView=main;}
             var axis=standard.TransformVector(Vector3.back*bounds.size.z);float length=axis.magnitude;
-            var normal=cameraView?cameraView.transform.forward:Vector3.down;
+            visualTime=time;var normal=replayNormal??(cameraView?cameraView.transform.forward:Vector3.down);visualNormal=normal;
             var side=Vector3.Cross(normal,axis.normalized).normalized;if(side.sqrMagnitude<.5f)side=standard.right;
             var origin=standard.TransformPoint(new Vector3(bounds.center.x,bounds.center.y,bounds.max.z));
             float half=artwork.height/(float)artwork.width*.5f;

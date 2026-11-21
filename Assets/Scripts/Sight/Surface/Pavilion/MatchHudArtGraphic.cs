@@ -17,7 +17,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             view=owner;raycastTarget=false;artwork=Resources.Load<Texture2D>("Gameplay/MatchHud/ReferenceArtwork");
             ownedMaterial=new Material(Resources.Load<Shader>("Gameplay/MatchHud/ReferenceArt"));material=ownedMaterial;
-            var canvas=GetComponentInParent<Canvas>();canvas.rootCanvas.additionalShaderChannels|=AdditionalCanvasShaderChannels.TexCoord1;
+            var canvas=GetComponentInParent<Canvas>(true);if(canvas)canvas.rootCanvas.additionalShaderChannels|=AdditionalCanvasShaderChannels.TexCoord1;
             SetAllDirty();
         }
         public static float Position(MatchHudView view,int side,int index)

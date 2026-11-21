@@ -191,6 +191,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             if (replayPanel) replayPanel.gameObject.SetActive(false);
             if (replayLoadMode)
             {
+                replayPresentation=replayPresentationBeforeLoad;
                 replayFrames.Clear();
                 if (replayBeforeLoad != null) replayFrames.AddRange(replayBeforeLoad);
                 replayStep = replayStepBeforeLoad; replayCueId = replayCueBeforeLoad;
@@ -228,6 +229,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             replayBeforeLoad = new List<ReplayFrame>(replayFrames);
             replayStepBeforeLoad = replayStep; replayCueBeforeLoad = replayCueId;
             replayStrokeBeforeLoad = replayStroke;
+            replayPresentationBeforeLoad=replayPresentation;
+            replayPresentation=null;
             replayStroke = default;
             replayFrames.Clear(); ReplayFrameIndex = 0;
             replayLoadMode = true; selectedReplaySlot = -1;
@@ -325,10 +328,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         static Vector3 ReadReplayVector(BinaryReader reader) => new Vector3(ReadReplayFloat(reader), ReadReplayFloat(reader), ReadReplayFloat(reader));
         void ReadReplay(BinaryReader reader, List<ReplayFrame> frames, out int cue, out float step, out ReplayStroke stroke)
         {
+            parsedPresentation=null;
             stroke = default;
             if (reader.ReadInt32() != 0x4D525031) throw new InvalidDataException();
             int version = reader.ReadInt32();
-            if (version < 1 || version > 3) throw new InvalidDataException();
+            if (version < 1 || version > 4) throw new InvalidDataException();
             int recordedBalls = reader.ReadInt32();
             if (recordedBalls != ballcs.Length && !(recordedBalls == 3 && ballcs.Length == 4)) throw new InvalidDataException();
             cue = reader.ReadInt32(); step = ReadReplayFloat(reader); int count = reader.ReadInt32();
@@ -343,13 +347,14 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 if (stroke.power < 0 || stroke.power > 1 || stroke.follow < 0 || stroke.follow > 1 ||
                     stroke.point.sqrMagnitude > 371f * 371f || norm < .9f || norm > 1.1f) throw new InvalidDataException();
             }
+            long motionEnd=reader.BaseStream.Position+count*(4L+52L*recordedBalls+(version>=3?54L:0));
             if (cue < 0 || cue >= recordedBalls || step <= 0 || step > 1 || count < 2 || count > MaxReplayFrames ||
-                reader.BaseStream.Length != reader.BaseStream.Position + count * (4L + 52L * recordedBalls + (version >= 3 ? 54L : 0))) throw new InvalidDataException();
+                (version<4?reader.BaseStream.Length!=motionEnd:reader.BaseStream.Length<motionEnd+8)) throw new InvalidDataException();
             for (int f = 0; f < count; f++)
             {
                 var frame = new ReplayFrame { time = ReadReplayFloat(reader), positions = new Vector3[recordedBalls],
                     rotations = new Quaternion[recordedBalls], velocities = new Vector3[recordedBalls], spins = new Vector3[recordedBalls] };
-                if (Mathf.Abs(frame.time - f * step) > .01f) throw new InvalidDataException();
+                if(version<4?Mathf.Abs(frame.time-f*step)>.01f:frame.time<0||frame.time>86400||f>0&&frame.time<=frames[f-1].time)throw new InvalidDataException();
                 for (int i = 0; i < recordedBalls; i++)
                 {
                     frame.positions[i] = ReadReplayVector(reader);
@@ -372,6 +377,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 }
                 frames.Add(frame);
             }
+            if(version==4)parsedPresentation=Assets.Scripts.Often.MatchReplayPresentation.Read(reader,count);
+            if(reader.BaseStream.Position!=reader.BaseStream.Length)throw new InvalidDataException();
         }
 
         public bool LoadReplaySlot(int slot)
@@ -384,6 +391,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 using (var reader = new BinaryReader(File.OpenRead(ReplaySlotPath(slot))))
                     ReadReplay(reader, frames, out cue, out step, out stroke);
                 StopReplayView(); replayFrames.Clear(); replayFrames.AddRange(frames);
+                replayPresentation=parsedPresentation;
                 replayStroke = stroke;
                 replayCueId = cue; replayStep = step; selectedReplaySlot = slot; replaySlotMessage = "";
                 ResetPracticeReplay(); return true;

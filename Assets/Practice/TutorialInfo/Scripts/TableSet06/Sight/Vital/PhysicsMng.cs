@@ -919,6 +919,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         [Obsolete]
         private void OnDestroy()
         {
+            StopRecordedPresentation();
             PoolCoach.Release(this);
             DisposeClothPhysics();
             if (IsBallPlacement) { Time.timeScale = placementTimeScale; ShotCtrl.canControl = placementControl; }

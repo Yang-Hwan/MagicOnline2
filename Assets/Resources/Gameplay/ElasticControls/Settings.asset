@@ -13,3 +13,5 @@ MonoBehaviour:
   m_Name: Settings
   m_EditorClassIdentifier: 
   useNewAppearance: 1
+  bodyHeight: 402
+  followTravel: 95

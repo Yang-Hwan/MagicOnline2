@@ -169,7 +169,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             SetFollowThrough(DefaultFollowThrough);
             CreateGaugeValueLabels();
             CreateOverlapPreview();
-            Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.Install(this, forceHandle, pullBarHandle, powerValueLabel, followValueLabel, () => InputOutput.usedCamera);
+            Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.Install(this, forceHandle, pullBarHandle, powerValueLabel, followValueLabel, () => InputOutput.usedCamera,
+                () => physicsManager.OnlineAdapter && physicsManager.OnlineAdapter.IsOpponentTurn);
         }
 
         private static Material[] CacheLineMaterials(LineRenderer[] lines)
@@ -191,6 +192,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void InputOutput_OnMouseState(MouseState mouseState)
         {
+            if(Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.InputBlocked){_targetEquip=TargetEquip.None;return;}
             if(Assets.Scripts.Often.ModalBackdrop.BlocksGameplayInput){_targetEquip=TargetEquip.None;return;}
 
             if (Assets.Scripts.Often.PracticeMatchTestRoute.Enabled &&

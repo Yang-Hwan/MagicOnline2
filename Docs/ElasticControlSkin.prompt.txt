@@ -1,0 +1,32 @@
+Tool: built-in image_gen (transparent-background edit)
+Reference: approved rounded gunmetal concept with fixed numeric displays, 2026-11-21.
+Project asset: Assets/Resources/Gameplay/ElasticControls/RoundedGunmetalParts.png
+
+Final generation prompt:
+Use case: precise-object-edit / game sprite asset preparation. This is the approved game UI design. Prepare it for actual Unity implementation as a transparent RGBA parts source sheet. STRICTLY PRESERVE the exact original 1860x845 wide composition, all NINE control positions and proportions, their exact dome/shaft heights, frame shape, dark gunmetal finish, generously rounded slider grips with three grooves, U-shaped frame bottom, fasteners, black leather interior, red fabric. Remove ALL text everywhere: top heading numbers 1..9, every gauge digit. Remove ALL tiny gauge windows as well: seamlessly restore plain black leather at the bottom of the inset and plain brushed steel on the exposed upper shaft, since those windows and numbers will be rendered dynamically in Unity. Remove the entire background and floor including cast shadows, replacing it with genuine transparent alpha; only the nine mechanical control silhouettes remain. Preserve dark internal inset material, which is NOT background and must remain opaque black leather. Preserve silver shaft and domes. Do not add shadows onto the transparent space. Do not rearrange the nine parts, do not add new details or change their positions. Smooth clean antialiased alpha silhouette edges. This asset sheet will be sampled via UV rectangles in Unity, so exact reference layout preservation is crucial. No labels, no watermark, no digits.
+
+Implementation:
+- Shared ElasticShotControls view is installed in single and multiplayer ShotCtrl.
+- Fixed power display: inside the bottom dark inset, 0.0 to 10.0.
+- Fixed follow display: above the body shoulder; moving cap and grip render in front.
+- Settings.asset: bodyHeight and followTravel use reference pixels at 768px viewport height.
+- ElasticControlGraphic protects source end regions and stretches the continuous middle region.
+- No shot/input/network physics transforms are replaced.
+- Preview and validation: Tools > Gameplay > Elastic Controls > Validate And Render Approved Design.
+
+Opponent-turn plain cover, 2026-11-21:
+Tool: built-in image_gen (transparent-background edit).
+Project asset: Assets/Resources/Gameplay/ElasticControls/PlainMetalCover.png
+Reference: approved closed metal cover concept.
+
+Final cover generation prompt:
+Use case: precise-object-edit, Unity game UI sprite. Edit the provided approved closed gunmetal protective cover. REMOVE the glowing padlock icon completely. REMOVE the Korean text completely. REMOVE the entire black text display window and its rim completely. Replace all of those areas with seamless uninterrupted dark brushed gunmetal texture matching the surrounding cover panel; no trace, recess, plaque, symbols or display remains. Preserve the exact original 1024x1536 portrait composition and the single slender cover at its same position and size, rounded dome top, U-shaped rounded bottom, thin machined metallic perimeter seam, four metal fasteners, dark brushed titanium texture and subdued highlights. The cover must be entirely plain metal with NO markings. Remove the studio backdrop and floor and cast shadows to GENUINE TRANSPARENT RGBA background, retaining only the cover itself with clean antialiased silhouette. Preserve the opaque metal panel, not a hollow frame. Do not redesign, rearrange, crop or change the camera perspective. No text, icons, locks, windows, symbols, digits, watermark or glow. This image will be used as a full-length cover sprite in Unity; precise shape and continuous central metal grain are essential.
+
+Turn behavior:
+- The legacy multiplayer ShotCtrl supplies the real local player's turn state.
+- The online practice match adapter supplies IsOpponentTurn from the actual turn seat, not from temporary CanSubmit/input availability.
+- Single-player does not request the cover.
+- Cover closes over the full maximum extension; the active controls and readouts are hidden behind it.
+- A hidden source control does not remove the cover or leave an empty slot.
+- Covered controls reject input; local turn restores the normal UI.
+- Cover never resets or moves the authoritative input/network transforms.

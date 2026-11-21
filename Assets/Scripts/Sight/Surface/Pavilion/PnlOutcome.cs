@@ -246,6 +246,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         void OpenMatchReplaySavePanel()
         {
             if (!matchReplayPanel || !matchReplayPanel.CanSaveMatchReplay) return;
+            matchReplayPanel.SealMatchReplay();
             if (matchReplaySavePanel) Destroy(matchReplaySavePanel);
             selectedMatchReplayFolder = "";
             selectedMatchReplaySlot = -1;

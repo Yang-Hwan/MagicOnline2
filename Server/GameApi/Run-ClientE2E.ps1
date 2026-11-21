@@ -1,6 +1,7 @@
 param(
     [ValidateSet('rematch','disconnect','reconnect','restart','public','public-guard','isolation','corrupt','outage')][string]$Mode = 'rematch',
-    [ValidateSet(0,9003,9004)][int]$HallId = 0
+    [ValidateSet(0,9003,9004)][int]$HallId = 0,
+    [switch]$ReplayBaseline
 )
 $ErrorActionPreference = 'Stop'
 $workspace = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -15,7 +16,8 @@ $newerSources = @(Get-ChildItem -LiteralPath (Join-Path $workspace 'Assets\Scrip
 if ($newerSources.Count) {
     # Unity Reimport can touch a source without changing it. Accept that only when
     # the actual player's portable PDB proves the same SHA256 was compiled.
-    $symbolPath = Join-Path (Split-Path $build.executable) 'MagicOnline2-Test_Data\Managed\Assembly-CSharp.pdb'
+    $dataDirectory = [System.IO.Path]::GetFileNameWithoutExtension($build.executable) + '_Data'
+    $symbolPath = Join-Path (Split-Path $build.executable) ($dataDirectory + '\Managed\Assembly-CSharp.pdb')
     $symbolStream = $null; $symbolProvider = $null
     try {
         $symbolStream = [IO.File]::OpenRead($symbolPath)
@@ -70,6 +72,8 @@ try {
         $route = if ($Mode -in @('public','public-guard')) { '-local-api-public-test' } else { '-practice-match-test' }
         $arguments = @($route,'-local-api-e2e',$Mode,'-e2e-role',$role,'-e2e-hall',"$hall",'-e2e-output',$reportPath,
             '-logFile',$logPath,'-screen-fullscreen','0','-screen-width','960','-screen-height','540')
+        $arguments += @('-replay-performance',(Join-Path $directory ($role + '-performance.json')))
+        if ($ReplayBaseline) { $arguments += '-replay-recording-off' }
         if ($Mode -eq 'reconnect' -and $role -eq 'B') { $arguments += '-practice-match-recovery-test' }
         $children += Start-TestPlayer $arguments ($Mode -in @('restart','isolation','corrupt') -and $role -eq 'A')
         if ($role -eq 'A') {

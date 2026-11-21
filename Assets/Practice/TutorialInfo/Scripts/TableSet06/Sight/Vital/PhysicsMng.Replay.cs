@@ -18,7 +18,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         readonly List<ReplayFrame> replayFrames = new List<ReplayFrame>();
         readonly List<ReplayFrame> recordingBuffer = new List<ReplayFrame>();
-        const int MaxReplayFrames = 60000;
+        const int MaxReplayFrames = 120000;
         readonly Queue<ReplayFrame> cuePreparation = new Queue<ReplayFrame>();
         bool recordingCuePreparation;
 
@@ -224,6 +224,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             shotController.HideLiveAimPrediction();
             ReplayFrameIndex = 0; replayClock = 0;
             ApplyReplayFrame(replayFrames[0]);
+            BeginRecordedPresentation();
             var first = replayFrames[0];
             if (first.cueRecorded || replayStroke.available)
                 shotController.ShowReplayAimOverlap(replayCueId, first.positions,
@@ -252,7 +253,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 shotController.cueDisplacement.localPosition = frame.cueContact;
                 shotController.cueSlider.localPosition = frame.cueSlide;
             }
-            if (IsPracticeReplay && frame != replayReturn) UpdateReplayTrail();
+            if (IsPracticeReplay && frame != replayReturn){
+                if(replayPresentation!=null){ApplyRecordedPresentation();if(replayTrail)replayTrail.enabled=false;}
+                else UpdateReplayTrail();
+            }
         }
         public void TogglePracticeReplay()
         {
@@ -278,6 +282,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         void StopReplayView()
         {
+            StopRecordedPresentation();
             if (!IsPracticeReplay) return;
             replayPlaying = false;
             if (replayTrail) { replayTrail.enabled = false; replayTrail.positionCount = 0; }
@@ -455,14 +460,17 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             if (IsPracticeReplay && replayPlaying)
             {
                 replayClock += Time.unscaledDeltaTime * (IsMatchReplayBrowser ? replaySpeeds[replaySpeedIndex] : 1f);
-                while (replayClock >= replayStep && ReplayFrameIndex < replayFrames.Count - 1)
-                { replayClock -= replayStep; ReplayFrameIndex++; }
+                while (ReplayFrameIndex < replayFrames.Count - 1){
+                    float interval=Mathf.Max(.000001f,replayFrames[ReplayFrameIndex+1].time-replayFrames[ReplayFrameIndex].time);
+                    if(replayClock<interval)break;replayClock-=interval;ReplayFrameIndex++;
+                }
                 ApplyReplayFrame(replayFrames[ReplayFrameIndex]);
                 if (ReplayFrameIndex == replayFrames.Count - 1) replayPlaying = false;
             }
             replayPlay.interactable = replayNext.interactable = replayReset.interactable = CanReplayShot;
-            replayExit.interactable = replaySavePanelOpen;
-            replayExit.gameObject.SetActive(false);
+            replayExit.interactable = replaySavePanelOpen || replayDisplay!=null;
+            replayExit.gameObject.SetActive(replayDisplay!=null);
+            if(replayDisplay!=null){replayExit.GetComponentInChildren<TMP_Text>().text="닫기";replayExit.GetComponent<RectTransform>().anchoredPosition=new Vector2(320,145);}
             if(replayBackdrop)replayBackdrop.gameObject.SetActive(replayPanel.gameObject.activeInHierarchy && (replaySavePanelOpen || matchArchiveSaveMode));
             replayPlayText.text = replayPlaying ? "일시정지" : "재생";
             replayInfo.text = !string.IsNullOrEmpty(replaySlotMessage) ? replaySlotMessage : recordingShot ? "샷 자동 기록 중" : IsPracticeReplay ?

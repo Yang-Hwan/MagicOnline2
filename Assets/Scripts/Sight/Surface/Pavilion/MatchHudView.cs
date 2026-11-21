@@ -17,7 +17,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public const float DesignWidth=1560, DesignHeight=178;
         internal const float GaugeTop=58;
         public const float RingDuration=.72f;
-        public sealed class Counter
+        [Serializable] public sealed class Counter
         {
             public int Target=8, Actual, Desired, Displayed;
             public int Moving=-1, FromScore, ToScore;
@@ -44,21 +44,29 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             n is PunNetwork p && p.HasQuickShotBonus;
         // Preview/validation can use the same renderer without creating a paid match.
         internal bool QuickShotPreview;
-        public bool DrawQuickShot => QuickShotEnabled || QuickShotPreview;
+        ReplayVisual replayVisual;
+        public bool DrawQuickShot => replayVisual!=null?replayVisual.quick:QuickShotEnabled || QuickShotPreview;
         public void ShowQuickShotBonus(int side,long bonus)
         {
             if(bonus<=0)return;
             if(!quickMotion)quickMotion=QuickShotBonusMotion.Install(root,this);
             quickMotion.Show(side,bonus);quickPulse=VisualTime;quickPulseSide=side;
         }
-        public bool ShowLevels => !localPractice;
+        public bool ShowLevels => replayVisual!=null?replayVisual.levels:!localPractice;
         public int ActiveSide {get;private set;}
         public float RemainingRatio {get;private set;}=1;
         public float RemainingSeconds {get;private set;}=30;
         public bool TimerRunning {get;private set;}
         public float TurnBlend {get;private set;}=1;
         public float VisualTime {get;private set;}
-        public bool IsSeries => series[0] && (!string.IsNullOrEmpty(series[0].text)||!string.IsNullOrEmpty(series[1].text));
+        public bool IsSeries => replayVisual!=null?replayVisual.series:series[0] && (!string.IsNullOrEmpty(series[0].text)||!string.IsNullOrEmpty(series[1].text));
+        [Serializable] public sealed class ReplayVisual
+        {
+            public int side;public float ratio,seconds,blend,time;public bool timer,quick,levels,series;public Counter[] counters;
+        }
+        public ReplayVisual CaptureReplayVisualState()=>new ReplayVisual{side=ActiveSide,ratio=RemainingRatio,seconds=RemainingSeconds,blend=TurnBlend,time=VisualTime,timer=TimerRunning,quick=DrawQuickShot,levels=ShowLevels,series=IsSeries,counters=Array.ConvertAll(Counters,n=>new Counter{Target=n.Target,Actual=n.Actual,Desired=n.Desired,Displayed=n.Displayed,Moving=n.Moving,FromScore=n.FromScore,ToScore=n.ToScore,Started=n.Started})};
+        public string CaptureReplayVisual()=>JsonUtility.ToJson(CaptureReplayVisualState());
+        public void ApplyReplayVisual(string json){replayVisual=JsonUtility.FromJson<ReplayVisual>(json);ActiveSide=replayVisual.side;RemainingRatio=replayVisual.ratio;RemainingSeconds=replayVisual.seconds;TurnBlend=replayVisual.blend;VisualTime=replayVisual.time;TimerRunning=replayVisual.timer;for(int i=0;i<2;i++){var a=replayVisual.counters[i];var b=Counters[i];b.Target=a.Target;b.Actual=a.Actual;b.Desired=a.Desired;b.Displayed=a.Displayed;b.Moving=a.Moving;b.FromScore=a.FromScore;b.ToScore=a.ToScore;b.Started=a.Started;}}
         public MatchHudGraphic Decoration=>graphic;
         public RectTransform DesignRoot=>root;
         static readonly Color Gold=new Color32(255,216,118,255);
@@ -248,6 +256,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         readonly System.Collections.Generic.List<int> indices = new System.Collections.Generic.List<int>();
         Rect backdropRect;
         float time;
+        public float ReplayTime=>time;
         public void SetTime(float value)
         {
             time=value;
