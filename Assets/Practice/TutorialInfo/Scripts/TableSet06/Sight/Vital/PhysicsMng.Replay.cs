@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -82,6 +82,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 replayTrail.receiveShadows = false;
                 replayTrail.useWorldSpace = true;
             }
+            if(replayPresentation!=null){UpdateMatchCueTrail();return;}
             if (ReplayFrameIndex < replayTrailFrame) replayTrailFrame = -1;
             replayTrail.enabled = true;
             // Append only newly visited recorded frames; never simulate replay physics.
@@ -254,7 +255,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 shotController.cueSlider.localPosition = frame.cueSlide;
             }
             if (IsPracticeReplay && frame != replayReturn){
-                if(replayPresentation!=null){ApplyRecordedPresentation();if(replayTrail)replayTrail.enabled=false;}
+                if(replayPresentation!=null){ApplyRecordedPresentation();UpdateReplayTrail();}
                 else UpdateReplayTrail();
             }
         }
@@ -455,7 +456,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             }
             UpdateReplaySlots();
             if (!replayDragHeader) CreateReplayDragHeader();
-            replayPanel.gameObject.SetActive(matchArchiveSaveMode ||
+            replayPanel.gameObject.SetActive(IsMatchReplayBrowser || matchArchiveSaveMode ||
                 IsLocalPractice && (IsReplayBrowser ? replayLoadMode : replaySavePanelOpen));
             if (IsPracticeReplay && replayPlaying)
             {
@@ -484,6 +485,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 replaySlower.interactable = replaySpeedIndex > 0;
                 replayFaster.interactable = replaySpeedIndex < replaySpeeds.Length - 1;
                 replaySpeedText.text = $"{replaySpeeds[replaySpeedIndex]:0.#}×";
+                UpdateMatchReplayControls();
             }
         }
         TMP_Text CreateReplayControlLabel(string value, Vector2 position, Vector2 size)

@@ -39,6 +39,24 @@ namespace Assets.Scripts.Often
             SceneManager.LoadScene(ScenePath);
         }
 
+        internal static void ConfigureWaitingPractice(int balls)
+        {
+            entryRequest++;
+            OnlineSession = null;
+            returnInProgress = false;
+            ReturnToPracticeMenu = false;
+            SelectedMode = balls == 3 ? Mode.ThreeBall : Mode.FourBall;
+            Configuration = MatchConfiguration.Practice(balls);
+        }
+        internal static void EndWaitingPractice()
+        {
+            returnInProgress = false;
+            ReturnToPracticeMenu = false;
+            OnlineSession = null;
+            Configuration = MatchConfiguration.Practice(4);
+            SelectedMode = Mode.FourBall;
+        }
+
         public static void ConsumeMenuReturn() { ReturnToPracticeMenu = false; returnInProgress = false; }
 
         // Called by the session transport only after both configurations are accepted.
@@ -59,6 +77,7 @@ namespace Assets.Scripts.Often
 
         public static void ReturnToMenu()
         {
+            if (WaitingRoomPractice.ReturnToLobby()) return;
             entryRequest++;
             if (returnInProgress) return;
             returnInProgress = true;

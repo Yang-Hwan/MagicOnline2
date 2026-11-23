@@ -156,7 +156,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         void UpdateBallPlacement()
         {
             if (!placementButton) CreatePlacementUI();
-            placementButton.gameObject.SetActive(IsLocalPractice && !IsReplayBrowser);
+            placementButton.gameObject.SetActive(PracticeToolsVisible);
             placementButton.interactable = IsBallPlacement || CanPlaceBalls;
             placementButton.GetComponentInChildren<TMP_Text>(true).text = IsBallPlacement ? "공재배치 완료" : "공재배치";
             if (!IsBallPlacement) return;

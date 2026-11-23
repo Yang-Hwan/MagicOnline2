@@ -1,4 +1,4 @@
-using PracticeSceneFlow = Assets.Scripts.Often.PracticeSceneFlow;
+﻿using PracticeSceneFlow = Assets.Scripts.Often.PracticeSceneFlow;
 using MatchHudView = Assets.Scripts.Sight.Surface.Pavilion.MatchHudView;
 ﻿using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Often;
@@ -164,6 +164,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             btnMatchEnd.onClick.AddListener(btnMatchEnd_Click);
 
             rectMsgInfo = transform.Find("MsgInfo").GetComponent<RectTransform>();
+            if (PracticeSceneFlow.Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.OnlineMatch)
+                rectMsgInfo.gameObject.SetActive(false);
             txtMsgs = new TextMeshProUGUI[transform.Find("MsgInfo/Box").childCount];
             for (int i = 0; i < transform.Find("MsgInfo/Box").childCount; i++)
                 txtMsgs[i] = transform.Find("MsgInfo/Box").GetChild(i).GetComponent<TextMeshProUGUI>();
@@ -245,6 +247,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         System.Collections.IEnumerator ReturnAfterPracticeFinish()
         {
+            while(matchFinish && matchFinish.ResultPending)yield return null;
             yield return new WaitForSecondsRealtime(3f);
             finishReturnRoutine = null;
             Assets.Scripts.Often.PracticeSceneFlow.ReturnToMenu();
@@ -323,6 +326,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         void MatchInit()
         {
+            Assets.Scripts.Sight.Surface.Pavilion.MatchResultPresentation.Reset();
             CancelPracticeFinish();
             PoolCoach.Instance.MatchReset();            // 시합정보 리셋
             PoolCoach_OnUpdateTime(0);

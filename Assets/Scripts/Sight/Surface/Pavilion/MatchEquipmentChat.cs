@@ -108,7 +108,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             float outerWidth = count == 0 ? 330 : 24 + count * (width + 8);
             popup = Rect("EquippedChatMenu", transform, 0, 0, outerWidth, height + 28 + (total > columns ? 42 : 0));
             Fill(popup, Ink);
-            Assets.Scripts.Often.ModalBackdrop.Create(popup,Close);
+            Assets.Scripts.Often.ModalBackdrop.Create(popup,Close).gameObject.name="EquippedChatMenu Backdrop";
             Place(popup, ownAvatar, true);
             for (int i = 0; i < count; i++)
                 Card(packs[start+i], profile.Messages, i, width, height);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -149,7 +149,7 @@ namespace Assets.Scripts.Often
         }
         static bool Excluded(Transform t)
         {
-            for(var p=t;p;p=p.parent)if(p.name=="MatchReplaySavePanel"||p.name=="Practice Replay Controls"||p.name=="Recorded match presentation")return true;
+            for(var p=t;p;p=p.parent)if(MatchReplayStateCapture.IsRemovedOverlay(p.name)||MatchReplayStateCapture.IsPrivateMatchControl(p.name)||p.name=="BlindBack"&&p.parent&&p.parent.Find("PointBig")||p.name=="Inning Score UI"||p.name=="Replay Inning Controls"||p.name=="EquippedChatMenu"||p.name=="EquippedChatMenu Backdrop"||p.name=="MatchReplaySavePanel"||p.name=="Practice Replay Controls"||p.name=="Recorded match presentation")return true;
             return false;
         }
         Rect Clip(Transform t,Camera camera,out bool clipped)
@@ -200,7 +200,7 @@ namespace Assets.Scripts.Often
             if(!camera)return;
             var planes=GeometryUtility.CalculateFrustumPlanes(camera);
             var renderers=scene.GetRootGameObjects().SelectMany(root=>root.GetComponentsInChildren<Renderer>(false))
-                .Where(r=>r.gameObject.scene==scene&&r.enabled&&r.gameObject.activeInHierarchy&&!Excluded(r.transform))
+                .Where(r=>r.gameObject.scene==scene&&r.enabled&&!r.forceRenderingOff&&r.gameObject.activeInHierarchy&&!Excluded(r.transform))
                 .OrderBy(r=>SortingLayer.GetLayerValueFromID(r.sortingLayerID)).ThenBy(r=>r.sortingOrder);
             foreach(var renderer in renderers){
                 if(!IsWorldEffect(renderer))continue;
@@ -225,6 +225,7 @@ namespace Assets.Scripts.Often
         }
         public static bool IsWorldEffect(Renderer renderer)
         {
+            if(renderer.name=="Replay Cue Trail")return false;
             string path=renderer.name;for(var p=renderer.transform.parent;p;p=p.parent)path=p.name+"/"+path;
             return renderer is ParticleSystemRenderer||renderer.GetComponent<TMP_Text>()||renderer.GetComponentInParent<Canvas>(true)||path.IndexOf("Facilities",StringComparison.OrdinalIgnoreCase)>=0||path.IndexOf("DetailTurn",StringComparison.OrdinalIgnoreCase)>=0||path.IndexOf("MovStory",StringComparison.OrdinalIgnoreCase)>=0||path.IndexOf("Sentiment",StringComparison.OrdinalIgnoreCase)>=0||path.IndexOf("Effects",StringComparison.OrdinalIgnoreCase)>=0||path.IndexOf("SupportLines",StringComparison.OrdinalIgnoreCase)>=0||path.IndexOf("Cue",StringComparison.OrdinalIgnoreCase)>=0;
         }

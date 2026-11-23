@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Exert.Match;
@@ -388,6 +388,14 @@ namespace Assets.Scripts.Exert.Network
 
         [PunRPC] async void HistoryStartRequestRPC(string requestId, PhotonMessageInfo info)
         {
+            // A guest may finish its countdown while the host is unloading local practice.
+            var requestedRoom = PhotonNetwork.CurrentRoom;
+            while (WaitingRoomPractice.Active)
+            {
+                if (!PhotonNetwork.InRoom || !PhotonNetwork.PlayerList.Contains(info.Sender) || info.Sender.IsInactive) return;
+                await UniTask.Delay(100, ignoreTimeScale: true);
+            }
+            if (PhotonNetwork.CurrentRoom != requestedRoom) return;
             if(IsGuildWar && historyOffer!=null)return; // A new official match requires a new server queue ticket.
             if (!LegacyHistoryEnabled || !PhotonNetwork.IsMasterClient || info.Sender != opponentPlayer ||
                 PhotonNetwork.PlayerList.Length != 2 || !Guid.TryParseExact(requestId, "N", out _) ||

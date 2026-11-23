@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using System.Linq;
@@ -486,6 +486,7 @@ namespace Assets.Scripts.Exert.Match
             calculateTime = false;
             if (finish)
             {
+                ClearNonScoringFinishEffects();
                 PoolLogic.gameState.gameIsComplete = true;
                 CallOnGameComplite();
                 return;
@@ -502,6 +503,7 @@ namespace Assets.Scripts.Exert.Match
             // 볼의 멈춰있는 상태 
             if (!_physicsMng.inMove && !_physicsMng.IsResolvingShot)
             {
+                ClearNonScoringFinishEffects();
                 other_play_time_send_cnt = 0;
                 playTime = 1.0f;
                 calculateTime = false;
@@ -631,9 +633,16 @@ namespace Assets.Scripts.Exert.Match
         // 상대가 떠남. 
         public void OtherLefted()
         {
+            ClearNonScoringFinishEffects();
             PoolLogic.Instance.OnMatchAbort(true);
             Debug.Log($"PoolCoach.OtherLefted ~~~~~~ ");
             CallOnGameComplite();
+        }
+
+        static void ClearNonScoringFinishEffects()
+        {
+            Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Hide();
+            Assets.Scripts.Sight.Surface.Pavilion.ScoreFloatMotion.Hide();
         }
 
         bool completionNotified;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using Assets.Scripts.Often;
 using Assets.Scripts.Exert.Network;
@@ -34,6 +34,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         float nextFrame, sampleStarted, pendingAt, lastReceived;
         MatchBallState[] from, target;
         public bool IsAuthority => session != null && session.LocalActor == session.AuthorityActor;
+        public bool IsMatchInProgress => initialized && session != null && session.Phase==MatchStartPhase.Started && results != null && !results.Finished;
         public bool IsOpponentTurn => initialized && session != null && session.Phase==MatchStartPhase.Started &&
             shots != null && results != null && !results.Finished && shots.TurnSeat!=session.Configuration.LocalSeat;
         public bool CanSimulate => initialized && IsAuthority && session.Phase == MatchStartPhase.Started &&
@@ -221,6 +222,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             result.bank = result.kind == MatchResultKind.Shot && result.outcome == MatchShotOutcome.Point && contacts != null && contacts.IsBank;
             if(result.kind==MatchResultKind.Shot && result.outcome==MatchShotOutcome.Point)
                 Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Show(result.technique);
+            if (results.Finished && !(result.kind == MatchResultKind.Shot && result.outcome == MatchShotOutcome.Point))
+            {
+                Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Hide();
+                Assets.Scripts.Sight.Surface.Pavilion.ScoreFloatMotion.Hide();
+            }
             if (avatars && result.kind == MatchResultKind.Shot) avatars.Resolve(result.outcome);
             Trace($"event=Result sequence={results.Sequence} kind={result.kind} shot={shots.ShotId} score={results.Score0}:{results.Score1} turn={shots.TurnSeat} finished={results.Finished}");
             pending = false;

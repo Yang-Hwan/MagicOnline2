@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -68,9 +68,10 @@ namespace Assets.Scripts.Often
             Presentation.events.Add(new MatchReplayPresentation.Event{time=time,kind=kind,value=value??""});
         }
         public void Seal(){if(recorder)recorder.Seal();}
+        public void StopPresentation(){if(recorder)recorder.Stop();}
 
-        // Stores the full match as one version-3 replay, compatible with the
-        // existing deterministic frame reader and playback controls.
+        // Full matches use v5 lossless motion compression plus event presentation.
+        // Standalone shot archives retain the legacy v3 layout.
         public int SaveToEmptySlot(string directory)
         {
             if (!Ready) return -1;
@@ -88,21 +89,22 @@ namespace Assets.Scripts.Often
         {
             Seal();
             if (!Ready || slot < 0 || slot >= 20) return false;
-            Directory.CreateDirectory(directory);
             {
                 string path = Path.Combine(directory, $"slot{slot + 1:00}.bin");
                 string temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
                 try
                 {
+                    Directory.CreateDirectory(directory);FailureReason="";
                     using (var writer = new BinaryWriter(File.Create(temp)))
                     {
-                        writer.Write(0x4D525031); writer.Write(Presentation!=null?4:3); writer.Write(ballCount);
+                        writer.Write(0x4D525031); writer.Write(Presentation!=null?5:3); writer.Write(ballCount);
                         writer.Write(Mathf.Clamp(shot!=null?shot.seat:0, 0, ballCount - 1)); writer.Write(step); writer.Write(frames.Count);
                         writer.Write(shot!=null);
                         if(shot!=null){writer.Write(shot.power); writer.Write(shot.followThrough);
                             var point = Vector2.ClampMagnitude(shot.contact * 400f, 370f);
                             writer.Write(point.x); writer.Write(point.y);Rotation(writer, cueRotation);}
-                        for (int i = 0; i < frames.Count; i++)
+                        if(Presentation!=null)MatchReplayMotionCodec.Write(writer,times,frames,ballCount);
+                        else for (int i = 0; i < frames.Count; i++)
                         {
                             writer.Write(Presentation!=null?times[i]:i*step);
                             foreach (var ball in frames[i])
@@ -122,7 +124,7 @@ namespace Assets.Scripts.Often
                     else File.Move(temp, path);
                     return true;
                 }
-                catch(Exception error) when(error is IOException||error is UnauthorizedAccessException){FailureReason=error.Message;return false;}
+                catch(Exception error) when(error is IOException||error is UnauthorizedAccessException||error is InvalidDataException){FailureReason=error.Message;return false;}
                 finally { if (File.Exists(temp)) File.Delete(temp); }
             }
         }

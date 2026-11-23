@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Assets.Scripts.Often;
 using TMPro;
@@ -17,6 +17,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         Func<int,string> playerName;
         Func<int> selfSeat;
         InningScoreHistory history;
+        Action<int,int> replaySeek;Func<int,int,bool> canReplaySeek,isReplayCurrent;
         RectTransform root,panel,buttonRect,viewport,content;
         CanvasGroup group;
         InningScoreIcon icon;
@@ -28,13 +29,28 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         TMP_FontAsset font;
         int revision=-1;
         float progress,scale=1,previousWidth;
-        bool open,follow=true,changingScroll,scrollToLatest;
+        bool open,follow=true,changingScroll,scrollToLatest,replayTopLayout;
+        TMP_Text replayHeading;
+        public void SetReplayTopLayout()
+        {
+            if(replayTopLayout)return;replayTopLayout=true;previousWidth=0;
+            if(buttonRect)buttonRect.gameObject.SetActive(false);
+            panel.GetComponent<InningScorePanelGraphic>().enabled=false;
+            ReplayChrome.Apply(panel.gameObject,ReplayChromeGraphic.Finish.Charcoal,true);
+            replayHeading=Text("Replay Jump Heading",panel,"이닝 이동",24,TextAlignmentOptions.MidlineLeft);
+            replayHeading.color=new Color(.96f,.94f,.84f);
+            foreach(var glow in highlights)foreach(var image in glow)ReplayChrome.Apply(image.gameObject,ReplayChromeGraphic.Finish.Emerald);
+        }
         Vector2 panelPosition;
         public bool IsOpen=>open;
         public ScrollRect InningsScroll=>scroll;
         public RectTransform Panel=>panel;
         public RectTransform IconButton=>buttonRect;
         public InningScoreHistory History=>source?.Invoke();
+        public string PlayerName(int seat)=>playerName?.Invoke(seat)??("선수 "+(seat+1));
+        public static InningScoreView RecordingSource(UnityEngine.SceneManagement.Scene scene)=>instances.Find(v=>v&&v.gameObject.scene==scene&&v.replaySeek==null&&v.History!=null);
+        public void SetReplayNavigation(Action<int,int> seek,Func<int,int,bool> available,Func<int,int,bool> current){replaySeek=seek;canReplaySeek=available;isReplayCurrent=current;revision=-1;}
+        public void RefreshReplaySelection()=>RenderColumns();
 
         public static InningScoreView Install(Transform owner,Func<InningScoreHistory> source,Func<int,string> name,Func<int> self)
         {
@@ -48,7 +64,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             foreach(var view in instances)
                 if(view && view.isActiveAndEnabled && view.root &&
-                    (RectTransformUtility.RectangleContainsScreenPoint(view.buttonRect,point,view.UICamera) ||
+                    (view.buttonRect.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(view.buttonRect,point,view.UICamera) ||
                     view.open && RectTransformUtility.RectangleContainsScreenPoint(view.panel,point,view.UICamera)))return true;
             return false;
         }
@@ -105,6 +121,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 {
                     var r=Node("Current Visit "+row,column);glow[row]=Fill(r,new Color(1,.75f,.2f,.18f));glow[row].raycastTarget=false;
                     texts[row+1]=Text("Score "+row,column,"",26);
+                    var scoreButton=texts[row+1].gameObject.AddComponent<Button>();scoreButton.targetGraphic=texts[row+1];scoreButton.transition=Selectable.Transition.None;
                 }
                 cells.Add(texts);highlights.Add(glow);
             }
@@ -154,7 +171,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 for(int row=0;row<2;row++)
                 {
                     int seat=row==0?self:1-self;var score=history.Score(seat,index);cells[i][row+1].text=score.HasValue?score.Value.ToString():"—";
-                    bool active=!history.Finished && seat==history.Active && index==history.Count(seat)-1;
+                    bool active=replaySeek!=null?(isReplayCurrent?.Invoke(seat,index)??false):!history.Finished && seat==history.Active && index==history.Count(seat)-1;
+                    var scoreButton=cells[i][row+1].GetComponent<Button>();scoreButton.onClick.RemoveAllListeners();
+                    bool seekable=replaySeek!=null&&score.HasValue&&(canReplaySeek?.Invoke(seat,index)??false);scoreButton.interactable=seekable;cells[i][row+1].raycastTarget=seekable;
+                    if(seekable){int selectedSeat=seat,selectedColumn=index;scoreButton.onClick.AddListener(()=>replaySeek(selectedSeat,selectedColumn));}
                     highlights[i][row].gameObject.SetActive(active);Place(highlights[i][row].rectTransform,1,32*scale+row*38*scale,(Cell-2)*scale,38*scale);
                     Place(cells[i][row+1].rectTransform,0,(32+row*38)*scale,Cell*scale,38*scale);cells[i][row+1].color=active?Gold:score.HasValue?Color.white:new Color(.5f,.5f,.48f);
                 }
@@ -176,7 +196,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             float w=root.rect.width,h=root.rect.height;scale=w/1600f;if(scale<=0)return;
             Rect table=new Rect(-w*.4f,-h*.36f,w*.8f,h*.65f);var camera=Camera.main;var cloth=GameObject.Find("Table/ClothSpace");
             if(camera && cloth && ProjectBounds(new Bounds(cloth.transform.position,cloth.transform.lossyScale),camera,out var projected))table=projected;
-            float pw=table.width*.96f;panel.sizeDelta=new Vector2(pw,148*scale);panelPosition=new Vector2(table.center.x,table.yMin+12*scale);
+            float pw=replayTopLayout?Mathf.Min(table.width*.96f,900*scale):table.width*.96f;panel.sizeDelta=new Vector2(pw,(replayTopLayout?180:148)*scale);panelPosition=new Vector2(table.center.x,table.yMin+12*scale);
+            if(replayTopLayout)panelPosition=new Vector2(0,h*.5f-panel.sizeDelta.y-8*scale);
             buttonRect.sizeDelta=Vector2.one*58*1.8f*scale;var wheel=GameObject.Find("DetailTurn");Vector2 iconPosition=new Vector2(w*.45f,0);
             if(camera && wheel)
             {
@@ -206,6 +227,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             Place((RectTransform)scroll.horizontalScrollbar.transform,10*scale,123*scale,cw-20*scale,6*scale);
             foreach(var texts in cells)foreach(var t in texts)t.fontSize=(t==texts[0]?22:26)*scale;
             foreach(var t in names)t.fontSize=24*scale;foreach(var t in totals)t.fontSize=28*scale;
+            if(replayTopLayout){
+                foreach(RectTransform child in panel)if(child.name!="Replay Chrome"&&child!=replayHeading.rectTransform)child.anchoredPosition+=Vector2.down*32*scale;
+                Place(replayHeading.rectTransform,18*scale,5*scale,pw-36*scale,28*scale);replayHeading.fontSize=24*scale;
+            }
         }
     }
 

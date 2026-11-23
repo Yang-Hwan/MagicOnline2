@@ -23,7 +23,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         TMP_Text sourceTitle, sourceStatus, sourceSelf, sourceOther;
         TMP_Text title, status, hint, selfName, otherName, level, selfState, otherState;
         TMP_Text ball, fee, target, duration;
-        Button cancel, sourceCancel;
+        Button cancel, sourceCancel, practice;
         WaitingLights waitingLights;
         Image selfPortrait, otherPortrait;
         EquipmentPortrait selfEquipment, otherEquipment;
@@ -96,8 +96,15 @@ namespace Assets.Scripts.Sight.Surface.Consist
             colors.pressedColor = new Color(1, 1, 1, .2f); colors.selectedColor = Color.clear; cancel.colors = colors;
             cancel.onClick.AddListener(() => { if (sourceCancel && sourceCancel.interactable) sourceCancel.onClick.Invoke(); });
             Label("CancelLabel", 670, 848, 330, 61, 33, new Color(1, .91f, 0)).text = "대기 취소";
+            var practiceHit = Panel("WaitingPractice", 1055, 847, 350, 62, new Color(.06f,.24f,.28f));
+            practiceHit.raycastTarget = true;
+            practice = practiceHit.gameObject.AddComponent<Button>(); practice.targetGraphic = practiceHit;
+            practice.onClick.AddListener(() => Assets.Scripts.Often.WaitingRoomPractice.Enter(GetComponentInParent<PnlLobby>()));
+            Label("PracticeLabel", 1055, 847, 350, 62, 28, new Color(.88f,1f,.94f)).text = "기다리는 동안 연습";
+            practiceLabel = design.Find("PracticeLabel").gameObject;
             Refresh();
         }
+        GameObject practiceLabel;
 
         void OnEnable()
         {
@@ -201,6 +208,9 @@ namespace Assets.Scripts.Sight.Surface.Consist
             }
             status.color = error ? new Color(1, .55f, .4f) : Color.white;
             cancel.interactable = sourceCancel.interactable;
+            bool canPractice = Assets.Scripts.Often.WaitingRoomPractice.CanEnter;
+            if(practice) practice.gameObject.SetActive(canPractice);
+            if(practiceLabel) practiceLabel.SetActive(canPractice);
         }
         void LateUpdate() { Refresh(); }
         static Image Portrait(RectTransform card)

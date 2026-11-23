@@ -1,4 +1,4 @@
-using Assets.Scripts.Often;
+﻿using Assets.Scripts.Often;
 using Assets.Scripts.Sight.Vital.Pavilion;
 using UnityEngine;
 using UnityEngine.UI;
@@ -39,7 +39,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             v.title=v.Art("Gold brush title",Resources.Load<Texture2D>("Gameplay/Techniques/Back"));
             v.grandTitle=v.Art("Grand tour suffix",Resources.Load<Texture2D>("Gameplay/Techniques/Titles"));
             v.grandTitleMaterial=v.grandTitle.material;v.grandTitle.gameObject.SetActive(false);
-            var fx=new GameObject("Impact embers",typeof(RectTransform),typeof(TechniqueSparkGraphic));fx.layer=go.layer;fx.transform.SetParent(go.transform,false);
+            var fx=new GameObject("Impact embers",typeof(RectTransform),typeof(CanvasRenderer),typeof(TechniqueSparkGraphic));fx.layer=go.layer;fx.transform.SetParent(go.transform,false);
             v.sparks=fx.GetComponent<TechniqueSparkGraphic>();v.sparks.raycastTarget=false;
             v.brushMaterial=v.brush.material;v.titleMaterial=v.title.material;
             current=v;return v;
@@ -53,11 +53,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public static void Show(ThreeCushionTechnique kind)
         {
-            if(!current || !current.owner || !current.owner.isActiveAndEnabled || kind==ThreeCushionTechnique.None)return;
+            if(MatchResultPresentation.EffectsBlocked || !current || !current.owner || !current.owner.isActiveAndEnabled || kind==ThreeCushionTechnique.None)return;
             current.Play(kind);
         }
         public bool Play(ThreeCushionTechnique kind)
         {
+            if(MatchResultPresentation.EffectsBlocked)return false;
             if(kind<ThreeCushionTechnique.Side || kind>ThreeCushionTechnique.ThreeBankReturn)return false;
             Technique=kind;
             bool compound=IsCompound;
@@ -161,12 +162,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             if(elapsed>=Duration)return;
             Layout();AdvanceVisual(elapsed+Time.unscaledDeltaTime);
         }
+        public static float ResultHold => current && current.owner && current.owner.isActiveAndEnabled && current.elapsed<Duration ? Mathf.Max(.001f,1f-current.elapsed) : 0;
+        public static bool BeginResultFade(){if(!current||current.elapsed>=Duration)return false;current.AdvanceVisual(Mathf.Max(current.elapsed,1.8f));return true;}
         public static void Hide(){if(current)current.HideLocal();}
         void HideLocal(){elapsed=Duration;if(opacity)opacity.alpha=0;}
         void OnDisable()=>HideLocal();
         void OnDestroy(){if(current==this)current=null;if(brushMaterial)Destroy(brushMaterial);if(titleMaterial)Destroy(titleMaterial);if(grandTitleMaterial)Destroy(grandTitleMaterial);}
     }
 
+    [RequireComponent(typeof(CanvasRenderer))]
     public sealed class TechniqueSparkGraphic:MaskableGraphic
     {
         float time=ThreeCushionTechniqueMotion.Duration;

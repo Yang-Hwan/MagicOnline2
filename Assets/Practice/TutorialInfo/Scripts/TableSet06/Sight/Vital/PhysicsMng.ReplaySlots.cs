@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
@@ -332,7 +332,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             stroke = default;
             if (reader.ReadInt32() != 0x4D525031) throw new InvalidDataException();
             int version = reader.ReadInt32();
-            if (version < 1 || version > 4) throw new InvalidDataException();
+            if (version < 1 || version > 5) throw new InvalidDataException();
             int recordedBalls = reader.ReadInt32();
             if (recordedBalls != ballcs.Length && !(recordedBalls == 3 && ballcs.Length == 4)) throw new InvalidDataException();
             cue = reader.ReadInt32(); step = ReadReplayFloat(reader); int count = reader.ReadInt32();
@@ -346,6 +346,17 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 float norm = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
                 if (stroke.power < 0 || stroke.power > 1 || stroke.follow < 0 || stroke.follow > 1 ||
                     stroke.point.sqrMagnitude > 371f * 371f || norm < .9f || norm > 1.1f) throw new InvalidDataException();
+            }
+            if(version==5){
+                if(cue<0||cue>=recordedBalls||step<=0||step>1)throw new InvalidDataException();
+                var times=new List<float>();var motion=new List<Assets.Scripts.Often.MatchBallState[]>();
+                Assets.Scripts.Often.MatchReplayMotionCodec.Read(reader,count,recordedBalls,times,motion);
+                for(int f=0;f<count;f++){
+                    var frame=new ReplayFrame{time=times[f],positions=new Vector3[recordedBalls],rotations=new Quaternion[recordedBalls],velocities=new Vector3[recordedBalls],spins=new Vector3[recordedBalls]};
+                    for(int i=0;i<recordedBalls;i++){var b=motion[f][i];frame.positions[i]=b.position;frame.rotations[i]=b.rotation;frame.velocities[i]=b.velocity;frame.spins[i]=b.angularVelocity;}frames.Add(frame);
+                }
+                parsedPresentation=Assets.Scripts.Often.MatchReplayPresentation.Read(reader,count);
+                if(reader.BaseStream.Position!=reader.BaseStream.Length)throw new InvalidDataException();return;
             }
             long motionEnd=reader.BaseStream.Position+count*(4L+52L*recordedBalls+(version>=3?54L:0));
             if (cue < 0 || cue >= recordedBalls || step <= 0 || step > 1 || count < 2 || count > MaxReplayFrames ||
@@ -426,7 +437,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             }
             UpdateReplayTitle();
             UpdateReplayFolders();
-            replayLoad.gameObject.SetActive(IsLocalPractice && !IsReplayBrowser && !matchArchiveSaveMode); replayLoad.interactable = ReplaySlotReady;
+            replayLoad.gameObject.SetActive(PracticeToolsVisible && !matchArchiveSaveMode); replayLoad.interactable = ReplaySlotReady;
             replaySave.gameObject.SetActive(!replayLoadMode);
             replaySave.interactable = (matchArchiveSaveMode ? OnlineAdapter != null && OnlineAdapter.CanSaveMatchReplay : CanReplayShot) && selectedReplaySlot >= 0;
             for (int i = 0; i < ReplaySlotCount; i++)

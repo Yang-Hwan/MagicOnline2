@@ -1,4 +1,4 @@
-using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
+﻿using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Often;
 using Cysharp.Threading.Tasks;
 using System;
@@ -170,7 +170,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             CreateGaugeValueLabels();
             CreateOverlapPreview();
             Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.Install(this, forceHandle, pullBarHandle, powerValueLabel, followValueLabel, () => InputOutput.usedCamera,
-                () => physicsManager.OnlineAdapter && physicsManager.OnlineAdapter.IsOpponentTurn);
+                () => physicsManager.OnlineAdapter && physicsManager.OnlineAdapter.IsOpponentTurn,
+                () => physicsManager && physicsManager.isActiveAndEnabled && (!physicsManager.OnlineAdapter || physicsManager.OnlineAdapter.IsMatchInProgress));
         }
 
         private static Material[] CacheLineMaterials(LineRenderer[] lines)
@@ -293,6 +294,16 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         // 큐대를 조준하기위해 준비한다.
         public void CueReadyShot()
         {
+            // A completed stroke belongs to the previous turn. The handle returns
+            // visually during its animation, but offline play also needs to clear
+            // the selected power before BuildGuideImpulse chooses the idle preview.
+            force = 0f;
+            forceSliderYPos = forceSliderMinYPos = 0f;
+            cueSliderDisplacementY = 0f;
+            forceHandle.localPosition = Vector3.zero;
+            cueSlider.localPosition = Vector3.zero;
+            _targetEquip = TargetEquip.None;
+            predictionDirty = true;
             if (physicsManager.OnlineAdapter != null) ShowOnlineStroke(0, DefaultFollowThrough);
             // 선수별 큐볼지정
             cueBall?.SetCueBall(false);
@@ -642,6 +653,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void GuideLineReset()
         {
+            if(ballCheckerRenderer) ballCheckerRenderer.forceRenderingOff=true;
             predictionDirty = true;
             ballChecker.position = new Vector3(0, 0, 2f);
             for (int i = 0; i < cueBallLines.Length; i++) cueBallLines[i].positionCount = 0;
@@ -988,6 +1000,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void SetBallChecker(Vector3 pos, int id)
         {
+            if(ballCheckerRenderer) ballCheckerRenderer.forceRenderingOff=true;
 
             int ringIndex = 0;
             foreach (var ball in physicsManager.ballcs)

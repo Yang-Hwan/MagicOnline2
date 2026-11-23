@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface;
@@ -11,6 +11,48 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 {
     public partial class PhysicsMng
     {
+        bool practiceToolsOpen;
+        Button practiceToolsToggle;
+        Assets.Scripts.Sight.Surface.Pavilion.InningScoreView practiceScoreView;
+        readonly Vector3[] practiceIconCorners = new Vector3[4];
+        public bool PracticeToolsVisible => practiceToolsOpen && IsLocalPractice && !IsReplayBrowser && !IsStage;
+
+        void TogglePracticeTools()
+        {
+            practiceToolsOpen = !practiceToolsOpen;
+            if (!practiceToolsOpen && IsBallPlacement) EndBallPlacement();
+            UpdatePracticeToolsToggle();
+        }
+
+        void UpdatePracticeToolsToggle()
+        {
+            bool available = IsLocalPractice && !IsReplayBrowser && !IsStage;
+            if (!practiceScoreView)
+                practiceScoreView = Assets.Scripts.Sight.Surface.Pavilion.InningScoreView.RecordingSource(gameObject.scene);
+            if (!practiceToolsToggle && available && practiceScoreView)
+            {
+                practiceToolsToggle = ReplayButton("Practice Tools Toggle", "연습", 0, TogglePracticeTools);
+                practiceToolsToggle.transform.SetParent(undoButton.transform.parent, false);
+                var rect = (RectTransform)practiceToolsToggle.transform;
+                rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * .5f;
+                practiceToolsToggle.GetComponentInChildren<TMP_Text>(true).fontSize = 24;
+            }
+            if (!practiceToolsToggle) return;
+            practiceToolsToggle.gameObject.SetActive(available && practiceScoreView && practiceScoreView.isActiveAndEnabled);
+            if (!practiceToolsToggle.gameObject.activeSelf) return;
+            var buttonRect = (RectTransform)practiceToolsToggle.transform;
+            practiceScoreView.IconButton.GetWorldCorners(practiceIconCorners);
+            var parent = buttonRect.parent;
+            var left = parent.InverseTransformPoint(practiceIconCorners[1]);
+            var right = parent.InverseTransformPoint(practiceIconCorners[2]);
+            float width = Mathf.Abs(right.x - left.x), height = width * .5f;
+            buttonRect.sizeDelta = new Vector2(width, height);
+            buttonRect.localPosition = new Vector3((left.x + right.x) * .5f, left.y + height * .5f + 10, 0);
+            practiceToolsToggle.GetComponentInChildren<TMP_Text>(true).rectTransform.sizeDelta = buttonRect.sizeDelta;
+            practiceToolsToggle.GetComponent<Image>().color = practiceToolsOpen
+                ? new Color(.22f, .48f, .38f, .98f) : new Color(.12f, .25f, .3f, .96f);
+        }
+
         sealed class UndoSnapshot
         {
             public Vector3[] positions;
@@ -156,22 +198,23 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public bool IsPointerOverUndoButton() => IsPointerOverUndoButton(Input.mousePosition);
         bool IsPointerOverUndoButton(Vector2 screenPosition) =>
             Assets.Scripts.Often.ModalBackdrop.BlocksGameplayInput ||
+            (practiceToolsToggle && practiceToolsToggle.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint((RectTransform)practiceToolsToggle.transform, screenPosition)) ||
             (stageBar && RectTransformUtility.RectangleContainsScreenPoint(stageBar,screenPosition)) ||
             (optionsRect && optionsRect.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(optionsRect, screenPosition)) ||
-            undoButton && undoButton.gameObject.activeInHierarchy &&
-            (RectTransformUtility.RectangleContainsScreenPoint(undoButtonRect, screenPosition) ||
+            (undoButton && undoButton.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(undoButtonRect, screenPosition)) ||
                 (placementButton && placementButton.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint((RectTransform)placementButton.transform, screenPosition)) ||
                 (replayLoad && replayLoad.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint((RectTransform)replayLoad.transform, screenPosition)) ||
-                (replayPanel && replayPanel.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(replayPanel, screenPosition)));
+                (replayPanel && replayPanel.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(replayPanel, screenPosition));
         void LateUpdate()
         {
             if (IsStage) { UpdateStage(); return; }
             UpdatePracticeOptions();
             if (!undoButton) return;
-            undoButton.gameObject.SetActive(!externalItemSession && !IsReplayBrowser);
+            undoButton.gameObject.SetActive(PracticeToolsVisible && !externalItemSession);
             undoButton.interactable = CanUndoShot;
             UpdatePracticeReplay();
             UpdateBallPlacement();
+            UpdatePracticeToolsToggle();
             bool interpolate = inMove && !scatterPending && !IsPracticeReplay && !IsBallPlacement;
             float alpha = Mathf.Clamp01((float)((Time.timeAsDouble - Time.fixedTimeAsDouble) / Time.fixedDeltaTime));
             foreach (var ball in ballcs) ball.UpdateMotionVisual(interpolate, alpha);

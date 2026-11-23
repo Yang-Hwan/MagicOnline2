@@ -1,4 +1,4 @@
-using Assets.Scripts.Exert.Match;
+﻿using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Often;
 using Assets.Scripts.Sight.Surface.Pavilion;
@@ -239,7 +239,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             targetBallLineMaterials = Array.ConvertAll(targetBallLines, item => item.material);
             CreateGaugeValueLabels(); CreateOverlapPreview();
             Assets.Scripts.Sight.Surface.Pavilion.ElasticShotControls.Install(this, forceHandle, pullBarHandle, powerValueLabel, followValueLabel, () => InputOutput.usedCamera,
-                () => PoolPlayer.mainPlayer != null && !PoolPlayer.mainPlayer.myTurn && !PoolLogic.gameState.gameIsComplete);
+                () => PoolPlayer.mainPlayer != null && !PoolPlayer.mainPlayer.myTurn && !PoolLogic.gameState.gameIsComplete,
+                () => physicsManager && physicsManager.isActiveAndEnabled && !PoolLogic.gameState.gameIsComplete);
 
         }
 
@@ -721,6 +722,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         // 예상 안내선 초기화 
         void GuideLineReset()
         {
+            if(ballCheckerRenderer) ballCheckerRenderer.forceRenderingOff=true;
 
             ballChecker.position = new Vector3(0, 0, 2f);
             for (int i = 0; i < cueBallLines.Length; i++) cueBallLines[i].positionCount = 0;
@@ -1020,6 +1022,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void SetBallChecker(Vector3 pos, int id)
         {
+            if(ballCheckerRenderer) ballCheckerRenderer.forceRenderingOff=true;
 
             if (id == cueBall.id || id == -1)
             {

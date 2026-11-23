@@ -1,4 +1,4 @@
-using Assets.Scripts.Exert.Match;
+﻿using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Often;
 using Assets.Scripts.Sight.Vital.Pavilion;
@@ -115,6 +115,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         private void Awake()
         {
             Instance = this;
+
+            // Retired developer diagnostics (white boxes, local-turn and waiting flags).
+            var diagnostics = transform.Find("MsgInfo");
+            if (diagnostics) diagnostics.gameObject.SetActive(false);
 
             //DontDestroyOnLoad(this.gameObject);
             if (!NetworkManager.initialized)
@@ -374,6 +378,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         void MatchInit()
         {
+            Assets.Scripts.Sight.Surface.Pavilion.MatchResultPresentation.Reset();
             //Debug.Log($"PnlMatch.MatchInit ******** ... OnMatchComplite : {PoolLogic.gameState.gameIsComplete}  ");
 
 
@@ -646,7 +651,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             catch (IOException) { return false; }
             catch (System.UnauthorizedAccessException) { return false; }
         }
+        public string MatchReplaySaveError => matchReplayArchive.FailureReason;
         public void SealMatchReplay()=>matchReplayArchive.Seal();
+        public void StopMatchReplay()=>matchReplayArchive.StopPresentation();
 
         void PoolCoach_OnSetPlayer(PoolPlayer player)
         {
@@ -1464,12 +1471,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         async UniTaskVoid MatchCompliteMotionAsync(Assets.Scripts.Exert.BackSys.BackendMatchHistory.LevelUpAward award = null)
         {
             var token = matchViewLifetime.Token;
+            if(await UniTask.WaitUntil(()=>!popMatchFinish.ResultPending,cancellationToken:token).SuppressCancellationThrow())return;
             if (await UniTask.Delay(TimeSpan.FromSeconds(3f), ignoreTimeScale: true, cancellationToken: token).SuppressCancellationThrow()) return;
             if (award != null && award.Level > 0)
             {
                 popMatchFinish.ShowLevelUp(award);
                 if (await UniTask.Delay(TimeSpan.FromSeconds(3f), ignoreTimeScale: true, cancellationToken: token).SuppressCancellationThrow()) return;
             }
+            // Finalize while the result is still visible; never capture the rematch lounge.
+            matchReplayArchive.Seal();
             popMatchFinish.MatchResultClose();
             ges.Open(GesPnl.Pnl.One);
             Debug.Log("MatchCompliteMotion");

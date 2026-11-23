@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Assets.Scripts.Often
 {
@@ -11,6 +11,17 @@ namespace Assets.Scripts.Often
             "MotherOfPearl", "Cordovan", "BlackGold", "Titanium"
         };
 
+        // Store a small authored-resource key, never a full table texture in each replay.
+        public static string ReplayKey(Sprite sprite)
+        {
+            if(!sprite)return "";
+            foreach(var name in ByHall)if(sprite.name==name || sprite==Resources.Load<Sprite>("ArenaTables/"+name))return name;
+            return "";
+        }
+        public static Sprite ReplaySprite(string key)
+        {
+            return System.Array.IndexOf(ByHall,key)>=0 ? Resources.Load<Sprite>("ArenaTables/"+key) : null;
+        }
         public static void Apply(SpriteRenderer background, int hallId, string matchId)
         {
             if (!background || hallId < 1) return;

@@ -19,6 +19,16 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         GameObject controls;
         PracticeSentimentController sentiment;
         bool legacy;
+        Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.PhysicsMng practicePhysics;
+        void LateUpdate()
+        {
+            if (!controls) return;
+            if (!practicePhysics) practicePhysics = FindAnyObjectByType<Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.PhysicsMng>();
+            bool visible = practicePhysics && practicePhysics.PracticeToolsVisible;
+            if (!visible && controls.activeSelf && selection) selection.Hide();
+            if (controls.activeSelf != visible) controls.SetActive(visible);
+        }
+
         readonly List<MovStoryAni> legacyChoices = new List<MovStoryAni>();
         static readonly string[] Categories = { "", "분노", "격려", "실망", "불만", "좌절", "기쁨", "감사", "안도" };
         void Start()
@@ -38,7 +48,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             sentiment.Emotion+=OnEmotion;
             sentiment.ShotStarted+=StopStory;
             var root=new GameObject("StoryPreviewControls",typeof(RectTransform),typeof(Image));
-            controls=root;root.transform.SetParent(transform,false);
+            controls=root;root.SetActive(false);root.transform.SetParent(transform,false);
             var rect=root.GetComponent<RectTransform>();
             rect.anchorMin=rect.anchorMax=new Vector2(.5f,0);rect.pivot=new Vector2(.5f,0);
             rect.anchoredPosition=new Vector2(0,65);rect.sizeDelta=new Vector2(660,48);

@@ -67,6 +67,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public ReplayVisual CaptureReplayVisualState()=>new ReplayVisual{side=ActiveSide,ratio=RemainingRatio,seconds=RemainingSeconds,blend=TurnBlend,time=VisualTime,timer=TimerRunning,quick=DrawQuickShot,levels=ShowLevels,series=IsSeries,counters=Array.ConvertAll(Counters,n=>new Counter{Target=n.Target,Actual=n.Actual,Desired=n.Desired,Displayed=n.Displayed,Moving=n.Moving,FromScore=n.FromScore,ToScore=n.ToScore,Started=n.Started})};
         public string CaptureReplayVisual()=>JsonUtility.ToJson(CaptureReplayVisualState());
         public void ApplyReplayVisual(string json){replayVisual=JsonUtility.FromJson<ReplayVisual>(json);ActiveSide=replayVisual.side;RemainingRatio=replayVisual.ratio;RemainingSeconds=replayVisual.seconds;TurnBlend=replayVisual.blend;VisualTime=replayVisual.time;TimerRunning=replayVisual.timer;for(int i=0;i<2;i++){var a=replayVisual.counters[i];var b=Counters[i];b.Target=a.Target;b.Actual=a.Actual;b.Desired=a.Desired;b.Displayed=a.Displayed;b.Moving=a.Moving;b.FromScore=a.FromScore;b.ToScore=a.ToScore;b.Started=a.Started;}}
+        public void AdvanceReplayClock(float elapsed){
+            if(replayVisual==null)return;elapsed=Mathf.Max(0,elapsed);VisualTime=replayVisual.time+elapsed;
+            RemainingSeconds=replayVisual.timer?Mathf.Max(0,replayVisual.seconds-elapsed):replayVisual.seconds;
+            RemainingRatio=replayVisual.timer&&replayVisual.seconds>0?replayVisual.ratio*RemainingSeconds/replayVisual.seconds:replayVisual.ratio;
+            TurnBlend=Mathf.Lerp(replayVisual.blend,replayVisual.side==0?1:0,1-Mathf.Exp(-elapsed*4));
+        }
         public MatchHudGraphic Decoration=>graphic;
         public RectTransform DesignRoot=>root;
         static readonly Color Gold=new Color32(255,216,118,255);

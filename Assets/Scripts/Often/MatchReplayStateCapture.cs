@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -14,9 +14,11 @@ namespace Assets.Scripts.Often
         public int id,parent=-1;public string name,kind,asset,texture,shader,particle;
         public int[] materials,subEmitters;public bool mask,maskGraphic,rectMask,particleBuffer,rectTransform,hasCanvas;public int sorting,layer,rendererLayer;
         public string settings;
+        public bool proceduralHud;public bool particleEvents;public float particleSpeed=1;public int particleSpace,particleScaling;
         public ReplayCanvasSettings canvas;public ReplayTextSettings text;public ReplayImageSettings image;public ReplayBones bones;
         public ReplaySpriteSettings sprite;public bool sortingGroup;public int sortingLayer,groupOrder;
     }
+    [Serializable] public sealed class ReplayVisualParent { public int id,parent,frame; }
     [Serializable] public struct ReplayVisualState : IEquatable<ReplayVisualState>
     {
         public int id,frame,sibling;public bool active,enabled;
@@ -39,14 +41,14 @@ namespace Assets.Scripts.Often
         sealed class Tracked
         {
             public Transform transform;public Graphic graphic;public Renderer renderer;public ParticleSystem particle;public CanvasGroup group;
-            public ReplayVisualNode node;public ReplayVisualState previous;public bool hasState,dirty=true;
+            public int parent;public ReplayVisualNode node;public ReplayVisualState previous;public bool hasState,dirty=true;
             public string geometry;public UnityEngine.Events.UnityAction callback;
             public MatchReplayHierarchyObserver observer;
             public ReplayLocalGeometry localGeometry;
             public ReplayElasticState elastic;public ReplayLine line;
             public Material[] appearances;public int[] appearanceIds;public string appearanceKey;
             public ParticleSystem.Particle[] particleScratch;public bool hadParticles;
-            public ReplayParticleBuffer particleValue;
+            public ReplayParticleBuffer particleValue;public float particleAnchorTime;
             public PremiumCueWorld premium;
             public PremiumCueWorld.ReplayState premiumState;
         }
@@ -77,7 +79,11 @@ namespace Assets.Scripts.Often
             if(!assets)throw new InvalidOperationException("리플레이 에셋 목록을 생성한 뒤 빌드해 주세요.");
             data.presentationVersion=Format;data.width=Mathf.Max(1,Screen.width);data.height=Mathf.Max(1,Screen.height);data.applicationVersion=Application.version;
         }
-        static bool Excluded(Transform t){for(var p=t;p;p=p.parent)if(p.name=="MatchReplaySavePanel"||p.name=="Practice Replay Controls"||p.name=="Recorded match presentation"||p.name=="Replay state presentation")return true;return false;}
+        public static bool CanRegenerateParticles(ParticleSystem ps)=>ps.emission.enabled&&!ps.subEmitters.enabled&&!ps.collision.enabled&&!ps.trigger.enabled&&ps.main.simulationSpace!=ParticleSystemSimulationSpace.Custom;
+        // These are presentation-only exclusions; live match controls remain usable.
+        public static bool IsPrivateMatchControl(string name)=>name=="BtnMatchEnd"||name=="PlayerInformation";
+        public static bool IsRemovedOverlay(string name)=>name=="SupportLines"||name=="Replay Cue Trail"||name=="RingCueBall"||name=="RingBall1"||name=="RingBall2"||name=="ChkBall"||name=="PointBig";
+        static bool Excluded(Transform t){for(var p=t;p;p=p.parent)if(IsRemovedOverlay(p.name)||IsPrivateMatchControl(p.name)||p.name=="BlindBack"&&p.parent&&p.parent.Find("PointBig")||p.name=="Inning Score UI"||p.name=="Replay Inning Controls"||p.name=="EquippedChatMenu"||p.name=="EquippedChatMenu Backdrop"||p.name=="MatchReplaySavePanel"||p.name=="Practice Replay Controls"||p.name=="Recorded match presentation"||p.name=="Replay state presentation")return true;return false;}
         string Asset(UnityEngine.Object value)
         {
             if(!value)return "";if(runtimeIds.TryGetValue(value,out string known))return known;
@@ -108,7 +114,7 @@ namespace Assets.Scripts.Often
             var g=t.GetComponent<Graphic>();var renderer=t.GetComponent<Renderer>();var ps=t.GetComponent<ParticleSystem>();
             if(ps&&(!(renderer is ParticleSystemRenderer particleRenderer)||!particleRenderer.sharedMaterial||particleRenderer.renderMode==ParticleSystemRenderMode.None)){ps=null;renderer=null;}
             var node=new ReplayVisualNode{id=ordered.Count,parent=parent,name=t.name,kind="transform",layer=t.gameObject.layer,rectTransform=t is RectTransform};
-            var item=new Tracked{transform=t,graphic=g,renderer=renderer,particle=ps,group=t.GetComponent<CanvasGroup>(),node=node};
+            var item=new Tracked{transform=t,graphic=g,renderer=renderer,particle=ps,group=t.GetComponent<CanvasGroup>(),node=node,parent=parent};
             item.premium=t.GetComponent<PremiumCueWorld>();if(item.premium){node.kind="premium-cue";node.asset=Asset(item.premium.ReplayArtwork);}
             tracked.Add(t,item);ordered.Add(item);
             if(t.TryGetComponent<UnityEngine.Rendering.SortingGroup>(out var sorting)){node.sortingGroup=true;node.sortingLayer=sorting.sortingLayerID;node.groupOrder=sorting.sortingOrder;}
@@ -118,6 +124,7 @@ namespace Assets.Scripts.Often
                 var mask=t.GetComponent<Mask>();node.mask=mask;node.maskGraphic=mask&&mask.showMaskGraphic;node.rectMask=t.GetComponent<RectMask2D>();
                 if(g is TMP_Text text){node.asset=Asset(text.font);node.text=new ReplayTextSettings{textSize=text.fontSize,style=(int)text.fontStyle,alignment=(int)text.alignment,auto=text.enableAutoSizing,min=text.fontSizeMin,max=text.fontSizeMax,wrap=(int)text.textWrappingMode,rich=text.richText,overflow=(int)text.overflowMode,margin=text.margin};}
                 if(g is Image image)node.image=new ReplayImageSettings{type=(int)image.type,fillMethod=(int)image.fillMethod,fillOrigin=image.fillOrigin,clockwise=image.fillClockwise,preserve=image.preserveAspect,fillCenter=image.fillCenter,pixelsPerUnit=image.pixelsPerUnitMultiplier};
+                node.proceduralHud=g is MatchHudGraphic||g is MatchHudArtGraphic;
                 node.materials=new[]{Material(g.material)};
                 item.callback=()=>item.dirty=true;g.RegisterDirtyVerticesCallback(item.callback);g.RegisterDirtyMaterialCallback(item.callback);
             }
@@ -127,7 +134,12 @@ namespace Assets.Scripts.Often
                 item.appearances=renderer is SpriteMask?Array.Empty<Material>():renderer.sharedMaterials;node.materials=Array.ConvertAll(item.appearances,Material);item.appearanceIds=node.materials;item.appearanceKey="world:"+string.Join(",",node.materials);
                 if(renderer is SpriteRenderer sprite)node.sprite=new ReplaySpriteSettings{interaction=(int)sprite.maskInteraction,drawMode=(int)sprite.drawMode,size=sprite.size,sortingLayer=sprite.sortingLayerID};
                 if(renderer is SpriteMask mask)node.sprite=new ReplaySpriteSettings{customRange=mask.isCustomRangeActive,frontLayer=mask.frontSortingLayerID,frontOrder=mask.frontSortingOrder,backLayer=mask.backSortingLayerID,backOrder=mask.backSortingOrder};
-                if(ps){node.particle=assets.FindParticleKey(ps);node.particleBuffer=true;}
+                if(ps){
+                    node.particle=assets.FindParticleKey(ps);
+                    // Collision/custom-space/sub-emitter effects keep their exact buffers.
+                    node.particleEvents=CanRegenerateParticles(ps);
+                    node.particleBuffer=!node.particleEvents;node.particleSpeed=ps.main.simulationSpeed;node.particleSpace=(int)ps.main.simulationSpace;node.particleScaling=(int)ps.main.scalingMode;
+                }
                 else if(renderer is SkinnedMeshRenderer skinned){node.asset=Asset(skinned.sharedMesh);node.bones=new ReplayBones{root=skinned.rootBone?Track(skinned.rootBone,time).node.id:-1,bones=Array.ConvertAll(skinned.bones,b=>b?Track(b,time).node.id:-1)};}
                 else if(t.TryGetComponent<MeshFilter>(out var filter))node.asset=Asset(filter.sharedMesh);
             }
@@ -163,7 +175,13 @@ namespace Assets.Scripts.Often
             return new ReplayLocalGeometry{positions=m.vertices,colors=m.colors32,uv0=uv[0].ToArray(),uv1=uv[1].ToArray(),uv2=uv[2].ToArray(),uv3=uv[3].ToArray(),indices=m.triangles};
         }
         static bool SameGeometry(ReplayLocalGeometry a,ReplayLocalGeometry b)=>a!=null&&b!=null&&a.positions.SequenceEqual(b.positions)&&a.colors.SequenceEqual(b.colors)&&a.uv0.SequenceEqual(b.uv0)&&a.uv1.SequenceEqual(b.uv1)&&a.uv2.SequenceEqual(b.uv2)&&a.uv3.SequenceEqual(b.uv3)&&a.indices.SequenceEqual(b.indices);
-        static bool SameHud(MatchHudView.ReplayVisual a,MatchHudView.ReplayVisual b){if(a==null||b==null||a.side!=b.side||a.ratio!=b.ratio||a.seconds!=b.seconds||a.blend!=b.blend||a.time!=b.time||a.timer!=b.timer||a.quick!=b.quick||a.levels!=b.levels||a.series!=b.series)return false;for(int i=0;i<2;i++){var x=a.counters[i];var y=b.counters[i];if(x.Target!=y.Target||x.Actual!=y.Actual||x.Desired!=y.Desired||x.Displayed!=y.Displayed||x.Moving!=y.Moving||x.FromScore!=y.FromScore||x.ToScore!=y.ToScore||x.Started!=y.Started)return false;}return true;}
+        static bool SameHudClock(MatchHudView.ReplayVisual a,MatchHudView.ReplayVisual b){
+            float dt=Mathf.Max(0,a.time-b.time),seconds=b.timer?Mathf.Max(0,b.seconds-dt):b.seconds;
+            float ratio=b.timer&&b.seconds>0?b.ratio*seconds/b.seconds:b.ratio;
+            float blend=Mathf.Lerp(b.blend,b.side==0?1:0,1-Mathf.Exp(-dt*4));
+            return Mathf.Abs(a.seconds-seconds)<.05f&&Mathf.Abs(a.ratio-ratio)<.002f&&Mathf.Abs(a.blend-blend)<.002f;
+        }
+        static bool SameHud(MatchHudView.ReplayVisual a,MatchHudView.ReplayVisual b){if(a==null||b==null||a.side!=b.side||!SameHudClock(a,b)||a.timer!=b.timer||a.quick!=b.quick||a.levels!=b.levels||a.series!=b.series)return false;for(int i=0;i<2;i++){var x=a.counters[i];var y=b.counters[i];if(x.Target!=y.Target||x.Actual!=y.Actual||x.Desired!=y.Desired||x.Displayed!=y.Displayed||x.Moving!=y.Moving||x.FromScore!=y.FromScore||x.ToScore!=y.ToScore||x.Started!=y.Started)return false;}return true;}
         static bool SameLine(ReplayLine a,ReplayLine b)=>a!=null&&b!=null&&a.world==b.world&&a.width==b.width&&a.positions.SequenceEqual(b.positions)&&a.color.colorKeys.SequenceEqual(b.color.colorKeys)&&a.color.alphaKeys.SequenceEqual(b.color.alphaKeys)&&a.widthCurve.keys.SequenceEqual(b.widthCurve.keys);
         void CaptureMaterials(float time,int frame)
         {
@@ -193,6 +211,8 @@ namespace Assets.Scripts.Often
                 var item=ordered[i];var t=item.transform;
                 long nodeStarted=System.Diagnostics.Stopwatch.GetTimestamp();
                 if(!t){if(item.hasState&&item.previous.active){var gone=item.previous;gone.active=false;gone.frame=frame;Emit(time,"visual-state",gone);item.previous=gone;}continue;}
+                int currentParent=t.parent?Track(t.parent,time).node.id:-1;
+                if(currentParent!=item.parent){Emit(time,"visual-parent",new ReplayVisualParent{id=item.node.id,parent=currentParent,frame=frame});item.parent=currentParent;}
                 if(!t.gameObject.activeInHierarchy&&item.hasState&&!item.previous.active)continue;
                 var s=new ReplayVisualState{id=item.node.id,frame=frame,active=t.gameObject.activeInHierarchy,sibling=t.GetSiblingIndex(),position=t.localPosition,rotation=t.localRotation,scale=t.localScale,alpha=item.group?item.group.alpha:1,enabled=true};
                 if(t is RectTransform rect){s.anchorMin=rect.anchorMin;s.anchorMax=rect.anchorMax;s.pivot=rect.pivot;s.size=rect.sizeDelta;s.anchored=rect.anchoredPosition;}
@@ -204,18 +224,23 @@ namespace Assets.Scripts.Often
                     else if(g is Image image){s.asset=Asset(image.overrideSprite?image.overrideSprite:image.sprite);s.fill=image.fillAmount;}
                     else if(g is RawImage raw)s.uv=raw.uvRect;
                     else if(g is ElasticControlGraphic elastic){if(item.dirty||!item.hasState){var value=ReplayElasticState.Capture(elastic);if(!value.Same(item.elastic)){item.elastic=value;item.geometry=Part(time,value);}}s.geometry=item.geometry;}
-                    else if(g is MatchHudGraphic||g is MatchHudArtGraphic){var view=g.GetComponentInParent<MatchHudView>();if(view){if(!hudParts.TryGetValue(view,out string id)){var value=view.CaptureReplayVisualState();previousHuds.TryGetValue(view,out var previous);id=SameHud(value,previous.state)?previous.id:Part(time,value);previousHuds[view]=(value,id);hudParts.Add(view,id);}s.geometry=id;}}
+                    else if(g is MatchHudGraphic||g is MatchHudArtGraphic){var view=g.GetComponentInParent<MatchHudView>();if(view){if(!hudParts.TryGetValue(view,out string id)){var value=view.CaptureReplayVisualState();previousHuds.TryGetValue(view,out var previous);if(SameHud(value,previous.state))id=previous.id;else{id=Part(time,value);previousHuds[view]=(value,id);}hudParts.Add(view,id);}s.geometry=id;}}
                     else if(g is MatchHudPortraitGlow glow)s.fill=glow.ReplayTime;
                     else if(g is TechniqueSparkGraphic sparks)s.fill=sparks.ReplayTime;
                     else {if(item.dirty||!item.hasState){var geometry=Geometry(g);if(geometry!=null&&!SameGeometry(geometry,item.localGeometry)){item.localGeometry=geometry;item.geometry=Part(time,geometry);}}s.geometry=item.geometry;}
                     item.dirty=false;
                 }
                 var r=item.renderer;
-                if(r&&!g){s.enabled=r.enabled;if(s.active&&s.enabled&&!(r is SpriteMask)){var appearance=r.sharedMaterials;if(item.appearances==null||!item.appearances.SequenceEqual(appearance)){item.appearances=appearance;item.appearanceIds=Array.ConvertAll(appearance,Material);item.appearanceKey="world:"+string.Join(",",item.appearanceIds);}if(item.appearanceIds!=null)foreach(int id in item.appearanceIds)if(id>=0)sampledMaterials.Add(id);}s.material=item.appearanceKey;if(r is SpriteRenderer sprite){s.asset=Asset(sprite.sprite);s.color=sprite.color;s.uv=new Rect(sprite.flipX?1:0,sprite.flipY?1:0,0,0);}
+                if(r&&!g){s.enabled=r.enabled&&!r.forceRenderingOff;if(s.active&&s.enabled&&!(r is SpriteMask)){var appearance=r.sharedMaterials;if(item.appearances==null||!item.appearances.SequenceEqual(appearance)){item.appearances=appearance;item.appearanceIds=Array.ConvertAll(appearance,Material);item.appearanceKey="world:"+string.Join(",",item.appearanceIds);}if(item.appearanceIds!=null)foreach(int id in item.appearanceIds)if(id>=0)sampledMaterials.Add(id);}s.material=item.appearanceKey;if(r is SpriteRenderer sprite){s.asset=Asset(sprite.sprite);s.color=sprite.color;s.uv=new Rect(sprite.flipX?1:0,sprite.flipY?1:0,0,0);}
                     if(r is SpriteMask mask){s.asset=Asset(mask.sprite);s.fill=mask.alphaCutoff;}
                     if(r is LineRenderer line){var p=new Vector3[line.positionCount];line.GetPositions(p);var value=new ReplayLine{positions=p,world=line.useWorldSpace,width=line.widthMultiplier,color=line.colorGradient,widthCurve=line.widthCurve};if(!SameLine(value,item.line)){item.line=value;item.geometry=Part(time,value);}s.geometry=item.geometry;}
                 }
-                if(item.particle){var ps=item.particle;s.particleTime=ps.time;s.seed=ps.randomSeed;s.emitting=ps.isEmitting;s.particles=item.previous.particles;if(s.active&&s.enabled&&(ps.particleCount>0||item.hadParticles)){var buffer=ReplayParticleBuffer.Capture(ps,ref item.particleScratch);if(!buffer.Same(item.particleValue)){item.particleValue=buffer;s.particles=Part(time,buffer);}item.hadParticles=buffer.count>0;}}
+                if(item.particle){var ps=item.particle;s.particleTime=ps.time;s.seed=ps.randomSeed;s.emitting=ps.isEmitting;s.particles=item.previous.particles;if(item.node.particleBuffer&&s.active&&s.enabled&&(ps.particleCount>0||item.hadParticles)){var buffer=ReplayParticleBuffer.Capture(ps,ref item.particleScratch);if(!buffer.Same(item.particleValue)){item.particleValue=buffer;s.particles=Part(time,buffer);}item.hadParticles=buffer.count>0;}
+                    if(item.node.particleEvents){
+                        bool anchor=!item.hasState||s.active!=item.previous.active||s.enabled!=item.previous.enabled||s.emitting!=item.previous.emitting||s.seed!=item.previous.seed||ps.time<item.previous.particleTime||time-item.particleAnchorTime>=.5f;
+                        if(anchor)item.particleAnchorTime=time;else s.particleTime=item.previous.particleTime;
+                    }
+                }
                 if(!item.hasState||!s.Equals(item.previous)){Emit(time,"visual-state",s);item.previous=s;item.hasState=true;}
                 if(frame>3){double ms=(System.Diagnostics.Stopwatch.GetTimestamp()-nodeStarted)*1000.0/System.Diagnostics.Stopwatch.Frequency;if(ms>MatchReplayPerformanceProbe.HeavyNodeMilliseconds){MatchReplayPerformanceProbe.HeavyNodeMilliseconds=ms;MatchReplayPerformanceProbe.HeavyNode=t.name+" / "+item.node.kind;}}
             }

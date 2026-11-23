@@ -9,6 +9,12 @@ using Assets.Scripts.Exert.Network;
 
 namespace Assets.Scripts.Sight.Surface.Pavilion
 {
+    public static class MatchResultPresentation
+    {
+        public static bool EffectsBlocked { get; set; }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        public static void Reset(){EffectsBlocked=false;}
+    }
     public class PopMatchFinish : MonoBehaviour
     {
         [SerializeField] RectTransform rectTransform;
@@ -17,6 +23,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         [SerializeField] LevelNumberView levelNumberPrefab;
         RectTransform levelUpContent;
         RawImage resultArtwork;
+        VictoryConfetti victoryConfetti;
+        bool victoryPresented;
         ModalBackdrop resultBackdrop;
         Image[] legacyPanels;
         bool[] legacyPanelEnabled;
@@ -28,6 +36,27 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             string asset = title.Contains("승리") ? "match-victory" :
                 title.Contains("패배") ? "match-defeat" :
                 title.Contains("비겼") || title.Contains("무승부") ? "match-draw" : null;
+            if (asset != null) MatchReplayRecorder.ResultShown(gameObject.scene);
+            if (asset == "match-victory")
+            {
+                if (!victoryPresented)
+                {
+                    if (!victoryConfetti)
+                    {
+                        var effect = new GameObject("Victory Confetti", typeof(RectTransform), typeof(CanvasRenderer), typeof(VictoryConfetti));
+                        effect.layer = gameObject.layer;
+                        effect.transform.SetParent(transform, false);
+                        victoryConfetti = effect.GetComponent<VictoryConfetti>();
+                        var effectRect = victoryConfetti.rectTransform;
+                        effectRect.anchorMin = Vector2.zero;
+                        effectRect.anchorMax = Vector2.one;
+                        effectRect.offsetMin = effectRect.offsetMax = Vector2.zero;
+                    }
+                    victoryConfetti.Play();
+                    victoryPresented = true;
+                }
+            }
+            else StopVictoryConfetti();
             var texture = asset == null ? null : Resources.Load<Texture2D>("Gameplay/" + asset);
             if (legacyPanels == null)
             {
@@ -58,6 +87,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             float width = Mathf.Min(700f, rectTransform.rect.width * .8f);
             rect.sizeDelta = new Vector2(width, width * texture.height / texture.width);
             resultArtwork.gameObject.SetActive(true);
+            resultArtwork.transform.SetAsLastSibling();
         }
 
         private void Awake()
@@ -72,7 +102,48 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             rectTransform = transform.GetComponent<RectTransform>();
         }
 
-        public void MatchResultView(int isWin, int matchCoin, int inning, int minute, float average, int highRun)
+        public bool ResultPending { get; private set; }
+        Coroutine resultRoutine;
+        Action pendingResult;
+        void PresentResult(Action show, bool immediate = false)
+        {
+            if (immediate) CancelPendingResult();
+            pendingResult=show;
+            if(ResultPending)return;
+            float techniqueHold=immediate?0:ThreeCushionTechniqueMotion.ResultHold;
+            float scoreHold=immediate?0:ScoreFloatMotion.ResultHold;
+            MatchResultPresentation.EffectsBlocked=true;
+            if(techniqueHold<=0 && scoreHold<=0){ShowPendingResult();return;}
+            ResultPending=true;
+            resultRoutine=StartCoroutine(FinishLastScore(techniqueHold,scoreHold));
+        }
+        System.Collections.IEnumerator FinishLastScore(float techniqueHold,float scoreHold)
+        {
+            float hold=Mathf.Max(techniqueHold,scoreHold);
+            if(hold>0)yield return new WaitForSecondsRealtime(hold);
+            if(ThreeCushionTechniqueMotion.BeginResultFade())yield return new WaitForSecondsRealtime(.3f);
+            resultRoutine=null;ShowPendingResult();
+        }
+        void ShowPendingResult()
+        {
+            ThreeCushionTechniqueMotion.Hide();ScoreFloatMotion.Hide();CushionCountMotion.Hide();
+            ResultPending=false;var show=pendingResult;pendingResult=null;show?.Invoke();
+        }
+        void CancelPendingResult()
+        {
+            if(resultRoutine!=null)StopCoroutine(resultRoutine);
+            resultRoutine=null;pendingResult=null;ResultPending=false;
+        }
+        public void MatchResultView(int isWin,int matchCoin,int inning,int minute,float average,int highRun)
+            =>PresentResult(()=>MatchResultViewNow(isWin,matchCoin,inning,minute,average,highRun));
+        public void MatchStatusView(string title,string detail)
+            =>PresentResult(()=>MatchStatusViewNow(title,detail));
+        public void PracticeResultView(string winnerName,int targetHit,bool timedOut=false)
+            =>PresentResult(()=>PracticeResultViewNow(winnerName,targetHit,timedOut),timedOut);
+        public void OnlineResultView(int outcome,int ownScore,int otherScore)
+            =>PresentResult(()=>OnlineResultViewNow(outcome,ownScore,otherScore));
+
+        void MatchResultViewNow(int isWin, int matchCoin, int inning, int minute, float average, int highRun)
         {
             BindView();
             rectTransform.anchoredPosition = new Vector2(0, 0);
@@ -91,7 +162,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             //WaitAfterClose(10f).Forget();
         }
 
-        public void MatchStatusView(string title, string detail)
+        void MatchStatusViewNow(string title, string detail)
         {
             BindView();
             rectTransform.anchoredPosition = Vector2.zero;
@@ -171,27 +242,34 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             levelUpContent = null;
         }
 
-        void OnDisable() => ClearLevelUp();
+        void StopVictoryConfetti()
+        {
+            if (victoryConfetti) victoryConfetti.Stop();
+            victoryPresented = false;
+        }
+        void OnDisable() { CancelPendingResult(); ClearLevelUp(); StopVictoryConfetti(); }
 
 
-        public void PracticeResultView(string winnerName, int targetHit, bool timedOut = false)
+        void PracticeResultViewNow(string winnerName, int targetHit, bool timedOut = false)
         {
             BindView();
             rectTransform.anchoredPosition = Vector2.zero;
             txtResult.text = timedOut ? "연습 종료" : "승리하였습니다";
             txtBrief.text = timedOut ? "연습 시간이 종료되었습니다" : $"{winnerName} · 목표 {targetHit}점 달성";
             ShowResultArtwork(txtResult.text);
+            OpenResultBackdrop();
             transform.parent.SetAsLastSibling();
             transform.SetAsLastSibling();
         }
 
-        public void OnlineResultView(int outcome, int ownScore, int otherScore)
+        void OnlineResultViewNow(int outcome, int ownScore, int otherScore)
         {
             BindView();
             rectTransform.anchoredPosition = Vector2.zero;
             txtResult.text = outcome > 0 ? "승리하였습니다" : outcome < 0 ? "패배하였습니다" : "비겼습니다";
             txtBrief.text = $"{ownScore} : {otherScore} · 친선 경기 (코인·전적 정산 없음)";
             ShowResultArtwork(txtResult.text);
+            OpenResultBackdrop();
             transform.parent.SetAsLastSibling(); transform.SetAsLastSibling();
         }
 
@@ -247,6 +325,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public void MatchResultClose()
         {
+            StopVictoryConfetti();
+            CancelPendingResult();
             if(resultBackdrop)resultBackdrop.gameObject.SetActive(false);
             ClearLevelUp();
             BindView();

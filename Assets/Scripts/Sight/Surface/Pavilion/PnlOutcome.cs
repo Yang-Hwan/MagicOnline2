@@ -37,6 +37,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         PnlMatch matchReplayPanel;
         GameObject matchReplaySavePanel;
         TMP_InputField matchReplayTitle;
+        TMP_Text matchReplaySaveMessage;
         string selectedMatchReplayFolder = "";
         int selectedMatchReplaySlot = -1;
         readonly List<Button> matchReplaySlotButtons = new List<Button>();
@@ -139,6 +140,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             btnPlay.interactable = false;
 
             matchReplayPanel = PnlMatch.Instance;
+            // Fallback for any alternate entry path: stop without capturing this screen.
+            if (matchReplayPanel) matchReplayPanel.StopMatchReplay();
             if (btnSaveMatchReplay) btnSaveMatchReplay.gameObject.SetActive(true);
 
             NetworkManager.network.OnNetwork += NetworkManager_network_OnNetwork;
@@ -280,13 +283,20 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
             var titleRect = UiRect(matchReplaySavePanel.transform, "ReplayTitleInput", new Vector2(540, 42), new Vector2(0, 112));
             titleRect.gameObject.AddComponent<Image>().color = Color.white;
+            titleRect.gameObject.SetActive(false);
             matchReplayTitle = titleRect.gameObject.AddComponent<TMP_InputField>();
             matchReplayTitle.targetGraphic = titleRect.GetComponent<Image>();
-            var titleText = UiText(titleRect, "TitleText", 23, Vector2.zero, new Vector2(520, 38));
+            var viewport=UiRect(titleRect,"Viewport",new Vector2(520,38),Vector2.zero);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            matchReplayTitle.textViewport=viewport;
+            var titleText = UiText(viewport, "TitleText", 23, Vector2.zero, new Vector2(520, 38));
             titleText.alignment = TextAlignmentOptions.MidlineLeft; titleText.color = Color.black;
             titleText.margin = new Vector4(12, 0, 8, 0);
             matchReplayTitle.textComponent = titleText;
             matchReplayTitle.text = DefaultMatchReplayTitle();
+            titleRect.gameObject.SetActive(true);
+            matchReplaySaveMessage=UiText(matchReplaySavePanel.transform,"SaveStatus",17,new Vector2(0,-185),new Vector2(760,35));
+            matchReplaySaveMessage.text="";
 
             for (int i = 0; i < 20; i++)
             {
@@ -324,6 +334,11 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             {
                 Destroy(matchReplaySavePanel);
                 if (btnSaveMatchReplay) btnSaveMatchReplay.gameObject.SetActive(false);
+            }
+            else
+            {
+                if(matchReplaySaveMessage)matchReplaySaveMessage.text="저장하지 못했습니다. 기록 크기 또는 저장 공간을 확인해 주세요.";
+                Debug.LogWarning("시합 리플레이 저장 실패: "+matchReplayPanel.MatchReplaySaveError);
             }
         }
 

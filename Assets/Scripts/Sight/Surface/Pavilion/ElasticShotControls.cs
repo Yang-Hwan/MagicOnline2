@@ -20,6 +20,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         MonoBehaviour owner;
         Func<Camera> cameraProvider;
         Func<bool> opponentTurn;
+        Func<bool> gameplayVisible;
+        bool suppressed;
         public bool IsCovered => opponentTurn?.Invoke()==true;
         Transform power,follow,space;
         Renderer[] oldRenderers;bool[] oldEnabled;
@@ -30,12 +32,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         Texture2D photoAtlas;
         Rect screenRect;
         bool shown;
-        public static ElasticShotControls Install(MonoBehaviour owner,Transform power,Transform follow,TMP_Text powerText,TMP_Text followText,Func<Camera> cameraProvider,Func<bool> opponentTurn=null)
+        public static ElasticShotControls Install(MonoBehaviour owner,Transform power,Transform follow,TMP_Text powerText,TMP_Text followText,Func<Camera> cameraProvider,Func<bool> opponentTurn=null,Func<bool> gameplayVisible=null)
         {
             if(!power || !follow)return null;
             var view=owner.gameObject.AddComponent<ElasticShotControls>();
             view.cameraProvider=cameraProvider;view.owner=owner;view.power=power;view.follow=follow;view.space=power.parent;
-            view.opponentTurn=opponentTurn;
+            view.opponentTurn=opponentTurn;view.gameplayVisible=gameplayVisible;
             view.oldPower=powerText;view.oldFollow=followText;
             view.settings=Resources.Load<ElasticControlSettings>("Gameplay/ElasticControls/Settings");
             view.oldRenderers=view.space.GetComponentsInChildren<Renderer>(true);
@@ -152,6 +154,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public static float BandWidth(float tension) => Mathf.Lerp(.65f,.44f,Mathf.Clamp01(tension));
         void LateUpdate()
         {
+            if(gameplayVisible?.Invoke()==false)
+            {
+                if(!suppressed) { Restore(); foreach(var r in oldRenderers)if(r)r.enabled=false;
+                    if(oldPower)oldPower.transform.parent.gameObject.SetActive(false);
+                    if(oldFollow)oldFollow.transform.parent.gameObject.SetActive(false);
+                    suppressed=true; }
+                return;
+            }
+            if(suppressed)Restore();
             bool covered=owner && owner.isActiveAndEnabled && IsCovered;
             bool want=settings && settings.useNewAppearance && owner && owner.isActiveAndEnabled && space && power && follow &&
                 (covered || space.gameObject.activeInHierarchy && power.gameObject.activeInHierarchy && follow.gameObject.activeInHierarchy);
@@ -215,7 +226,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         void Restore()
         {
-            if(!shown)return;shown=false;if(Active==this)Active=null;
+            if(!shown&&!suppressed)return;shown=false;suppressed=false;if(Active==this)Active=null;
             if(canvasRoot)canvasRoot.gameObject.SetActive(false);
             for(int i=0;i<oldRenderers.Length;i++)if(oldRenderers[i])oldRenderers[i].enabled=oldEnabled[i];
             if(oldPower)oldPower.transform.parent.gameObject.SetActive(true);

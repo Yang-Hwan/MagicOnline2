@@ -1,0 +1,10 @@
+{
+  "tool": "built-in image_gen",
+  "output": "Assets/Common/Sprites/StarloftStudio.png",
+  "size": [
+    1774,
+    887
+  ],
+  "scene": "Assets/Scenes/Arise.unity",
+  "prompt": "Create one large standalone STARLOFT Studio logo, extracting ONLY bottom logo in the reference. Preserve its exact smooth white meteor outline, rounded bulb left, upward slant, all rounded tail bars and detached dots, black angular bold STARLOFT and black script Studio. Faithful clean reproduction, not a redesign. Solid pure black #000000 background as in original. NO TRANSPARENCY. Crisp perfectly smooth edges. No grunge, dust, speckles, paper texture, glow, shadow, border. Single centered logo on wide landscape canvas approximately 2:1. Keep all meteor artwork inside frame with 8% margins horizontally, ample black vertical margin. High resolution. Only STARLOFT Studio, no other names. This is a polished black-background Unity splash-screen logo image."
+}

@@ -425,53 +425,9 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         // 큐볼, 적구 등 디스플레이 적용  ..모든 공이 멈추었을 때
         public void SetBallSign()
         {
-
-            float ang = -90f;  //유니티기본각도오차설정 
-            float ang_rnd;
-            float radian;
-            Quaternion qua;
-            int cueball_id = -1;
-            int ring_idx = 0;
-
-            for (int i = 0; i < ballLen; i++)
-            {
-                Ball ball = balls[i];
-                if (ball.isCueBall)
-                {
-                    //Debug.Log($"SetBallSign cueball id : {ball.id} <<<< --------------------- cueball.name : {ball.name}  ");
-                    ang_rnd = UnityEngine.Random.Range(0, 360);
-                    radian = ang_rnd * Mathf.Deg2Rad;
-                    qua = Quaternion.Euler(90, ang_rnd, 0);
-
-                    ringCue.gameObject.SetActive(true);
-                    ringCue.transform.position = ball.transform.position;
-                    ringCue.transform.localRotation = qua;
-                    ringCue.ZeroVal();
-                    break;
-                }
-            }
-
-            for (int i = 0; i < ballLen; i++)
-            {
-                Ball ball = balls[i];
-                ang_rnd = UnityEngine.Random.Range(0, 360);
-                radian = ang_rnd * Mathf.Deg2Rad;
-                qua = Quaternion.Euler(90, ang_rnd, 0);
-
-                if (ball.isCueBall) continue;
-                if(ballLen == 4)
-                {
-                    if (i == 0 || i == 1) continue;
-                }
-                ringBalls[ring_idx].SetActive(true);
-                ringBalls[ring_idx].transform.position = ball.transform.position;
-                ringBalls[ring_idx].transform.localRotation = qua;
-                ring_idx++;
-            }
-
- 
-
-
+            // Retired ball rings / thickness indicator. Keep the references for old scenes.
+            if(ringCue) ringCue.gameObject.SetActive(false);
+            if(ringBalls!=null) foreach(var ring in ringBalls) if(ring) ring.SetActive(false);
         }
 
         public void StartShot(Ball cueBall, Impulse impulse, string info)

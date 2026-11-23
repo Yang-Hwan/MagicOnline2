@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
@@ -11,10 +11,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         readonly Vector3[] corners = new Vector3[4];
         int pointerId;
         bool dragging;
+        float maximumScale=1;
 
-        public void Initialize(RectTransform target)
+        public void Initialize(RectTransform target, float scaleLimit = 1)
         {
-            panel = target;
+            panel = target; maximumScale=scaleLimit;
             bounds = (RectTransform)target.parent;
             FitInsideCanvas();
         }
@@ -56,7 +57,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         {
             previousBoundsSize = bounds.rect.size;
             if (previousBoundsSize.x <= 0 || previousBoundsSize.y <= 0) return;
-            float scale = Mathf.Min(1f, previousBoundsSize.x / panel.rect.width, previousBoundsSize.y / panel.rect.height);
+            float scale = Mathf.Min(maximumScale, previousBoundsSize.x / panel.rect.width, previousBoundsSize.y / panel.rect.height);
             panel.localScale = Vector3.one * scale;
             dragging = false;
             ClampInsideCanvas();

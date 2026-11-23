@@ -1,4 +1,4 @@
-using Assets.Scripts.Exert.BackSys;
+﻿using Assets.Scripts.Exert.BackSys;
 using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Often;
@@ -161,14 +161,29 @@ namespace Assets.Scripts.Sight.Surface.Consist
         async UniTaskVoid AsyncWaitCountDown(int sec)
         {
             var token = cancelSource.Token;
+            var countdownRoom = Photon.Pun.PhotonNetwork.CurrentRoom;
+            var actors = Photon.Pun.PhotonNetwork.PlayerList.Select(p => p.ActorNumber).OrderBy(id => id).ToArray();
+            bool SameParticipants() => countdownRoom != null && Photon.Pun.PhotonNetwork.CurrentRoom == countdownRoom &&
+                actors.Length == 2 && Photon.Pun.PhotonNetwork.PlayerList.All(p => !p.IsInactive) &&
+                actors.SequenceEqual(Photon.Pun.PhotonNetwork.PlayerList.Select(p => p.ActorNumber).OrderBy(id => id));
+            if (!SameParticipants()) return;
+            while (WaitingRoomPractice.StartBlocked)
+            {
+                txtCounter.text = "연습 종료 후 대전 준비";
+                if (await UniTask.Delay(100, ignoreTimeScale: true, cancellationToken: token).SuppressCancellationThrow()) return;
+                if (!SameParticipants()) return;
+            }
             txtCounter.text = sec.ToString();
             while (sec > 0)
             {
-                if (await UniTask.Delay(1000, cancellationToken: token).SuppressCancellationThrow()) return;
+                if (await UniTask.Delay(1000, ignoreTimeScale: true, cancellationToken: token).SuppressCancellationThrow()) return;
+                if (!SameParticipants()) { txtCounter.text = "상대 대기"; return; }
                 sec--;
                 txtCounter.text = sec.ToString();
             }
-            if (!token.IsCancellationRequested && isActiveAndEnabled)
+            if (!token.IsCancellationRequested && isActiveAndEnabled && !WaitingRoomPractice.StartBlocked &&
+                Photon.Pun.PhotonNetwork.InRoom && Photon.Pun.PhotonNetwork.PlayerList.Length == 2 &&
+                Photon.Pun.PhotonNetwork.PlayerList.All(p => !p.IsInactive))
                 NetworkManager.network.WaitCountdowned();
         }
 

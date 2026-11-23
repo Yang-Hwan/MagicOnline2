@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,6 +23,7 @@ namespace Assets.Scripts.Often
         long rawBytes,geometryBytes;
         readonly Dictionary<Graphic,bool> suppressed=new Dictionary<Graphic,bool>();
         readonly Dictionary<Renderer,bool> worldSuppressed=new Dictionary<Renderer,bool>();
+        public Transform AdditionalControls {get;set;}
         readonly Transform controls;
         readonly MatchReplayDisplayHost host;
         public int Frame {get;private set;}=-1;
@@ -116,7 +117,7 @@ namespace Assets.Scripts.Often
         internal void SuppressLive()
         {
             foreach(var g in root.scene.GetRootGameObjects().SelectMany(go=>go.GetComponentsInChildren<Graphic>(true))){
-                if(g.gameObject.scene!=root.scene||g.transform.IsChildOf(root.transform)||controls&&g.transform.IsChildOf(controls))continue;
+                if(g.gameObject.scene!=root.scene||g.transform.IsChildOf(root.transform)||controls&&g.transform.IsChildOf(controls)||AdditionalControls&&g.transform.IsChildOf(AdditionalControls))continue;
                 if(!suppressed.ContainsKey(g))suppressed.Add(g,g.enabled);g.enabled=false;
             }
             foreach(var r in root.scene.GetRootGameObjects().SelectMany(go=>go.GetComponentsInChildren<Renderer>(true))){

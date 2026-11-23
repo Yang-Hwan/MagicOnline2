@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,6 +16,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         Vector2 origin;
         float elapsed = Duration;
         const float Duration = .9f;
+        bool positive;
+        public static float ResultHold => current && current.positive && current.owner && current.owner.isActiveAndEnabled ? Mathf.Max(0,Duration-current.elapsed) : 0;
 
         public static void Install(RectTransform canvas, Behaviour panel)
         {
@@ -37,7 +39,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         public static void Show(Vector3 worldPosition, Camera camera, int result)
         {
-            if (!current || !camera || !current.owner || !current.owner.isActiveAndEnabled || result == 0) return;
+            if (MatchResultPresentation.EffectsBlocked || !current || !camera || !current.owner || !current.owner.isActiveAndEnabled || result == 0) return;
             var screen = camera.WorldToScreenPoint(worldPosition);
             if (screen.z <= 0 || !current.SetArtwork(result)) return;
             // Capture once. Never retain a cue-ball Transform or track it during animation.
@@ -49,7 +51,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             current.rect.anchoredPosition = current.origin;
             current.rect.localScale = Vector3.one * .85f;
             current.opacity.alpha = 1;
-            current.elapsed = 0;
+            current.elapsed = 0;current.positive=result>0;
         }
 
         bool SetArtwork(int result)
