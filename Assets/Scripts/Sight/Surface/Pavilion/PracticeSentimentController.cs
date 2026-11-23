@@ -68,9 +68,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 previous[i]=previousAnimation[i]=-1;
             }
             foreach (var actor in Actors) {
+                actor.ConfigurePracticeTableEffects(clothSpace);
                 actor.PrepareAnimation();
                 if (actor.category>=1 && actor.category<=8)
-                    (actor.animation ? animationGroups[actor.category] : groups[actor.category]).Add(actor);
+                    (actor.HasAnimation ? animationGroups[actor.category] : groups[actor.category]).Add(actor);
                 actor.gameObject.SetActive(false);
             }
             canvas = GetComponentInParent<Canvas>().rootCanvas;
@@ -269,7 +270,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public void Play(PracticeSentimentActor actor,Vector3 position,bool preview=false)
         {
             Hide(); if(!actor) return;
-            if(actor.animation) {
+            if(actor.HasAnimation) {
                 active=actor;elapsed=0;
                 actor.PlayAnimation(position);
                 LogDisplayed(actor.category,$"{actor.name} · {actor.phrase}",preview);
@@ -399,7 +400,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             if(!active || !image) return;
             elapsed+=Time.unscaledDeltaTime;
-            if(active.animation) {
+            if(active.HasAnimation) {
                 if(active.AnimationFinished(elapsed))Hide();
                 return;
             }

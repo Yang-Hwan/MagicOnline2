@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: 6088323a35b94a45a804e665295e08d6
   m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.Often.ReplayAssetReference
   objects:
-  - {fileID: -2116656867, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
-  - {fileID: -1127518817, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
   - {fileID: -707277413, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
-  - {fileID: 2800000, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
-  - {fileID: 487499862, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
-  - {fileID: 512553761, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
   - {fileID: 778844262, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
+  - {fileID: 512553761, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
+  - {fileID: -1127518817, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
+  - {fileID: 487499862, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
+  - {fileID: -2116656867, guid: 6088323a35b94a45a804e665295e08d6, type: 3}
+  - {fileID: 2800000, guid: 6088323a35b94a45a804e665295e08d6, type: 3}

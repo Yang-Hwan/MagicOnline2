@@ -79,7 +79,14 @@ namespace Assets.Scripts.Often
             if(!assets)throw new InvalidOperationException("리플레이 에셋 목록을 생성한 뒤 빌드해 주세요.");
             data.presentationVersion=Format;data.width=Mathf.Max(1,Screen.width);data.height=Mathf.Max(1,Screen.height);data.applicationVersion=Application.version;
         }
-        public static bool CanRegenerateParticles(ParticleSystem ps)=>ps.emission.enabled&&!ps.subEmitters.enabled&&!ps.collision.enabled&&!ps.trigger.enabled&&ps.main.simulationSpace!=ParticleSystemSimulationSpace.Custom;
+        public static bool CanRegenerateParticles(ParticleSystem ps)=>!RequiresParticleHistory(ps)&&ps.emission.enabled&&!ps.subEmitters.enabled&&!ps.collision.enabled&&!ps.trigger.enabled&&ps.main.simulationSpace!=ParticleSystemSimulationSpace.Custom;
+        // The crow emitter moves while it leaves dots behind. Re-simulating at
+        // its current transform loses the emission path, even with the same seed.
+        public static bool RequiresParticleHistory(ParticleSystem ps)
+        {
+            for(var t=ps.transform;t;t=t.parent)if(t.name=="s5_4"||t.GetComponent<Assets.Scripts.Sight.Vital.Pavilion.AniCrowFly>())return true;
+            return false;
+        }
         // These are presentation-only exclusions; live match controls remain usable.
         public static bool IsPrivateMatchControl(string name)=>name=="BtnMatchEnd"||name=="PlayerInformation";
         public static bool IsRemovedOverlay(string name)=>name=="SupportLines"||name=="Replay Cue Trail"||name=="RingCueBall"||name=="RingBall1"||name=="RingBall2"||name=="ChkBall"||name=="PointBig";
@@ -114,6 +121,7 @@ namespace Assets.Scripts.Often
             var g=t.GetComponent<Graphic>();var renderer=t.GetComponent<Renderer>();var ps=t.GetComponent<ParticleSystem>();
             if(ps&&(!(renderer is ParticleSystemRenderer particleRenderer)||!particleRenderer.sharedMaterial||particleRenderer.renderMode==ParticleSystemRenderMode.None)){ps=null;renderer=null;}
             var node=new ReplayVisualNode{id=ordered.Count,parent=parent,name=t.name,kind="transform",layer=t.gameObject.layer,rectTransform=t is RectTransform};
+            node.rectMask=t.GetComponent<RectMask2D>();
             var item=new Tracked{transform=t,graphic=g,renderer=renderer,particle=ps,group=t.GetComponent<CanvasGroup>(),node=node,parent=parent};
             item.premium=t.GetComponent<PremiumCueWorld>();if(item.premium){node.kind="premium-cue";node.asset=Asset(item.premium.ReplayArtwork);}
             tracked.Add(t,item);ordered.Add(item);

@@ -117,6 +117,19 @@ namespace Assets.Scripts.Exert.Network
         }
 
         int scoreMotionSerial = -1;
+        public int ShotClockPlacementSeed=>unchecked(legacyShotSerial*7919+PoolPlayer.turnId*104729);
+        public void PublishShotClockAnchor(Vector2 anchor,bool fallback)
+        {
+            if(!HasLegacyMatch||historyEnded||!PoolLogic.controlInNetwork||float.IsNaN(anchor.sqrMagnitude)||float.IsInfinity(anchor.sqrMagnitude))return;
+            view.RPC(nameof(ShotClockAnchorRPC),RpcTarget.Others,LegacyMatchId,legacyShotSerial,PoolPlayer.turnId,anchor,fallback);
+        }
+        [PunRPC] void ShotClockAnchorRPC(string id,int serial,int turn,Vector2 anchor,bool fallback,PhotonMessageInfo info)
+        {
+            if(!HasLegacyMatch||historyEnded||id!=LegacyMatchId||serial!=legacyShotSerial||turn!=PoolPlayer.turnId||PoolLogic.controlInNetwork||
+                info.Sender.ActorNumber!=(historyPlayer.SeatNo==0?historyOffer.actor1:historyOffer.actor0)||
+                float.IsNaN(anchor.sqrMagnitude)||float.IsInfinity(anchor.sqrMagnitude)||Mathf.Abs(anchor.x)>.46f||Mathf.Abs(anchor.y)>.46f)return;
+            var alarm=Assets.Scripts.Sight.Surface.Pavilion.ShotClockAlarm.MultiplayerInstance;if(alarm)alarm.ReceiveAnchor(anchor,fallback);
+        }
         int techniqueMotionSerial = -1;
 
         public void PublishSentiment(int category,Vector3 shotPosition)

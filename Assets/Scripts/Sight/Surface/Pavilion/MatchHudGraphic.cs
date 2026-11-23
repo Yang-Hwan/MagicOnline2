@@ -202,39 +202,26 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public static float QuickThreshold(int side,float x,float width)=>x+width*(side==0?.7f:.3f);
         void QuickZone(int side,float x,float y,float width,float height)
         {
-            float boundary=QuickThreshold(side,x,width),end=side==0?x+width:x;
-            bool ready=view.TimerRunning && view.RemainingRatio>=.7f;
-            Color gold=ready?new Color(1,.72f,.20f):new Color(.55f,.56f,.50f,.6f);
-            if(ready)
+            if(!view.TimerRunning)return;
+            // Derive the short fade from the recorded timer, so replay seeks stay deterministic.
+            float duration=view.RemainingSeconds/Mathf.Max(.0001f,view.RemainingRatio);
+            float elapsedPastBoundary=Mathf.Max(0,.7f-view.RemainingRatio)*duration;
+            float opacity=1-Mathf.SmoothStep(0,1,elapsedPastBoundary/.2f);
+            if(opacity<=0 || view.RemainingRatio<=0)return;
+            float pulse=.82f+.06f*Mathf.Sin(view.VisualTime*2.1f);
+            Color gold=Alpha(new Color(1,.72f,.20f),.20f*pulse*opacity);
+            Color edge=Alpha(new Color(1,.86f,.43f),pulse*opacity);
+            void Rail(Vector2 a,Vector2 b){SoftSegment(a,b,5,gold);Segment(a,b,1.7f,edge);}
+            float radius=height*.5f,left=x+radius,right=x+width-radius;
+            Rail(new Vector2(left,y),new Vector2(right,y));
+            Rail(new Vector2(left,y+height),new Vector2(right,y+height));
+            for(int cap=0;cap<2;cap++)for(int i=0;i<20;i++)
             {
-                // Tint only the quick-shot segment, clipped to the existing capsule silhouette.
-                for(int i=0;i<20;i++)
-                {
-                    float a=height*i/20,b=height*(i+1)/20;
-                    float ea=CapsuleEdge(a,height,height*.5f),eb=CapsuleEdge(b,height,height*.5f);
-                    float la=side==0?boundary:x+ea,ra=side==0?x+width-ea:boundary;
-                    float lb=side==0?boundary:x+eb,rb=side==0?x+width-eb:boundary;
-                    Color tint=new Color(.98f,.56f,.035f,.12f+.09f*Mathf.Abs(a/height-.5f)*2);
-                    Quad(new Vector2(la,y+a),new Vector2(ra,y+a),new Vector2(rb,y+b),new Vector2(lb,y+b),tint,tint,tint,tint);
-                }
-                float arcCenter=side==0?x+width-height*.5f:x+height*.5f;
-                float pulse=.72f+.09f*Mathf.Sin(view.VisualTime*2.1f);
-                for(int edge=0;edge<2;edge++)
-                {
-                    float yy=y+(edge==0?0:height);
-                    SoftSegment(new Vector2(boundary,yy),new Vector2(arcCenter,yy),5,Alpha(gold,.23f*pulse));
-                    Segment(new Vector2(boundary,yy),new Vector2(arcCenter,yy),1.7f,Alpha(new Color(1,.86f,.43f),pulse));
-                }
-                for(int i=0;i<20;i++)
-                {
-                    float a=(-90+i*9)*(Mathf.PI/180),b=(-90+(i+1)*9)*(Mathf.PI/180),dir=side==0?1:-1;
-                    Vector2 pa=new Vector2(arcCenter+dir*Mathf.Cos(a)*height*.5f,y+height*.5f+Mathf.Sin(a)*height*.5f);
-                    Vector2 pb=new Vector2(arcCenter+dir*Mathf.Cos(b)*height*.5f,y+height*.5f+Mathf.Sin(b)*height*.5f);
-                    SoftSegment(pa,pb,4,Alpha(gold,.20f*pulse));Segment(pa,pb,1.7f,Alpha(new Color(1,.86f,.43f),pulse));
-                }
+                float a=(-90+i*9)*Mathf.Deg2Rad,b=(-90+(i+1)*9)*Mathf.Deg2Rad;
+                float center=cap==0?left:right,dir=cap==0?-1:1;
+                Rail(new Vector2(center+dir*Mathf.Cos(a)*radius,y+radius+Mathf.Sin(a)*radius),
+                     new Vector2(center+dir*Mathf.Cos(b)*radius,y+radius+Mathf.Sin(b)*radius));
             }
-            for(float yy=4;yy<height-3;yy+=9)
-                Segment(new Vector2(boundary,y+yy),new Vector2(boundary,y+Mathf.Min(yy+5,height-3)),3.2f,gold);
         }
         static Color LiquidColor(float u,Color bright,Color liquid,Color dark)
         {

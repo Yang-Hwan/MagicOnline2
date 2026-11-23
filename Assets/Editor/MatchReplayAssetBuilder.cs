@@ -61,6 +61,7 @@ public sealed class MatchReplayAssetBuilder : IPreprocessBuildWithReport
             var prefab=PrefabUtility.SaveAsPrefabAsset(root,Folder+"/Particles.prefab");
             var catalog=AssetDatabase.LoadAssetAtPath<MatchReplayAssets>(Folder+"/Assets.asset");if(!catalog){catalog=ScriptableObject.CreateInstance<MatchReplayAssets>();AssetDatabase.CreateAsset(catalog,Folder+"/Assets.asset");}
             catalog.ids=ids.ToArray();catalog.assetNames=names.ToArray();catalog.assetTypes=types.ToArray();catalog.groups=groups.ToArray();catalog.slots=slots.ToArray();catalog.particleKeys=keys.ToArray();catalog.particleResource="Gameplay/Replay/Particles";EditorUtility.SetDirty(catalog);AssetDatabase.SaveAssets();
+            catalog.InvalidateCache();
             Debug.Log($"Replay asset IDs: {assets.Count}, particle templates: {keys.Count}");
         }
         finally{UnityEngine.Object.DestroyImmediate(root);}

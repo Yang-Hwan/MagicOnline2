@@ -21,6 +21,40 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         Transform[] parts;
         Vector3[] positions, scales;
         Quaternion[] rotations;
+        PracticeTableDemolition demolition;
+        PracticeBombExplosion explosion;
+        PracticeTableStorm storm;
+        PracticeSkullCurse skullCurse;
+        PracticeTearFountain tearFountain;
+        PracticeProudHalo proudHalo;
+        public bool HasAnimation=>animation||demolition||explosion||storm||skullCurse||tearFountain||proudHalo;
+
+        public void ConfigurePracticeTableEffects(Transform cloth,bool includeBomb=true)
+        {
+            if(name=="s8_5"&&cloth){
+                proudHalo=GetComponent<PracticeProudHalo>()??gameObject.AddComponent<PracticeProudHalo>();
+                proudHalo.Configure(cloth);
+            }
+            if(name=="s5_11"&&cloth){
+                tearFountain=GetComponent<PracticeTearFountain>()??gameObject.AddComponent<PracticeTearFountain>();
+                tearFountain.Configure(cloth);
+            }
+            if(name=="s5_9"&&cloth){
+                skullCurse=GetComponent<PracticeSkullCurse>()??gameObject.AddComponent<PracticeSkullCurse>();
+                skullCurse.Configure(cloth);
+            }
+            if(name=="s5_8"&&cloth){
+                storm=GetComponent<PracticeTableStorm>()??gameObject.AddComponent<PracticeTableStorm>();
+                storm.Configure(cloth);
+            }
+            if(name=="s1_4"&&includeBomb&&cloth){
+                explosion=GetComponent<PracticeBombExplosion>()??gameObject.AddComponent<PracticeBombExplosion>();
+                explosion.Configure(cloth);
+            }
+            if(name!="s5_10"||!cloth)return;
+            demolition=GetComponent<PracticeTableDemolition>()??gameObject.AddComponent<PracticeTableDemolition>();
+            demolition.Configure(cloth);
+        }
 
         public void PrepareAnimation()
         {
@@ -41,6 +75,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             PrepareAnimation();
             gameObject.SetActive(true); // Original Awake binds child objects once.
+            if(proudHalo){if(animation)animation.ReleaseSequence();proudHalo.Play(worldPoint);return;}
+            if(tearFountain){animation.ReleaseSequence();tearFountain.Play(worldPoint);return;}
+            if(skullCurse){animation.ReleaseSequence();skullCurse.Play(worldPoint);return;}
+            if(storm){animation.ReleaseSequence();storm.Play();return;}
+            if(explosion){animation.ReleaseSequence();explosion.Play();return;}
+            if(demolition){animation.ReleaseSequence();demolition.Play();return;}
             animation.mySequence?.Kill();
             for (int i = 0; i < parts.Length; i++) {
                 parts[i].localPosition = positions[i]; parts[i].localScale = scales[i];
@@ -56,6 +96,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public bool AnimationFinished(float elapsed)
         {
+            if(proudHalo)return proudHalo.Finished;
+            if(tearFountain)return tearFountain.Finished;
+            if(skullCurse)return skullCurse.Finished;
+            if(storm)return storm.Finished;
+            if(explosion)return explosion.Finished;
+            if(demolition)return demolition.Finished;
             if (elapsed >= animationTimeout) return true;
             if (elapsed < .1f || (animation.mySequence != null && animation.mySequence.IsActive() &&
                 !animation.mySequence.IsComplete())) return false;
@@ -64,6 +110,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public void StopAnimation()
         {
+            if(proudHalo)proudHalo.Stop();
+            if(tearFountain)tearFountain.Stop();
+            if(skullCurse)skullCurse.Stop();
+            if(storm)storm.Stop();
+            if(explosion)explosion.Stop();
+            if(demolition)demolition.Stop();
             if (!animation) return;
             animation.ReleaseSequence();
             if (particles != null) foreach (var particle in particles)

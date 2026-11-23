@@ -31,6 +31,13 @@ namespace Assets.Scripts.Often
                 if (recorder.gameObject.scene == scene && !recorder.stopped && recorder.resultEndAt < 0)
                     recorder.resultEndAt = Time.unscaledTime + 3f;
         }
+        public static void RecordShotClockBell(Scene scene,int stage,float volume)
+        {
+            if(!Application.isPlaying)return;
+            foreach(var recorder in FindObjectsByType<MatchReplayRecorder>(FindObjectsSortMode.None))
+                if(recorder.gameObject.scene==scene&&!recorder.stopped&&recorder.archive!=null)
+                    recorder.archive.RecordEvent("shot-clock-bell",JsonUtility.ToJson(new Assets.Scripts.Sight.Surface.Pavilion.ReplayShotClockBell{stage=stage,volume=volume}));
+        }
         void OnCanvas(){if(!stopped&&!capturing&&Time.unscaledTime>=next)Capture();}
         void Capture()
         {

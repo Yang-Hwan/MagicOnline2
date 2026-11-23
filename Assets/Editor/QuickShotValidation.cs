@@ -52,7 +52,8 @@ public static class QuickShotValidation
             {
                 hud.SetTurn(side);hud.SetTime(.15f,30);hud.AdvanceVisual(10,0);Render("ready-"+side);
                 hud.SetTime(.3f,30);Render("boundary-"+side);
-                hud.SetTime(.30004f,30);Render("expired-"+side);
+                hud.SetTime(.30333f,30);Render("fading-"+side);
+                hud.SetTime(.31f,30);Render("expired-"+side);
                 hud.SetTime(.15f,30);hud.StopTimer();Render("released-"+side);
                 hud.ShowQuickShotBonus(side,200);var motion=hud.GetComponentInChildren<QuickShotBonusMotion>();
                 Check(motion && motion.Bonus==200,"bonus title not connected");

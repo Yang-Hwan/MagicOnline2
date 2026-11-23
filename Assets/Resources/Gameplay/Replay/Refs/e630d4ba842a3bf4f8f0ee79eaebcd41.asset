@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: e630d4ba842a3bf4f8f0ee79eaebcd41
   m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.Often.ReplayAssetReference
   objects:
-  - {fileID: 2800000, guid: e630d4ba842a3bf4f8f0ee79eaebcd41, type: 3}
   - {fileID: 21300000, guid: e630d4ba842a3bf4f8f0ee79eaebcd41, type: 3}
+  - {fileID: 2800000, guid: e630d4ba842a3bf4f8f0ee79eaebcd41, type: 3}

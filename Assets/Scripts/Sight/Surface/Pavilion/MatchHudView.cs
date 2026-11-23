@@ -38,6 +38,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         int generation;
         string loadedMatch;
         bool localPractice;
+        ShotClockAlarm shotClockAlarm;
+        public ShotClockAlarm ShotAlarm=>shotClockAlarm;
+        internal void BindShotClockAlarm(ShotClockAlarm value){shotClockAlarm=value;}
         QuickShotBonusMotion quickMotion;
         float quickPulse = -10; int quickPulseSide;
         public bool QuickShotEnabled => !localPractice && NetworkManager.TryGetExistingNetwork(out var n) &&
@@ -80,7 +83,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public static MatchHudView Install(Transform panel,bool localPractice=false)
         {
             var existing=panel.GetComponent<MatchHudView>();if(existing)return existing;
-            var view=panel.gameObject.AddComponent<MatchHudView>();view.localPractice=localPractice;view.Build();return view;
+            var view=panel.gameObject.AddComponent<MatchHudView>();view.localPractice=localPractice;view.Build();view.shotClockAlarm=ShotClockAlarm.Install(view,localPractice);return view;
         }
         static RectTransform Node(string name,Transform parent,float x,float y,float w,float h)
         {
@@ -196,12 +199,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             }
             portraitGlows[ActiveSide].SetTime(VisualTime);
         }
-        public void SetTurn(int side){ActiveSide=Mathf.Clamp(side,0,1);UpdatePortraitTurn();RemainingRatio=1;RemainingSeconds=30;TimerRunning=true;graphic.SetVerticesDirty();}
+        public void SetTurn(int side){if(shotClockAlarm)shotClockAlarm.ResetTurn();ActiveSide=Mathf.Clamp(side,0,1);UpdatePortraitTurn();RemainingRatio=1;RemainingSeconds=30;TimerRunning=true;graphic.SetVerticesDirty();}
         public void SetTime(float progress,float duration,bool running=true)
         {
             RemainingRatio=1-Mathf.Clamp01(progress);RemainingSeconds=RemainingRatio*Mathf.Max(1,duration);TimerRunning=running;
         }
-        public void StopTimer(){TimerRunning=false;}
+        public void StopTimer(){TimerRunning=false;if(shotClockAlarm)shotClockAlarm.Hide();}
         public void AdvanceVisual(float time,float delta)
         {
             VisualTime=time;
@@ -247,9 +250,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             transform.Find("PlayerBoxs").localScale=Vector3.one*scale;transform.Find("TopCenter").localScale=Vector3.one*scale;
         }
         void OnEnable(){generation++;loadedMatch=null;nextDataRefresh=0;}
-        void OnDisable(){generation++;loadedMatch=null;TimerRunning=false;foreach(var n in Counters){n.Moving=-1;n.Displayed=n.Desired;}}
+        void OnDisable(){generation++;loadedMatch=null;TimerRunning=false;if(shotClockAlarm)shotClockAlarm.Hide();foreach(var n in Counters){n.Moving=-1;n.Displayed=n.Desired;}}
         void OnDestroy()
         {
+            if(shotClockAlarm){if(Application.isPlaying)Destroy(shotClockAlarm.gameObject);else DestroyImmediate(shotClockAlarm.gameObject);}
             foreach(var mat in nicknameMaterials)if(mat){if(Application.isPlaying)Destroy(mat);else DestroyImmediate(mat);}
         }
     }

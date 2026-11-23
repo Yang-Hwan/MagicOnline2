@@ -17,6 +17,13 @@ namespace Assets.Scripts.Often
         Dictionary<string,List<int>> byName;
         static MatchReplayAssets instance;
         public static MatchReplayAssets Current=>instance?instance:instance=Resources.Load<MatchReplayAssets>("Gameplay/Replay/Assets");
+        public void InvalidateCache(){forward=null;reverse=null;byName=null;}
+        public Shader ResolveShader(string name)
+        {
+            Prepare();
+            if(byName.TryGetValue(typeof(Shader).FullName+"|"+name,out var candidates))foreach(int at in candidates)if(Resolve(ids[at]) is Shader shader)return shader;
+            return Shader.Find(name);
+        }
         void Prepare(){if(forward!=null)return;forward=new Dictionary<UnityEngine.Object,string>();reverse=new Dictionary<string,int>();byName=new Dictionary<string,List<int>>();for(int i=0;i<ids.Length;i++){reverse[ids[i]]=i;string key=assetTypes[i]+"|"+assetNames[i];if(!byName.TryGetValue(key,out var list)){list=new List<int>();byName.Add(key,list);}list.Add(i);}}
         public string Id(UnityEngine.Object asset)
         {

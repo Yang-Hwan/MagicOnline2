@@ -22,6 +22,10 @@ namespace Assets.Scripts.Often
         float shaderTime,timelineTime;
         readonly Dictionary<string,Sprite> runtimeSprites=new Dictionary<string,Sprite>();readonly Dictionary<string,ReplaySpriteAsset> spriteAssets=new Dictionary<string,ReplaySpriteAsset>();readonly Dictionary<int,Texture2D> runtimeTextures=new Dictionary<int,Texture2D>();
         readonly Dictionary<string,string> parts=new Dictionary<string,string>();
+        readonly List<(float time,ReplayShotClockBell bell)> alarmBells=new List<(float,ReplayShotClockBell)>();
+        int alarmBellCursor;
+        ShotClockAlarmSound alarmSound;
+        readonly List<Item> alarmImages=new List<Item>();
         string Part(string value)=>value!=null&&value.StartsWith("@part:",StringComparison.Ordinal)?parts[value]:value;
         public Transform Root=>root.transform;
         public MatchReplayStateDisplay(Transform parent,MatchReplayPresentation data,Transform controls)
@@ -29,6 +33,10 @@ namespace Assets.Scripts.Often
             this.data=data;this.controls=controls;assets=MatchReplayAssets.Current;if(!assets)throw new InvalidOperationException("리플레이 에셋 목록이 없습니다.");
             root=new GameObject("Replay state presentation");UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root,parent.gameObject.scene);
             foreach(var e in data.events){
+                if(e.kind=="shot-clock-bell"){
+                    var bell=JsonUtility.FromJson<ReplayShotClockBell>(e.value);
+                    if(bell!=null&&bell.stage>=0&&bell.stage<=2&&bell.volume>=0&&bell.volume<=1)alarmBells.Add((e.time,bell));
+                }
                 if(e.kind=="visual-sprite"){var sprite=JsonUtility.FromJson<ReplaySpriteAsset>(e.value);spriteAssets[sprite.id]=sprite;}
                 else if(e.kind.StartsWith("visual-part:",StringComparison.Ordinal))parts[e.kind.Substring(12)]=e.value;
                 if(e.kind=="visual-node"){var node=JsonUtility.FromJson<ReplayVisualNode>(e.value);if(items.ContainsKey(node.id))throw new InvalidOperationException("Duplicate replay visual node");items.Add(node.id,new Item{node=node});}
@@ -65,6 +73,7 @@ namespace Assets.Scripts.Often
         void Create(Item item)
         {
             var n=item.node;bool ui=n.rectTransform||n.kind=="canvas"||n.kind=="text"||n.kind=="text-world"||n.kind=="image"||n.kind=="raw"||n.kind=="graphic"||n.kind=="elastic"||n.kind=="hud"||n.kind=="hud-art"||n.kind=="glow"||n.kind=="sparks";
+            if(n.kind=="image"&&n.name=="Shot clock alarm sprite")alarmImages.Add(item);
             // A Local-scaled particle must own the recorded transform. An extra
             // identity-scale child ignores e.g. CoinAni/Root's authored 0.06 scale.
             item.go=n.kind=="particle"?UnityEngine.Object.Instantiate(assets.Particle(n.particle)):ui?new GameObject(n.name,typeof(RectTransform)):new GameObject(n.name);
@@ -96,7 +105,7 @@ namespace Assets.Scripts.Often
                 else item.graphic=item.go.AddComponent<MatchHudArtGraphic>();
             }
             else if(n.kind=="particle"){
-                item.particle=item.go.GetComponent<ParticleSystem>();item.renderer=item.go.GetComponent<ParticleSystemRenderer>();item.particle.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);var main=item.particle.main;main.playOnAwake=false;main.useUnscaledTime=false;main.stopAction=ParticleSystemStopAction.None;if(n.particleEvents){main.simulationSpeed=1;main.simulationSpace=(ParticleSystemSimulationSpace)n.particleSpace;main.scalingMode=(ParticleSystemScalingMode)n.particleScaling;}var collision=item.particle.collision;collision.sendCollisionMessages=false;collision.colliderForce=0;
+                item.particle=item.go.GetComponent<ParticleSystem>();item.renderer=item.go.GetComponent<ParticleSystemRenderer>();item.particle.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);var main=item.particle.main;main.playOnAwake=false;main.useUnscaledTime=false;main.stopAction=ParticleSystemStopAction.None;if(n.particleEvents||n.particleBuffer){if(n.particleEvents)main.simulationSpeed=1;main.simulationSpace=(ParticleSystemSimulationSpace)n.particleSpace;main.scalingMode=(ParticleSystemScalingMode)n.particleScaling;}var collision=item.particle.collision;collision.sendCollisionMessages=false;collision.colliderForce=0;
             }
             else if(n.kind=="sprite"){var sprite=item.go.AddComponent<SpriteRenderer>();if(n.sprite!=null){sprite.maskInteraction=(SpriteMaskInteraction)n.sprite.interaction;sprite.drawMode=(SpriteDrawMode)n.sprite.drawMode;sprite.size=n.sprite.size;sprite.sortingLayerID=n.sprite.sortingLayer;}item.renderer=sprite;}
             else if(n.kind=="sprite-mask"){var mask=item.go.AddComponent<SpriteMask>();if(n.sprite!=null){mask.isCustomRangeActive=n.sprite.customRange;mask.frontSortingLayerID=n.sprite.frontLayer;mask.frontSortingOrder=n.sprite.frontOrder;mask.backSortingLayerID=n.sprite.backLayer;mask.backSortingOrder=n.sprite.backOrder;}item.renderer=mask;}
@@ -105,11 +114,12 @@ namespace Assets.Scripts.Often
             else if(n.kind=="mesh"){item.go.AddComponent<MeshFilter>().sharedMesh=Asset(n.asset) as Mesh;item.renderer=item.go.AddComponent<MeshRenderer>();}
             if(item.renderer){item.renderer.sortingOrder=n.sorting;item.renderer.sortingLayerID=n.rendererLayer;}
             if(item.graphic){item.graphic.raycastTarget=false;if(item.graphic is MaskableGraphic safe)safe.onCullStateChanged=new MaskableGraphic.CullStateChangedEvent();if(n.mask)item.go.AddComponent<Mask>().showMaskGraphic=n.maskGraphic;if(n.rectMask)item.go.AddComponent<RectMask2D>();}
+            else if(n.rectMask)item.go.AddComponent<RectMask2D>();
             item.group=item.go.AddComponent<CanvasGroup>();item.group.blocksRaycasts=false;item.group.interactable=false;
         }
         void Material(int id,ReplayMaterialState state)
         {
-            if(!materials.TryGetValue(id,out var m)){var shader=Shader.Find(state.shader);if(!shader)throw new InvalidOperationException("Replay shader missing: "+state.shader);m=new Material(shader);materials.Add(id,m);}
+            if(!materials.TryGetValue(id,out var m)){var shader=assets.ResolveShader(state.shader);if(!shader)throw new InvalidOperationException("Replay shader missing: "+state.shader);m=new Material(shader);materials.Add(id,m);}
             m.shaderKeywords=state.keywords;
             for(int i=0;i<state.names.Length;i++){
                 string name=state.names[i];if(!m.HasProperty(name))continue;var type=(ShaderPropertyType)state.types[i];var value=state.values[i];
@@ -158,7 +168,7 @@ namespace Assets.Scripts.Often
                 else if(!item.initialized||old.emitting)item.particleEmissionEnd=s.particleTime;
                 if(!item.initialized||old.particleTime!=s.particleTime||old.active!=s.active||old.enabled!=s.enabled||old.seed!=s.seed||old.emitting!=s.emitting){item.particleAnchor=time;item.particleRestart=seeking||!item.initialized||old.seed!=s.seed||!old.active||old.emitting!=s.emitting||s.particleTime<old.particleTime;}
             }
-            else if(item.particle&&item.node.particleBuffer){var ps=item.particle;if(s.active&&s.enabled){ps.useAutoRandomSeed=false;ps.randomSeed=s.seed;var emission=ps.emission;emission.enabled=false;var sub=ps.subEmitters;sub.enabled=false;ps.Play(false);ps.Pause(false);ps.time=s.particleTime;if(!string.IsNullOrEmpty(s.particles))ReplayParticleBuffer.Apply(ps,Part(s.particles));else ps.Clear(false);}else ps.Clear(false);}
+            else if(item.particle&&item.node.particleBuffer){var ps=item.particle;if(s.active&&s.enabled){if(!item.initialized||old.seed!=s.seed){ps.Stop(false,ParticleSystemStopBehavior.StopEmittingAndClear);ps.useAutoRandomSeed=false;ps.randomSeed=s.seed;}var emission=ps.emission;emission.enabled=false;var sub=ps.subEmitters;sub.enabled=false;ps.Play(false);ps.Pause(false);ps.time=s.particleTime;if(!string.IsNullOrEmpty(s.particles))ReplayParticleBuffer.Apply(ps,Part(s.particles));else ps.Clear(false);}else ps.Clear(false);}
             else if(item.particle&&s.active&&s.enabled){var ps=item.particle;bool restart=!item.initialized||!old.active||!old.enabled||old.seed!=s.seed||s.particleTime<old.particleTime;ps.useAutoRandomSeed=false;if(restart)ps.randomSeed=s.seed;var emission=ps.emission;emission.enabled=s.emitting;
                 ps.Simulate(restart?s.particleTime:Mathf.Max(0,s.particleTime-old.particleTime),false,restart,true);ps.Pause(false);
             }
@@ -167,6 +177,8 @@ namespace Assets.Scripts.Often
         public void Apply(int frame)
         {
             bool seeking=frame<lastFrame||frame>lastFrame+1;
+            float previousTimeline=timelineTime;
+            if(frame<lastFrame)alarmBellCursor=0;
             if(frame<lastFrame){cursor=0;foreach(var item in items.Values){item.go.SetActive(false);item.initialized=false;item.go.transform.SetParent(items.TryGetValue(item.node.parent,out var originalParent)?originalParent.go.transform:root.transform,false);}foreach(var m in materials.Values)MatchReplayDisplay.Release(m);materials.Clear();}
             while(cursor<changes.Count&&changes[cursor].frame<=frame){var change=changes[cursor++];if(change.clock){shaderTime=change.time;timelineTime=change.timeline;}else if(change.material!=null)Material(change.id,change.material);else if(items.TryGetValue(change.id,out var item)){if(change.parent!=null)item.go.transform.SetParent(items.TryGetValue(change.parent.parent,out var parentItem)?parentItem.go.transform:root.transform,false);else State(item,change.state,seeking,change.timeline);}}
             // Engine-owned clock uniforms reject material overrides. Visual
@@ -196,6 +208,12 @@ namespace Assets.Scripts.Often
                 }else if(target>item.particlePlayed)ps.Simulate(target-item.particlePlayed,false,false,true);
                 ps.Pause(false);item.particlePlayed=target;item.particleRestart=false;
             }
+            if(seeking||lastFrame<0){if(alarmSound)alarmSound.Silence();while(alarmBellCursor<alarmBells.Count&&alarmBells[alarmBellCursor].time<=timelineTime)alarmBellCursor++;}
+            else while(alarmBellCursor<alarmBells.Count&&alarmBells[alarmBellCursor].time<=timelineTime){
+                var sound=alarmBells[alarmBellCursor++];if(sound.time<previousTimeline)continue;
+                if(!alarmSound)alarmSound=root.AddComponent<ShotClockAlarmSound>();alarmSound.Bell(sound.bell.stage,sound.bell.volume);
+            }
+            if(alarmSound&&!alarmImages.Any(i=>i.initialized&&i.state.active&&i.state.enabled))alarmSound.Silence();
             lastFrame=frame;Suppress();
         }
         public void Suppress()
