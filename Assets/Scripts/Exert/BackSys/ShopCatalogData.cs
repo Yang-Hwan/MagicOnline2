@@ -20,11 +20,11 @@ namespace Assets.Scripts.Exert.BackSys
         {
             get {
                 if(CueAbility==null)return $"파워 {Power:+0;-0;0}% · 팔로스루 {FollowThrough:+0;-0;0}%\n당점 {Tip:+0;-0;0}% · 준비시간 {ShotSeconds:+0;-0;0}초";
-                var l=CueAbility.LevelsFromSteps(CueSteps+CuePending/CueAbility.Reach);
+                var l=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(CueAbility.LevelsFromSteps(CueSteps+CuePending/CueAbility.Reach));
                 var range=BackendChart.commonCodeData.Find(c=>c.GrpCd=="Cue" && c.ComCd=="Sec" && c.IsUse=="Y");
                 int min=CueTimeMin>0?CueTimeMin:range?.ComVal??20,max=CueTimeMax>=min?CueTimeMax:range?.ComVal2??40;
                 int seconds=(int)Math.Round(min+(max-min)*CueAbility.Percent(l[3])/100.0,MidpointRounding.AwayFromZero);
-                return $"{CueAbility.Grade}급 · Lv {l[0]}/{l[1]}/{l[2]}/{l[3]}\n파워 {CueAbility.Percent(l[0])}% · 스루 {CueAbility.Percent(l[1])}%\n당점 {CueAbility.Percent(l[2])}% · 준비시간 {seconds}초\n진도 {CuePending%CueAbility.Reach}/{CueAbility.Reach} · 최대 {string.Join("/",CueAbility.Maximum)}";
+                return $"{CueAbility.Grade}급 · Lv {l[0]}/{l[1]}/{l[2]}/{l[3]}/{l[4]}\n파워 {CueAbility.Percent(l[0])}% · 스루 {CueAbility.Percent(l[1])}%\n당점 {CueAbility.Percent(l[2])}% · 준비시간 {seconds}초\n가이드 {CueAbility.GuidePercent(CueSteps+CuePending/CueAbility.Reach)}%\n진도 {CuePending%CueAbility.Reach}/{CueAbility.Reach} · 최대 {string.Join("/",Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(CueAbility.Maximum))}";
             }
         }
         public ShopEmotionData[] Emotions = Array.Empty<ShopEmotionData>();

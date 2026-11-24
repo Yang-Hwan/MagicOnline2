@@ -15,6 +15,12 @@ Check(profile.TipScale==.5f && profile.TurnSeconds(30)==30,"tip radius and Cue/S
 Check(new CueAbilitySettings{Grade="C"}.Percent(60)==48,"C grade is 80 percent");
 Check(!new CueAbilitySettings{Grade="X"}.Valid() && !new CueAbilitySettings{Initial=[101,0,0,0]}.Valid() && !new CueAbilitySettings{Reach=0}.Valid(),"invalid grade/levels/reach rejected");
 var legacy=new MatchEquipmentProfile{Power=20,ShotSeconds=5};Check(Math.Abs(legacy.PowerScale-1.2f)<.00001 && legacy.TurnSeconds(30)==35,"legacy frozen equipment remains compatible");
+Check(profile.GuideScale==1 && legacy.GuideScale==1,"existing four-stat and frozen profiles keep full guide");
+var guideAbility=new CueAbilitySettings{Grade="A",Initial=[60,70,55,55,50],Maximum=[62,71,56,57,52],Reach=2};
+Check(guideAbility.Valid() && guideAbility.Levels(5)[4]==52,"guide grows and caps with other stats");
+Check(new MatchEquipmentProfile{Ability=guideAbility,Guide=50}.GuideScale==.5f,"50 effective guide is half length");
+Check(!new CueAbilitySettings{Initial=[100,100,100,50,101]}.Valid(),"guide above 100 rejected");
+Check(!new CueAbilitySettings{Initial=[100,100,100,50,-1]}.Valid(),"negative guide rejected");
 var config=new ConfigurationBuilder().AddUserSecrets<Database>().Build();var cs=new NpgsqlConnectionStringBuilder(config.GetConnectionString("GameDb"));
 if(cs.Host is not ("localhost" or "127.0.0.1"))throw new Exception("Local database only");
 await using var root=NpgsqlDataSource.Create(cs.ConnectionString);string schema="cue_abilities_test_"+Guid.NewGuid().ToString("N");
@@ -24,6 +30,9 @@ try {
  await using var c=await source.OpenConnectionAsync();
  async Task<object?> Sql(string sql,params object[] args){object? result=null;foreach(var statement in sql.Split(';',StringSplitOptions.RemoveEmptyEntries)){var used=System.Text.RegularExpressions.Regex.Matches(statement,@"\$(\d+)").Select(m=>int.Parse(m.Groups[1].Value)).DefaultIfEmpty(0).Max();await using var cmd=Database.Command(c,statement,args.Take(used).ToArray());result=await cmd.ExecuteScalarAsync();}return result;}
  Check(CueProgress.TimeRange(c)==(20,40),"fresh schema receives Cue/Sec seed");
+ Check((bool)(await Sql("SELECT valid_cue_ability($1::jsonb)",JsonSerializer.Serialize(guideAbility,Database.Json)))!,"database accepts five-stat guide");
+ Check(!(bool)(await Sql("SELECT valid_cue_ability($1::jsonb)","{\"Grade\":\"A\",\"Initial\":[100,100,100,50,101],\"Maximum\":[100,100,100,100,100],\"Reach\":100}"))!,"database rejects invalid guide");
+ ability.Initial=[60,70,55,55,50];ability.Maximum=[62,71,56,57,52];
  var a=Guid.NewGuid();var b=Guid.NewGuid();foreach(var user in new[]{a,b})await Sql("INSERT INTO users(id,login_id,normalized_login,password_hash,nickname) VALUES($1,$2,$2,'test','test');INSERT INTO wallets(user_id,coin) VALUES($1,100000);INSERT INTO user_stats(user_id) VALUES($1)",user,user.ToString());
  await Sql("INSERT INTO shop_content_assets(asset_key) VALUES('cue-test') ON CONFLICT DO NOTHING");
  var cue=(long)(await Sql("INSERT INTO shop_products(kind,name,price_gem,visible,purchasable) VALUES('Cue','cue-test',0,true,true) RETURNING id"))!;
@@ -31,6 +40,7 @@ try {
  foreach(var user in new[]{a,b})await Sql("INSERT INTO shop_user_inventory(user_id,product_id) VALUES($1,$2);INSERT INTO shop_user_equipment(user_id,slot,product_id) VALUES($1,'Cue',$2)",user,cue);
  var service=new MatchEquipment(db);var id=Guid.NewGuid().ToString("N");var snapshot=await service.Freeze(id,a,b);
  Check(snapshot.Players.All(p=>p.Power==60 && p.TurnSeconds(30)==30 && p.TipScale==.5f),"database cue config reaches immutable match snapshot");
+ Check(snapshot.Players[0].Guide==50 && Math.Abs(snapshot.Players[0].GuideScale-.45f)<.00001,"guide level and B grade reach frozen match profile");
  var award=typeof(CueProgress).GetMethod("Award",BindingFlags.Static|BindingFlags.NonPublic)!;
  award.Invoke(null,[c,a,cue,"practice-one",1]);award.Invoke(null,[c,a,cue,"practice-one",1]);
  Check((long)(await Sql("SELECT shots FROM shop_cue_progress WHERE user_id=$1 AND product_id=$2",a,cue))! ==1,"point retry advances only once");
@@ -38,6 +48,7 @@ try {
  var next=await service.Freeze(Guid.NewGuid().ToString("N"),a,b);
  Check(next.Players[0].Power==61 && next.Players[0].FollowThrough==71,"reach threshold upgrades owned cue on next match");
  Check((await service.Read(id,a)).Players[0].Power==60,"ongoing match retains pre-growth power");
+ Check(next.Players[0].Guide==51 && (await service.Read(id,a)).Players[0].Guide==50,"guide growth affects next match only");
  Check(next.Players[1].Power==60,"other member progression remains independent");
  ability.Reach=100;await Sql("UPDATE shop_cues SET ability=$2::jsonb WHERE product_id=$1",cue,JsonSerializer.Serialize(ability,Database.Json));
  var retained=await service.Freeze(Guid.NewGuid().ToString("N"),a,b);Check(retained.Players[0].Power==61,"changing reach preserves earned level increases");

@@ -34,8 +34,8 @@ public class ShopEditModel(Database db) : PageModel
         public int Tip { get; set; }
         public int Seconds { get; set; }
         public string Grade {get;set;}="A";
-        public int[] Initial {get;set;}=[100,100,100,50];
-        public int[] Maximum {get;set;}=[100,100,100,100];
+        public int[] Initial {get;set;}=[100,100,100,50,100];
+        public int[] Maximum {get;set;}=[100,100,100,100,100];
         public int Reach {get;set;}=100;
         public Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings Ability()=>new(){Grade=Grade,Initial=Initial,Maximum=Maximum,Reach=Reach};
         public Dictionary<string,string> Faces { get; set; } = new();
@@ -75,7 +75,7 @@ public class ShopEditModel(Database db) : PageModel
         if(Input.Kind=="CoinPack"){Input.CoinAmount=r.IsDBNull(22)?0:r.GetInt64(22);Input.CoinBonus=r.IsDBNull(23)?0:r.GetInt64(23);}
         if(Input.Kind=="Cue") {
             var ability=System.Text.Json.JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(Str(21)!,Database.Json)!;
-            Input.Grade=ability.Grade;Input.Initial=ability.Initial;Input.Maximum=ability.Maximum;Input.Reach=ability.Reach;
+            Input.Grade=ability.Grade;Input.Initial=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Initial);Input.Maximum=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Maximum);Input.Reach=ability.Reach;
         }
         return Page();
     }

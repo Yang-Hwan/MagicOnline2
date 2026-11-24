@@ -48,7 +48,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             if(cue.CueAbility==null)return cue.CueDetail.Replace("\n"," · ");
             var a=cue.CueAbility;var l=a.LevelsFromSteps(cue.CueSteps+cue.CuePending/a.Reach);
             int seconds=(int)Math.Round(cue.CueTimeMin+(cue.CueTimeMax-cue.CueTimeMin)*a.Percent(l[3])/100.0,MidpointRounding.AwayFromZero);
-            return $"파워 {a.Percent(l[0])}% · 팔로스루 {a.Percent(l[1])}% · 당점 {a.Percent(l[2])}% · 시간 {seconds}초";
+            return $"파워 {a.Percent(l[0])}% · 팔로스루 {a.Percent(l[1])}% · 당점 {a.Percent(l[2])}% · 시간 {seconds}초 · 가이드 {a.GuidePercent(cue.CueSteps+cue.CuePending/a.Reach)}%";
         }
         string PlayerCueProgress(ShopProductData cue)
         {

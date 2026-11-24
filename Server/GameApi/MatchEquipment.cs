@@ -79,7 +79,7 @@ public sealed class MatchEquipment(Database db)
                     profile.Ability=JsonSerializer.Deserialize<CueAbilitySettings>(p.GetProperty("CueAbility").GetRawText(),Database.Json)!;
                     profile.CueProgress=p.GetProperty("CueProgress").GetInt64();profile.CueSteps=p.GetProperty("CueSteps").GetInt64();profile.CuePending=p.GetProperty("CuePending").GetInt64();
                     var levels=profile.Ability.LevelsFromSteps(profile.CueSteps+profile.CuePending/profile.Ability.Reach);
-                    profile.Power=levels[0];profile.FollowThrough=levels[1];profile.Tip=levels[2];profile.ShotSeconds=levels[3];break;
+                    profile.Power=levels[0];profile.FollowThrough=levels[1];profile.Tip=levels[2];profile.ShotSeconds=levels[3];profile.Guide=levels.Length>4?levels[4]:100;break;
                 case "Character":
                     profile.CharacterId = p.GetProperty("Id").GetInt64();
                     profile.Emotions = JsonSerializer.Deserialize<MatchEquipmentEmotion[]>(p.GetProperty("Emotions").GetRawText(), Database.Json)!; break;

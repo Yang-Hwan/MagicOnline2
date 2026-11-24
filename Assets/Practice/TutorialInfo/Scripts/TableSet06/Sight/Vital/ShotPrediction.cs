@@ -28,7 +28,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public void Cancel() { work?.Dispose(); work=null; simulatingShot=false; }
         public void Begin(int cue,Impulse impulse,float maxTime=8f,float maxDistance=4.6f,bool firstContactOnly=false,float afterContactLength=1.6f)
         {
-            Cancel();PathDistance=0;FreeFlightSteps=0;ContactSolverSteps=0;resolvedContact=false;contactReleaseSteps=0;work=CalculateSteps(cue,impulse,maxTime,maxDistance,firstContactOnly,afterContactLength);
+            Cancel();ContactPathIndex=-1;PathDistance=0;FreeFlightSteps=0;ContactSolverSteps=0;resolvedContact=false;contactReleaseSteps=0;work=CalculateSteps(cue,impulse,maxTime,maxDistance,firstContactOnly,afterContactLength);
         }
         public bool Advance(double budgetMilliseconds=2,int maxTicks=16)
         {
@@ -47,6 +47,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public readonly List<Vector3> targetPath = new List<Vector3>();
         public readonly List<Vector3> timedCuePath = new List<Vector3>();
         public int targetIndex = -1;
+        public int ContactPathIndex { get; private set; } = -1;
         public Vector3 contactCentre;
         public float contactThickness;
         public Vector3 initialTensor, firstSpin;
@@ -131,7 +132,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             var normal=(balls[targetIndex].position-contactCentre).normalized;
             var tangent=Vector3.Cross(Vector3.up,normal).normalized;
             contactThickness=1-Mathf.Abs(Vector3.Dot(collision.relativeVelocity.normalized,tangent));
-            cuePath.Add(contactCentre); targetPath.Add(balls[targetIndex].position);
+            cuePath.Add(contactCentre); ContactPathIndex=cuePath.Count-1;
+            targetPath.Add(balls[targetIndex].position);
         }
 
         void DrawTargetFirstSegment(Vector3 direction)

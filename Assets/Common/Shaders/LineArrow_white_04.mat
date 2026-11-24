@@ -43,7 +43,7 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _bg_alpha: 0.1
-    - _line_height: 0.5
+    - _line_height: 0.78
     - _polygon_height: 2.83
     - _polygon_width: 0.94
     - _speed: 0.75

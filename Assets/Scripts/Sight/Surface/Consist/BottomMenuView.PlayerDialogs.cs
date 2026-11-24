@@ -106,7 +106,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             var card=PlayerDialog(cue.Name,1130,650);
             PlayerCueArt(card,cue,75,225,980,90);
             Text("CueSummary",card,PlayerCueSummary(cue),60,325,1010,50,26,AttendanceInk,TextAlignmentOptions.Center,true);
-            string levels=cue.CueAbility==null?cue.CueDetail:"현재 레벨  "+string.Join(" / ",cue.CueAbility.LevelsFromSteps(cue.CueSteps+cue.CuePending/cue.CueAbility.Reach))+"\n최고 레벨  "+string.Join(" / ",cue.CueAbility.Maximum)+"\n능력치 순서: 파워 · 팔로스루 · 당점 · 시간";
+            string levels=cue.CueAbility==null?cue.CueDetail:"현재 레벨  "+string.Join(" / ",Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(cue.CueAbility.LevelsFromSteps(cue.CueSteps+cue.CuePending/cue.CueAbility.Reach)))+"\n최고 레벨  "+string.Join(" / ",Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(cue.CueAbility.Maximum))+"\n능력치 순서: 파워 · 팔로스루 · 당점 · 시간 · 가이드";
             Text("CueLevels",card,levels,60,380,1010,109,24,AttendanceInk,TextAlignmentOptions.Center,true);
             Text("CueGrowth",card,PlayerCueProgress(cue),60,492,1010,38,25,AttendanceInk);
             PlayerButton("EquipCue",card,cue.Equipped?"장착 해제 · 기본 큐대로":"장착하기",315,557,500,53,()=>SetPlayerEquipment(cue,!cue.Equipped)).interactable=!playerSaving;

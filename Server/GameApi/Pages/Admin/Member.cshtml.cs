@@ -26,9 +26,10 @@ public class MemberModel(AdminReadService read, AdminMemberService members, Data
         {
             var ability=System.Text.Json.JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(r.GetString(3),Database.Json)!;
             long steps=r.GetInt64(5)+r.GetInt64(6)/ability.Reach;
-            var levels=ability.LevelsFromSteps(steps);
-            Cues.Add(new(r.GetInt64(0),r.GetString(1),r.GetBoolean(2),ability.Grade,ability.Initial,levels,ability.Maximum,
-                levels.Select(ability.Percent).ToArray(),r.GetInt64(4),steps,r.GetInt64(6)%ability.Reach,ability.Reach));
+            var levels=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.LevelsFromSteps(steps));
+            var effective=levels.Select(ability.Percent).ToArray();effective[4]=ability.GuidePercent(steps);
+            Cues.Add(new(r.GetInt64(0),r.GetString(1),r.GetBoolean(2),ability.Grade,Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Initial),levels,Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Maximum),
+                effective,r.GetInt64(4),steps,r.GetInt64(6)%ability.Reach,ability.Reach));
         }
     }
     public Guid Id { get; set; }

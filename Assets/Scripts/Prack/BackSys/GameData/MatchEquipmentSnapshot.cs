@@ -29,6 +29,8 @@ namespace Assets.Scripts.Prack.BackSys.GameData
         public long CueId, CharacterId;
         public string CueVisual = "";
         public int Power, FollowThrough, Tip, ShotSeconds;
+        public int Guide = 100;
+        public float GuideScale => (Ability != null && Ability.HasGuide() ? Ability.Percent(Guide) : Clamp(Guide,0,100))/100f;
         public MatchEquipmentEmotion[] Emotions = Array.Empty<MatchEquipmentEmotion>();
         public string[] Messages = Array.Empty<string>();
         public MatchMessagePack[] MessagePacks = Array.Empty<MatchMessagePack>();
@@ -47,15 +49,23 @@ namespace Assets.Scripts.Prack.BackSys.GameData
     [Serializable] public sealed class CueAbilitySettings
     {
         public string Grade = "A";
-        public int[] Initial = {100,100,100,50};
-        public int[] Maximum = {100,100,100,100};
+        public int[] Initial = {100,100,100,50,100};
+        public int[] Maximum = {100,100,100,100,100};
         public int Reach = 100;
         public bool Valid()
         {
-            if((Grade!="A" && Grade!="B" && Grade!="C") || Reach<1 || Reach>1000000 || Initial==null || Maximum==null || Initial.Length!=4 || Maximum.Length!=4)return false;
-            for(int i=0;i<4;i++)if(Initial[i]<0 || Initial[i]>Maximum[i] || Maximum[i]>100)return false;
+            if((Grade!="A" && Grade!="B" && Grade!="C") || Reach<1 || Reach>1000000 || Initial==null || Maximum==null || (Initial.Length!=4 && Initial.Length!=5) || Maximum.Length!=Initial.Length)return false;
+            for(int i=0;i<Initial.Length;i++)if(Initial[i]<0 || Initial[i]>Maximum[i] || Maximum[i]>100)return false;
             return true;
         }
+        public bool HasGuide() => Initial != null && Initial.Length == 5;
+        public static int[] WithGuide(int[] values)
+        {
+            var result = new int[]{100,100,100,100,100};
+            if(values != null) Array.Copy(values,result,Math.Min(values.Length,5));
+            return result;
+        }
+        public int GuidePercent(long steps) => HasGuide() ? Percent(LevelsFromSteps(steps)[4]) : 100;
         public int Percent(int level) => (int)Math.Round(Math.Max(0,Math.Min(100,level))*(Grade=="B"?.9:Grade=="C"?.8:1),MidpointRounding.AwayFromZero);
         public int[] Levels(long shots)
         {
@@ -63,8 +73,8 @@ namespace Assets.Scripts.Prack.BackSys.GameData
         }
         public int[] LevelsFromSteps(long earnedSteps)
         {
-            var result=new int[4];long steps=Math.Min(100,Math.Max(0,earnedSteps));
-            for(int i=0;i<4;i++)result[i]=(int)Math.Min(Maximum[i],Initial[i]+steps);
+            var result=new int[Initial.Length];long steps=Math.Min(100,Math.Max(0,earnedSteps));
+            for(int i=0;i<result.Length;i++)result[i]=(int)Math.Min(Maximum[i],Initial[i]+steps);
             return result;
         }
     }

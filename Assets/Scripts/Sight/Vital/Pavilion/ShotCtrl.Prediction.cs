@@ -133,7 +133,10 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 // line. Practice already applies this guard for very small powers.
                 if(prediction.cuePath.Count<2 || prediction.PathDistance<.0001f)return;
                 RenderPredictedPath(cueBallLines,cueBallLineMaterials,prediction.cuePath,3+lineLength);
-                RenderPredictedPath(targetBallLines,targetBallLineMaterials,prediction.targetPath,float.PositiveInfinity);
+                bool reachesTarget=Assets.Scripts.Often.CueGuideLength.ReachesContact(prediction.cuePath,
+                    3+lineLength,Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter.GuideScale,prediction.ContactPathIndex);
+                if(reachesTarget)RenderPredictedPath(targetBallLines,targetBallLineMaterials,prediction.targetPath,float.PositiveInfinity);
+                else foreach(var line in targetBallLines)if(line)line.positionCount=0;
                 SetBallChecker(prediction.contactCentre,prediction.targetIndex<0 ? -1 : physicsManager.balls[prediction.targetIndex].id);
                 if(prediction.targetIndex>=0)physicsManager.ringCue.FigureVal(prediction.contactThickness);
                 if(complete)PreviewCompleted++;else PreviewPartialUpdates++;
@@ -144,6 +147,8 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         {
             foreach(var line in lines) line.positionCount=0;
             if(points.Count<2 || lines.Length==0) return;
+            limit=Assets.Scripts.Often.CueGuideLength.Limit(points,limit,Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter.GuideScale);
+            if(limit<=0)return;
             if(previewRenderBuffer.Length<points.Count+1)Array.Resize(ref previewRenderBuffer,Mathf.NextPowerOfTwo(points.Count+1));
             int count=1;previewRenderBuffer[0]=points[0];float length=0;
             for(int i=1;i<points.Count;i++)
