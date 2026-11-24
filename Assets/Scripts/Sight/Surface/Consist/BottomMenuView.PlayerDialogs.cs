@@ -103,13 +103,40 @@ namespace Assets.Scripts.Sight.Surface.Consist
         }
         void OpenPlayerCue(ShopProductData cue)
         {
-            var card=PlayerDialog(cue.Name,1130,650);
+            var card=PlayerDialog(cue.Name,1130,850);
             PlayerCueArt(card,cue,75,225,980,90);
             Text("CueSummary",card,PlayerCueSummary(cue),60,325,1010,50,26,AttendanceInk,TextAlignmentOptions.Center,true);
             string levels=cue.CueAbility==null?cue.CueDetail:"현재 레벨  "+string.Join(" / ",Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(cue.CueAbility.LevelsFromSteps(cue.CueSteps+cue.CuePending/cue.CueAbility.Reach)))+"\n최고 레벨  "+string.Join(" / ",Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(cue.CueAbility.Maximum))+"\n능력치 순서: 파워 · 팔로스루 · 당점 · 시간 · 가이드";
             Text("CueLevels",card,levels,60,380,1010,109,24,AttendanceInk,TextAlignmentOptions.Center,true);
-            Text("CueGrowth",card,PlayerCueProgress(cue),60,492,1010,38,25,AttendanceInk);
-            PlayerButton("EquipCue",card,cue.Equipped?"장착 해제 · 기본 큐대로":"장착하기",315,557,500,53,()=>SetPlayerEquipment(cue,!cue.Equipped)).interactable=!playerSaving;
+            Text("CueGrowth",card,PlayerCueProgress(cue),60,492,540,38,25,AttendanceInk);
+            var bowls=cue.CueBowls;
+            if(bowls!=null){
+                Text("AutoDrinkLabel",card,"자동 마시기: "+(bowls.Auto?"켜짐":"꺼짐")+" (상품 설정)",620,492,430,36,22,AttendanceInk);
+                string[] names={"파워","팔로스루","당점","시간","가이드"};
+                for(int i=0;i<5;i++){
+                    int index=i;float y=540+i*35;
+                    string state=bowls.Drunk[i]?"마시기 완료":bowls.Ready(i)?"가득 참 · 승인 대기":"채우는 중";
+                    Text("Bowl"+i,card,names[i]+"   "+bowls.Filled[i]+" / "+bowls.Maximum[i]+"   · "+state,65,y,720,32,23,AttendanceInk,TextAlignmentOptions.MidlineLeft,true);
+                    PlayerButton("DrinkBowl"+i,card,"마시기",830,y,210,30,()=>ChangeCueBowl(cue,index),false).interactable=!playerSaving&&!bowls.Auto&&bowls.Ready(i);
+                }
+                Text("BowlDiscardNotice",card,"5종 모두 마시면 진도 +1 · 모두 가득 찬 동안의 추가 득점은 소멸합니다.",65,719,990,33,20,AttendanceInk);
+            }
+            PlayerButton("EquipCue",card,cue.Equipped?"장착 해제 · 기본 큐대로":"장착하기",315,765,500,53,()=>SetPlayerEquipment(cue,!cue.Equipped)).interactable=!playerSaving;
+        }
+        [Serializable] sealed class BowlActionInput {public long CueId,Cycle;public string Operation;public int Index;}
+        async void ChangeCueBowl(ShopProductData cue,int index)
+        {
+            if(playerSaving||string.IsNullOrEmpty(playerOwner)||cue.CueBowls==null)return;
+            var owner=playerOwner;int request=playerRequest;playerSaving=true;
+            try {
+                await GameApiClient.Request<Assets.Scripts.Prack.BackSys.GameData.CueBowlState>("/api/me/cue-bowls/drink","POST",new BowlActionInput{CueId=cue.Id,Cycle=cue.CueBowls.Cycle,Operation=Guid.NewGuid().ToString("D"),Index=index});
+                var inventory=await GameApiClient.Request<ShopCatalogData>("/api/me/inventory");
+                if(!PlayerCurrent(request)||playerOwner!=owner)return;
+                playerItems=inventory.Products;playerSaving=false;DrawPlayerLocker();
+                var updated=playerItems.FirstOrDefault(p=>p.Id==cue.Id);if(updated!=null&&playerDialog)OpenPlayerCue(updated);
+                playerStatus.text="바가지 상태를 갱신했습니다.";
+            }catch(Exception){if(PlayerCurrent(request))playerStatus.text="바가지 처리 상태를 확인하지 못했습니다. 새로고침 후 확인해 주세요.";}
+            finally{playerSaving=false;}
         }
     }
 }

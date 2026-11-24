@@ -5,16 +5,17 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace MagicOnline.GameApi.Pages.Admin;
 public class MemberModel(AdminReadService read, AdminMemberService members, Database db) : PageModel
 {
-    public sealed record MemberCue(long Id,string Name,bool Equipped,string Grade,int[] Initial,int[] Levels,int[] Maximum,int[] Effective,long Shots,long Steps,long Pending,int Reach)
+    public sealed record MemberCue(long Id,string Name,bool Equipped,string Grade,int[] Initial,int[] Levels,int[] Maximum,int[] Effective,long Shots,long Steps,long Pending,int Reach,Assets.Scripts.Prack.BackSys.GameData.CueBowlState Bowls)
     {
         public bool Maxed => Levels.SequenceEqual(Maximum);
     }
     public List<MemberCue> Cues { get; } = new();
     async Task LoadCues(Guid user)
     {
+        await CueProgress.SyncPolicies(db,user);
         await using var cmd=db.Source.CreateCommand("""
             SELECT p.id,p.name,EXISTS(SELECT FROM shop_user_equipment e WHERE e.user_id=i.user_id AND e.product_id=p.id AND e.slot='Cue'),
-                   COALESCE(i.cue_ability,c.ability)::text,COALESCE(g.shots,0),COALESCE(g.steps,0),COALESCE(g.progress,0)
+                   COALESCE(i.cue_ability,c.ability)::text,COALESCE(g.shots,0),COALESCE(g.steps,0),COALESCE(g.progress,0),g.bowls::text,c.ability::text
             FROM shop_user_inventory i JOIN shop_products p ON p.id=i.product_id
             JOIN shop_cues c ON c.product_id=p.id
             LEFT JOIN shop_cue_progress g ON g.user_id=i.user_id AND g.product_id=i.product_id
@@ -29,7 +30,8 @@ public class MemberModel(AdminReadService read, AdminMemberService members, Data
             var levels=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.LevelsFromSteps(steps));
             var effective=levels.Select(ability.Percent).ToArray();effective[4]=ability.GuidePercent(steps);
             Cues.Add(new(r.GetInt64(0),r.GetString(1),r.GetBoolean(2),ability.Grade,Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Initial),levels,Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Maximum),
-                effective,r.GetInt64(4),steps,r.GetInt64(6)%ability.Reach,ability.Reach));
+                effective,r.GetInt64(4),steps,r.GetInt64(6)%ability.Reach,ability.Reach,
+                r.IsDBNull(7)?new Assets.Scripts.Prack.BackSys.GameData.CueBowlState{Maximum=System.Text.Json.JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(r.GetString(8),Database.Json)!.BowlMaximum,Auto=System.Text.Json.JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(r.GetString(8),Database.Json)!.BowlAuto}:System.Text.Json.JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueBowlState>(r.GetString(7),Database.Json)!));
         }
     }
     public Guid Id { get; set; }

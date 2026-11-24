@@ -48,10 +48,10 @@ namespace Assets.Scripts.Exert.Network
             MatchEquipment = snapshot;
         }
 
-        public void RecordCasualCuePoint(int playerId)
+        public void RecordCasualCuePoint(int playerId,int points=1)
         {
             if(!HasLegacyMatch || HasScoreCoins || historyEnded || (!IsFriendly && !IsGuildWar) || playerId!=PoolPlayer.mainPlayer.playerId || MatchEquipment==null)return;
-            MatchEquipmentRuntime.RecordCasualPoint(LegacyMatchId,legacyShotSerial,MatchEquipment.Players[LegacyLocalSeat].CueId);
+            MatchEquipmentRuntime.RecordCasualPoint(LegacyMatchId,legacyShotSerial,MatchEquipment.Players[LegacyLocalSeat].CueId,points);
         }
         public bool SendEquippedMessage(int index)
         {
@@ -96,7 +96,7 @@ namespace Assets.Scripts.Exert.Network
         static bool InPractice=>UnityEngine.SceneManagement.SceneManager.GetActiveScene().name=="TableSet07" &&
             Assets.Scripts.Often.PracticeSceneFlow.Configuration.Execution==Assets.Scripts.Often.MatchExecutionMode.LocalPractice &&
             Assets.Scripts.Often.PracticeSceneFlow.SelectedMode!=Assets.Scripts.Often.PracticeSceneFlow.Mode.Stage;
-        [Serializable] sealed class ProgressPoint {public string RunId;public int Shot;public long CueId;}
+        [Serializable] sealed class ProgressPoint {public string RunId;public int Shot;public long CueId;public int Points=1;}
         [Serializable] sealed class ProgressQueue {public System.Collections.Generic.List<ProgressPoint> Items=new System.Collections.Generic.List<ProgressPoint>();}
         static readonly System.Threading.SemaphoreSlim progressGate=new System.Threading.SemaphoreSlim(1,1);
         static ProgressQueue ReadQueue(string key)
@@ -104,16 +104,16 @@ namespace Assets.Scripts.Exert.Network
             try{var q=JsonUtility.FromJson<ProgressQueue>(PlayerPrefs.GetString(key,""))??new ProgressQueue();if(q.Items==null)q.Items=new System.Collections.Generic.List<ProgressPoint>();return q;}
             catch{return new ProgressQueue();}
         }
-        public static async void RecordPracticePoint()
+        public static async void RecordPracticePoint(int points=1)
         {
             if(!InPractice || practiceProfile==null || practiceProfile.CueId<1 || string.IsNullOrEmpty(GameApiClient.UserId))return;
-            EnqueuePoint(new ProgressPoint{RunId=practiceRun,Shot=++practiceShot,CueId=practiceProfile.CueId});
+            EnqueuePoint(new ProgressPoint{RunId=practiceRun,Shot=++practiceShot,CueId=practiceProfile.CueId,Points=points});
             await FlushProgressAsync();
         }
-        public static async void RecordCasualPoint(string match,int shot,long cue)
+        public static async void RecordCasualPoint(string match,int shot,long cue,int points=1)
         {
             if(cue<1 || string.IsNullOrEmpty(GameApiClient.UserId) || !Guid.TryParse(match,out var run))return;
-            EnqueuePoint(new ProgressPoint{RunId=run.ToString("D"),Shot=shot,CueId=cue});await FlushProgressAsync();
+            EnqueuePoint(new ProgressPoint{RunId=run.ToString("D"),Shot=shot,CueId=cue,Points=points});await FlushProgressAsync();
         }
         static void EnqueuePoint(ProgressPoint point)
         {
@@ -131,7 +131,7 @@ namespace Assets.Scripts.Exert.Network
                 {
                     var queue=ReadQueue(key);if(queue.Items.Count==0)return;
                     try {
-                        var input=queue.Items[0];
+                        var input=queue.Items[0];if(input.Points<1)input.Points=1;
                         if(Guid.TryParse(input.RunId,out var run))input.RunId=run.ToString("D");
                         var next=await GameApiClient.Request<MatchEquipmentProfile>("/api/me/cue-progress/practice","POST",input);
                         if(owner!=GameApiClient.UserId)return;

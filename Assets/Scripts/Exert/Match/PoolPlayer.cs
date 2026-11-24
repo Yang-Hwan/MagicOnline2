@@ -365,7 +365,7 @@ namespace Assets.Scripts.Exert.Match
                             coinNetwork is Assets.Scripts.Exert.Network.PunNetwork coinMatch)
                         {
                             if(coinMatch.HasScoreCoins)coinMatch.AddScoringCoins(playerId, scoreBefore, player.hitInning - cnt + 1, cnt);
-                            if(scoreBefore<PoolCoach.Instance.targetHit)coinMatch.RecordCasualCuePoint(playerId);
+                            if(scoreBefore<PoolCoach.Instance.targetHit)coinMatch.RecordCasualCuePoint(playerId,PoolCoach.Instance.matchBall==MatchBall.ThreeBall?cnt:Mathf.Min(cnt,PoolCoach.Instance.targetHit-scoreBefore));
                         }
 
                         if(player.hitInning > player.hitHigh)

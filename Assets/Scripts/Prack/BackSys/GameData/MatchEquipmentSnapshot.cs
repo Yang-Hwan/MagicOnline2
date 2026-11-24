@@ -52,11 +52,13 @@ namespace Assets.Scripts.Prack.BackSys.GameData
         public int[] Initial = {100,100,100,50,100};
         public int[] Maximum = {100,100,100,100,100};
         public int Reach = 100;
+        public int[] BowlMaximum = {20,10,30,20,40};
+        public bool BowlAuto;
         public bool Valid()
         {
             if((Grade!="A" && Grade!="B" && Grade!="C") || Reach<1 || Reach>1000000 || Initial==null || Maximum==null || (Initial.Length!=4 && Initial.Length!=5) || Maximum.Length!=Initial.Length)return false;
             for(int i=0;i<Initial.Length;i++)if(Initial[i]<0 || Initial[i]>Maximum[i] || Maximum[i]>100)return false;
-            return true;
+            return BowlMaximum!=null && BowlMaximum.Length==5 && Array.TrueForAll(BowlMaximum,n=>n>=1&&n<=10000);
         }
         public bool HasGuide() => Initial != null && Initial.Length == 5;
         public static int[] WithGuide(int[] values)
@@ -79,6 +81,25 @@ namespace Assets.Scripts.Prack.BackSys.GameData
         }
     }
     [Serializable] public sealed class MatchEquipmentEmotion { public string Code = "", Asset = ""; }
+    [Serializable] public sealed class CueBowlState
+    {
+        public int[] Maximum={20,10,30,20,40}, Filled=new int[5];
+        public bool[] Drunk=new bool[5];
+        public bool Auto;
+        public long Cycle;
+        public bool Ready(int index)=>index>=0&&index<5&&Filled[index]>=Maximum[index]&&!Drunk[index];
+        // Each point visits exactly one non-full bowl. Full rounds discard further points.
+        public bool Add(int randomChoice)
+        {
+            int available=0;for(int i=0;i<5;i++)if(Filled[i]<Maximum[i])available++;
+            if(available==0)return false;
+            int pick=randomChoice%available;
+            for(int i=0;i<5;i++)if(Filled[i]<Maximum[i]&&pick--==0){Filled[i]++;if(Auto&&Filled[i]==Maximum[i])Drunk[i]=true;return true;}
+            return false;
+        }
+        public bool Complete=>Array.TrueForAll(Drunk,x=>x);
+        public void Reset(int[] maximum){Maximum=(int[])maximum.Clone();Filled=new int[5];Drunk=new bool[5];Cycle++;}
+    }
     [Serializable] public sealed class MatchMessagePack
     {
         public string Name = "";

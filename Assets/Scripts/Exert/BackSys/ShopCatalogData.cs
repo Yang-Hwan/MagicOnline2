@@ -15,6 +15,7 @@ namespace Assets.Scripts.Exert.BackSys
         public bool Purchasable, Owned, Equipped;
         public Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings CueAbility;
         public long CueProgress,CueSteps,CuePending;
+        public Assets.Scripts.Prack.BackSys.GameData.CueBowlState CueBowls;
         public int CueTimeMin=20,CueTimeMax=40;
         public string CueDetail
         {

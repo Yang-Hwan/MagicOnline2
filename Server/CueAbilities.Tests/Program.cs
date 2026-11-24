@@ -21,6 +21,11 @@ Check(guideAbility.Valid() && guideAbility.Levels(5)[4]==52,"guide grows and cap
 Check(new MatchEquipmentProfile{Ability=guideAbility,Guide=50}.GuideScale==.5f,"50 effective guide is half length");
 Check(!new CueAbilitySettings{Initial=[100,100,100,50,101]}.Valid(),"guide above 100 rejected");
 Check(!new CueAbilitySettings{Initial=[100,100,100,50,-1]}.Valid(),"negative guide rejected");
+var bowl=new CueBowlState{Maximum=[20,10,30,20,40],Filled=[10,10,0,0,10]};
+for(int i=0;i<60;i++){var sample=new CueBowlState{Maximum=[20,10,30,20,40],Filled=[10,10,0,0,10]};sample.Add(i);Check(sample.Filled[1]==10&&sample.Filled.Sum()==31,"full follow bowl excluded, one point only");}
+bowl.Filled=(int[])bowl.Maximum.Clone();Check(!bowl.Add(0)&&!bowl.Complete,"full unapproved round discards points without completing");
+bowl.Auto=true;Check(!bowl.Add(0),"automatic flag alone cannot invent a point");
+Check(!new CueAbilitySettings{BowlMaximum=[0,1,1,1,1]}.Valid()&&!new CueAbilitySettings{BowlMaximum=[1,1]}.Valid(),"invalid bowl limits rejected");
 var config=new ConfigurationBuilder().AddUserSecrets<Database>().Build();var cs=new NpgsqlConnectionStringBuilder(config.GetConnectionString("GameDb"));
 if(cs.Host is not ("localhost" or "127.0.0.1"))throw new Exception("Local database only");
 await using var root=NpgsqlDataSource.Create(cs.ConnectionString);string schema="cue_abilities_test_"+Guid.NewGuid().ToString("N");
@@ -41,10 +46,12 @@ try {
  var service=new MatchEquipment(db);var id=Guid.NewGuid().ToString("N");var snapshot=await service.Freeze(id,a,b);
  Check(snapshot.Players.All(p=>p.Power==60 && p.TurnSeconds(30)==30 && p.TipScale==.5f),"database cue config reaches immutable match snapshot");
  Check(snapshot.Players[0].Guide==50 && Math.Abs(snapshot.Players[0].GuideScale-.45f)<.00001,"guide level and B grade reach frozen match profile");
+ await Sql("INSERT INTO shop_cue_progress(user_id,product_id,bowls) VALUES($1,$2,$3::jsonb)",a,cue,JsonSerializer.Serialize(new CueBowlState{Maximum=[1,1,1,1,1],Auto=true},Database.Json));
+ ability.BowlMaximum=[1,1,1,1,1];ability.BowlAuto=true;await Sql("UPDATE shop_cues SET ability=$2::jsonb WHERE product_id=$1",cue,JsonSerializer.Serialize(ability,Database.Json));
  var award=typeof(CueProgress).GetMethod("Award",BindingFlags.Static|BindingFlags.NonPublic)!;
  award.Invoke(null,[c,a,cue,"practice-one",1]);award.Invoke(null,[c,a,cue,"practice-one",1]);
  Check((long)(await Sql("SELECT shots FROM shop_cue_progress WHERE user_id=$1 AND product_id=$2",a,cue))! ==1,"point retry advances only once");
- award.Invoke(null,[c,a,cue,"practice-two",1]);
+ award.Invoke(null,[c,a,cue,"practice-two",9]);
  var next=await service.Freeze(Guid.NewGuid().ToString("N"),a,b);
  Check(next.Players[0].Power==61 && next.Players[0].FollowThrough==71,"reach threshold upgrades owned cue on next match");
  Check((await service.Read(id,a)).Players[0].Power==60,"ongoing match retains pre-growth power");
@@ -59,7 +66,7 @@ try {
  await service.Freeze(match,a,b);settlement.Ready(match,a.ToString(),rules);settlement.Ready(match,b.ToString(),rules);
  var coins=new ScoreCoinLedger(100000,100000,1000,5);coins.Add(1,0,1,2,true);coins.Add(2,0,3,1);
  var result=new ResultReport(5,0,0,coins.Events);settlement.ConfirmResult(match,a.ToString(),result);settlement.ConfirmResult(match,b.ToString(),result);settlement.ConfirmResult(match,a.ToString(),result);
- Check((long)(await Sql("SELECT shots FROM shop_cue_progress WHERE user_id=$1 AND product_id=$2",a,cue))! ==4,"bank contributes one shot; settlement retries do not duplicate growth");
+ Check((long)(await Sql("SELECT shots FROM shop_cue_progress WHERE user_id=$1 AND product_id=$2",a,cue))! ==13,"bank contributes two points; settlement retries do not duplicate bowl points");
  await Sql("UPDATE shop_cue_progress SET shots=100000,steps=100000,progress=0 WHERE user_id=$1 AND product_id=$2",a,cue);
  var capped=await service.Freeze(Guid.NewGuid().ToString("N"),a,b);Check(capped.Players[0].Power==62 && capped.Players[0].Tip==56,"maximum levels enforced after many shots");
  Console.WriteLine($"{checks} cue ability checks passed; live accounts unchanged");

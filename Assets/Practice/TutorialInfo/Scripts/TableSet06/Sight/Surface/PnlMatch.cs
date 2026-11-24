@@ -549,7 +549,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             if(isHit && practiceHud && !physicsManager.IsPracticeReplay)
                 Assets.Scripts.Sight.Surface.Pavilion.ThreeCushionTechniqueMotion.Show(physicsManager.TechniqueTrace.Classify(true));
             if(isHit && PoolCoach.Instance.isRulePractice && !physicsManager.IsStage && !physicsManager.IsPracticeReplay)
-                Assets.Scripts.Exert.Network.MatchEquipmentRuntime.RecordPracticePoint();
+                Assets.Scripts.Exert.Network.MatchEquipmentRuntime.RecordPracticePoint(PoolLogic.Instance.ShotPoints);
             if (isHit) ShowScoreFloat(PoolLogic.Instance.ShotPoints);
             else if (PoolLogic.gameState.hitKinds.Contains(HitKind.Ball_Foul)) ShowScoreFloat(-1);
             if (PoolCoach.Instance.isRulePractice)

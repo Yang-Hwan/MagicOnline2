@@ -54,6 +54,16 @@ public static class PlayerPageValidation
             Invoke("DrawPlayerHeader");Invoke("DrawPlayerRecords");Invoke("DrawPlayerLocker");
             Find("PlayerStatus").GetComponent<TMP_Text>().text="UI 검증용 데이터 · 실제 화면은 서버 정보로 표시됩니다.";
             Render("ui-cues");
+            items[0].CueBowls=new CueBowlState{Filled=new[]{10,10,0,0,10}};
+            Invoke("OpenPlayerCue",items[0]);Render("ui-cue-bowls");
+            Check(Enumerable.Range(0,5).All(i=>Find("DrinkBowl"+i)),"All five bowl drink controls exist");
+            Check(Find("DrinkBowl1").GetComponent<Button>().interactable&&!Find("DrinkBowl0").GetComponent<Button>().interactable,"Only full unapproved bowls enable drinking");
+            Check(Find("Bowl1").GetComponent<TMP_Text>().text.Contains("10 / 10")&&Find("BowlDiscardNotice"),"Current bowl counts and discarded-score notice are visible");
+            Check(Find("AutoDrinkLabel").GetComponent<TMP_Text>().text.Contains("꺼짐"),"Automatic drinking defaults to off");
+            Check(!Find("AutoDrink")&&Find("AutoDrinkLabel").GetComponent<TMP_Text>().text.Contains("상품 설정"),"Member can read product auto mode but has no toggle");
+            if(File.Exists("Logs/Bowls/ui-only.request")){File.Delete("Logs/Bowls/ui-only.request");File.WriteAllText("Logs/Bowls/ui-result.json","{\"passed\":true,\"checks\":"+checks+",\"liveAccountsUntouched\":true}");return;}
+            Invoke("ClosePlayerDialog");Check(!Find("PlayerDialog"),"Bowl dialog dismisses without altering member data");
+
             var rate=Find("RecordRate0").GetComponent<TMP_Text>();
             File.WriteAllText("Logs/PlayerPage/rate-render.txt",$"text={rate.text} vertices={rate.mesh.vertexCount} cull={rate.canvasRenderer.cull} color={rate.color} size={rate.rectTransform.rect} material={rate.fontSharedMaterial.name}");
             Check(Find("BrushTitle").GetComponent<CanvasRenderer>() && Find("EditPencil").GetComponent<CanvasRenderer>(),"Brush heading and edit icons have native CanvasRenderers");

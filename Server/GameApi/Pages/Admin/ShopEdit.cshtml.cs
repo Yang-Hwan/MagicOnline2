@@ -37,7 +37,9 @@ public class ShopEditModel(Database db) : PageModel
         public int[] Initial {get;set;}=[100,100,100,50,100];
         public int[] Maximum {get;set;}=[100,100,100,100,100];
         public int Reach {get;set;}=100;
-        public Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings Ability()=>new(){Grade=Grade,Initial=Initial,Maximum=Maximum,Reach=Reach};
+        public int[] BowlMaximum {get;set;}=[20,10,30,20,40];
+        public bool BowlAuto {get;set;}
+        public Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings Ability()=>new(){Grade=Grade,Initial=Initial,Maximum=Maximum,Reach=Reach,BowlMaximum=BowlMaximum,BowlAuto=BowlAuto};
         public Dictionary<string,string> Faces { get; set; } = new();
         public string? Personality { get; set; }
         public string? Messages { get; set; }
@@ -75,7 +77,7 @@ public class ShopEditModel(Database db) : PageModel
         if(Input.Kind=="CoinPack"){Input.CoinAmount=r.IsDBNull(22)?0:r.GetInt64(22);Input.CoinBonus=r.IsDBNull(23)?0:r.GetInt64(23);}
         if(Input.Kind=="Cue") {
             var ability=System.Text.Json.JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(Str(21)!,Database.Json)!;
-            Input.Grade=ability.Grade;Input.Initial=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Initial);Input.Maximum=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Maximum);Input.Reach=ability.Reach;
+            Input.Grade=ability.Grade;Input.Initial=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Initial);Input.Maximum=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.Maximum);Input.Reach=ability.Reach;Input.BowlMaximum=ability.BowlMaximum;Input.BowlAuto=ability.BowlAuto;
         }
         return Page();
     }
@@ -88,7 +90,7 @@ public class ShopEditModel(Database db) : PageModel
         string? error=p.Kind switch {
             "GemPack" when p.Amount<=0 || p.Bonus<0 => "기본 보석은 1 이상, 추가 보석은 0 이상으로 입력해 주세요.",
             "CoinPack" when p.CoinAmount<=0 || p.CoinAmount>9_000_000_000_000_000L || p.CoinBonus<0 || p.CoinBonus>9_000_000_000_000_000L-p.CoinAmount => "기본 코인과 추가 코인의 합계는 1~9,000,000,000,000,000 범위로 입력해 주세요.",
-            "Cue" when string.IsNullOrWhiteSpace(p.Visual) || !p.Ability().Valid() => "큐대 스킨, 등급(A/B/C), 초기·최고 레벨(0~100), 도달 진도(1 이상)를 확인해 주세요.",
+            "Cue" when string.IsNullOrWhiteSpace(p.Visual) || !p.Ability().Valid() => "큐대 스킨, 등급(A/B/C), 초기·최고 레벨(0~100), 도달 진도(1 이상), 바가지 최대값 5개(각 1~10,000)를 확인해 주세요.",
             "Character" when Emotions.Any(e=>!p.Faces.TryGetValue(e,out var key)||string.IsNullOrWhiteSpace(key)) => "감정 9종의 이미지 경로를 모두 입력해 주세요.",
             "MessagePack" when string.IsNullOrWhiteSpace(p.Personality) || p.Lines.Length==0 => "성격과 메시지를 한 줄 이상 입력해 주세요.",
             _ => null
