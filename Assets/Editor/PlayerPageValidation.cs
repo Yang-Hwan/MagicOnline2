@@ -53,14 +53,16 @@ public static class PlayerPageValidation
             Set("playerItems",items.ToArray());Set("playerInformation",new MatchPlayerInfo{UserId=GameApiClient.UserId,Nickname="타이거우즈20",Level=12,LevelProgress=680,TotalPrize=30000000,Total=new PlayerRecord{Wins=60,Losses=40},ThreeBall=new PlayerRecord{Wins=38,Losses=22},FourBall=new PlayerRecord{Wins=22,Losses=18}});
             Invoke("DrawPlayerHeader");Invoke("DrawPlayerRecords");Invoke("DrawPlayerLocker");
             Find("PlayerStatus").GetComponent<TMP_Text>().text="UI 검증용 데이터 · 실제 화면은 서버 정보로 표시됩니다.";
-            Render("ui-cues");
+            items[0].CueBowls=new CueBowlState{Filled=new[]{10,10,0,0,10}};Invoke("DrawPlayerLocker");Render("ui-cues");
             items[0].CueBowls=new CueBowlState{Filled=new[]{10,10,0,0,10}};
             Invoke("OpenPlayerCue",items[0]);Render("ui-cue-bowls");
             Check(Enumerable.Range(0,5).All(i=>Find("DrinkBowl"+i)),"All five bowl drink controls exist");
             Check(Find("DrinkBowl1").GetComponent<Button>().interactable&&!Find("DrinkBowl0").GetComponent<Button>().interactable,"Only full unapproved bowls enable drinking");
-            Check(Find("Bowl1").GetComponent<TMP_Text>().text.Contains("10 / 10")&&Find("BowlDiscardNotice"),"Current bowl counts and discarded-score notice are visible");
-            Check(Find("AutoDrinkLabel").GetComponent<TMP_Text>().text.Contains("꺼짐"),"Automatic drinking defaults to off");
-            Check(!Find("AutoDrink")&&Find("AutoDrinkLabel").GetComponent<TMP_Text>().text.Contains("상품 설정"),"Member can read product auto mode but has no toggle");
+            Check(Find("BowlValue1").GetComponent<TMP_Text>().text=="+10"&&!Find("CloseCue"),"Ready amount is visible and detail has no close button");
+            Check(Find("GrowAll").GetComponent<Button>().interactable,"Grow all enables for a ready bowl");
+            Check(!Find("AutoDrink"),"Member cannot change product auto mode");
+            Check(Find("StatLevel1").GetComponent<TMP_Text>().text.Contains("밀기")&&Find("StatLevel4").GetComponent<TMP_Text>().text.Contains("조준"),"Rows use requested names");
+            Invoke("DrawPlayerLocker");Check(Find("GrowthNotice")&&!Find("GrowthNotice").GetComponent<Button>(),"List growth indicator is not an action");
             if(File.Exists("Logs/Bowls/ui-only.request")){File.Delete("Logs/Bowls/ui-only.request");File.WriteAllText("Logs/Bowls/ui-result.json","{\"passed\":true,\"checks\":"+checks+",\"liveAccountsUntouched\":true}");return;}
             Invoke("ClosePlayerDialog");Check(!Find("PlayerDialog"),"Bowl dialog dismisses without altering member data");
 
@@ -69,8 +71,10 @@ public static class PlayerPageValidation
             Check(Find("BrushTitle").GetComponent<CanvasRenderer>() && Find("EditPencil").GetComponent<CanvasRenderer>(),"Brush heading and edit icons have native CanvasRenderers");
             Check(Find("PlayerNickname").GetComponent<TMP_Text>().text=="타이거우즈20" && Find("TotalPrize").GetComponent<TMP_Text>().text=="30,000,000","Profile and cumulative prize bind their own values");
             Check(Find("RecordRate0").GetComponent<TMP_Text>().text=="60.0%" && Find("RecordRate1").GetComponent<TMP_Text>().text=="63.3%","Record panels use real model aggregation");
-            Check(Find("PlayerCue1") && Find("CueAbilities").GetComponent<TMP_Text>().text.Contains("54%"),"Equipped cue uses graded capabilities");
-            Tap("NextPage");Check(!Find("PlayerCue1") && menu.GetComponentsInChildren<RectTransform>().Count(r=>r.name.StartsWith("PlayerCue") && long.TryParse(r.name.Substring(9),out _))==3,"Cue pagination reaches additional owned cues");
+            Check(Find("PlayerCue1")&&Find("CueViewport").GetComponent<ScrollRect>().horizontal,"Cue carousel exists");
+            var cueScroll=Find("CueViewport").GetComponent<ScrollRect>();
+            Check(Mathf.Abs(((RectTransform)Find("PlayerCue1")).rect.width/((RectTransform)Find("CueViewport")).rect.width-920f/1430)<.001f,"One card plus about half of the next fits");
+            cueScroll.horizontalNormalizedPosition=1;Prepare();Check(cueScroll.content.anchoredPosition.x<0,"Cue carousel reaches the end");
             Tap("LockerMessages");Render("ui-messages");
             Check(Find("Phrase5") && Find("MessagePreviewViewport").GetComponent<ScrollRect>(),"All phrases appear in a scrollable preview");
             Tap("PreviewMessage201");Check(Find("MessagePreviewTitle").GetComponent<TMP_Text>().text.Contains("까칠이"),"Selecting a message pack changes its preview");

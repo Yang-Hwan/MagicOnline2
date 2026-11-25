@@ -29,7 +29,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         void OpenPlayerPage(int tab=0)
         {
             CloseModal();ClosePlayerPage();
-            playerOwner=GameApiClient.UserId;playerTab=Mathf.Clamp(tab,0,1);playerCuePage=playerCharacterPage=0;
+            playerCueScroll=0;playerOwner=GameApiClient.UserId;playerTab=Mathf.Clamp(tab,0,1);playerCuePage=playerCharacterPage=0;
             playerItems=Array.Empty<ShopProductData>();playerInformation=null;playerMessageId=0;
             playerPage=Node("PlayerPage",design,0,0,Width,Height);
             Box("OpaquePage",playerPage,0,0,Width,Height,Color.black).raycastTarget=true;

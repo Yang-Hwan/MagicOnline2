@@ -20,28 +20,53 @@ namespace Assets.Scripts.Sight.Surface.Consist
             if(playerTab==0)DrawPlayerCues();else DrawPlayerMessages();
         }
         ShopProductData[] PlayerOwned(string kind)=>playerItems.Where(p=>p.Owned && p.Kind==kind).OrderByDescending(p=>p.Equipped).ThenBy(p=>p.Name).ThenBy(p=>p.Id).ToArray();
+        static readonly Color CueIvory=new Color(.96f,.99f,1),CueQuiet=new Color(.66f,.78f,.88f);
+        RectTransform CueChrome(string name,Transform parent,float x,float y,float w,float h,CueLockerGraphic.Finish finish)
+        {
+            var node=Node(name,parent,x,y,w,h);var graphic=node.gameObject.AddComponent<CueLockerGraphic>();graphic.finish=finish;graphic.raycastTarget=false;return node;
+        }
+        UnityEngine.UI.Button CueButton(string id,Transform parent,string label,float x,float y,float w,float h,UnityEngine.Events.UnityAction action,bool gold,bool enabled=true)
+        {
+            CueChrome(id+"Face",parent,x,y,w,h,enabled?(gold?CueLockerGraphic.Finish.Gold:CueLockerGraphic.Finish.Blue):CueLockerGraphic.Finish.Muted);
+            Text(id+"Label",parent,label,x+8,y,w-16,h,h>60?33:26,enabled?(gold?new Color(.13f,.08f,.015f):CueIvory):CueQuiet);
+            var button=Hit(id,parent,x,y,w,h,action);button.interactable=enabled;return button;
+        }
+        float playerCueScroll;
+        static bool CueCanGrow(ShopProductData cue)=>cue.CueBowls!=null&&!cue.CueBowls.Auto&&Enumerable.Range(0,5).Any(cue.CueBowls.Ready);
         void DrawPlayerCues()
         {
             var items=PlayerOwned("Cue");
             if(items.Length==0){Text("EmptyCues",playerLocker,"보유한 큐대가 없습니다. 기본 큐대를 사용 중입니다.",50,105,1330,90,30,AttendanceInk);return;}
-            int pages=(items.Length+2)/3;playerCuePage=Mathf.Clamp(playerCuePage,0,pages-1);
-            for(int i=0;i<3 && playerCuePage*3+i<items.Length;i++){
-                var cue=items[playerCuePage*3+i];
-                var row=Node("PlayerCue"+cue.Id,playerLocker,0,57+i*78,1430,75);
-                if(cue.Equipped)AttendancePaper("EquippedRow",row,-8,0,1446,72,new Color(.88f,.94f,.77f,.85f),new Color(.57f,.69f,.38f),13,1);
-                Text("CueName",row,cue.Name,0,5,230,34,29,AttendanceInk,TextAlignmentOptions.MidlineLeft,true);
-                Text("CueGrade",row,(cue.CueAbility?.Grade??"A")+"급",0,41,80,27,21,PlayerGreen,TextAlignmentOptions.MidlineLeft);
-                PlayerCueArt(row,cue,255,1,760,37);
-                Text("CueAbilities",row,PlayerCueSummary(cue),95,39,950,31,20,AttendanceInk,TextAlignmentOptions.MidlineLeft,true);
-                string progress=PlayerCueProgress(cue);
-                Text("CueProgress",row,progress,1020,2,200,31,20,AttendanceInk,TextAlignmentOptions.Center,true);
-                float fraction=progress.Contains("MAX")?1:cue.CueAbility==null?0:(float)(cue.CuePending%cue.CueAbility.Reach)/cue.CueAbility.Reach;
-                AttendancePaper("GrowthTrack",row,1040,40,160,12,new Color(.82f,.83f,.73f),Color.clear,6);
-                if(fraction>0)AttendancePaper("GrowthFill",row,1040,40,160*fraction,12,PlayerGreen,Color.clear,6);
-                PlayerButton("CueDetails",row,cue.Equipped?"장착 중 · 상세":"상세 · 장착",1235,14,188,43,()=>OpenPlayerCue(cue),!cue.Equipped);
-                Box("RowRule",row,0,74,1430,1,PlayerLine);
+            const float cardWidth=920,spacing=30;
+            CueChrome("CueListBackdrop",playerLocker,-6,53,1442,254,CueLockerGraphic.Finish.Background);
+            var viewport=Node("CueViewport",playerLocker,0,58,1430,250);
+            var surface=viewport.gameObject.AddComponent<UnityEngine.UI.Image>();surface.color=Color.clear;
+            viewport.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
+            var content=Node("CueCards",viewport,0,0,Mathf.Max(1430,items.Length*(cardWidth+spacing)-spacing),250);
+            var scroll=viewport.gameObject.AddComponent<UnityEngine.UI.ScrollRect>();scroll.viewport=viewport;scroll.content=content;
+            scroll.horizontal=true;scroll.vertical=false;scroll.scrollSensitivity=45;scroll.movementType=UnityEngine.UI.ScrollRect.MovementType.Clamped;
+            for(int i=0;i<items.Length;i++){
+                var cue=items[i];var card=Node("PlayerCue"+cue.Id,content,i*(cardWidth+spacing),0,cardWidth,240);
+                AttendancePaper("CardShadow",card,3,6,cardWidth-6,232,new Color(0,0,0,.12f),Color.clear,22);
+                CueChrome("CardFace",card,0,0,cardWidth,230,CueLockerGraphic.Finish.Panel);
+                CueChrome("CardTitleBand",card,2,2,916,67,CueLockerGraphic.Finish.Header);
+                CueChrome("GradeBadge",card,25,15,88,43,CueLockerGraphic.Finish.Blue);
+                Text("CueGrade",card,(cue.CueAbility?.Grade??"A")+"급",25,15,88,43,26,Color.white);
+                Text("CueName",card,cue.Name,137,11,510,49,34,CueIvory,TextAlignmentOptions.Center,true);
+                Text("EquipState",card,cue.Equipped?"장착중":"장착하기",674,15,215,42,25,CueIvory);
+                CueChrome("SkinWell",card,26,84,868,86,CueLockerGraphic.Finish.Inset);
+                PlayerCueArt(card,cue,49,96,820,61);
+                Text("DetailHint",card,"큐대 상세 보기  ›",29,183,500,29,20,CueQuiet,TextAlignmentOptions.MidlineLeft);
+                if(CueCanGrow(cue)){
+                    CueChrome("GrowthNotice",card,710,181,180,35,CueLockerGraphic.Finish.Gold);
+                    Text("GrowthNoticeLabel",card,"성장!",710,181,180,35,25,new Color(.13f,.08f,.015f));
+                }
+                // One card target: the growth badge is an indicator, never a drink action.
+                Hit("CueDetails",card,0,0,cardWidth,230,()=>{if(!playerSaving)OpenPlayerCue(cue);});
             }
-            if(pages>1)PlayerPager(playerLocker,pages,playerCuePage,301,()=>{playerCuePage--;DrawPlayerLocker();},()=>{playerCuePage++;DrawPlayerLocker();});
+            scroll.horizontalNormalizedPosition=playerCueScroll;
+            scroll.onValueChanged.AddListener(v=>playerCueScroll=v.x);
+            Text("CueScrollHint",playerLocker,"좌우로 밀어 큐대를 확인하세요",0,309,1430,22,17,AttendanceInk);
         }
         string PlayerCueSummary(ShopProductData cue)
         {
