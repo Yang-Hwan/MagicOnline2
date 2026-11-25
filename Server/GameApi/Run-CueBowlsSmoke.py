@@ -87,6 +87,9 @@ try:
  action0={'CueId':cid,'Operation':str(uuid.uuid4()),'Cycle':0,'Index':0}
  state=api('POST','/api/me/cue-bowls/drink',a,action0);check(state['Drunk']==[True,False,False,False,False],'manual drinking approves only chosen bowl')
  api('POST','/api/me/cue-bowls/drink',a,action0);check(item()['CuePending']==0,'repeated drink operation cannot grant progress')
+ with db.cursor() as c:c.execute(sql.SQL("UPDATE {}.shop_cue_progress SET bowls=jsonb_set(bowls,'{{Filled,0}}','2'::jsonb) WHERE user_id=%s AND product_id=%s").format(sql.Identifier(schema)),(a['UserId'],cid))
+ check(item()['CueBowls']['Filled'][0]==0 and item()['CuePending']==0,'legacy approved bowl is consumed visually without another growth credit')
+
  for i in range(1,5):state=api('POST','/api/me/cue-bowls/drink',a,action0|{'Operation':str(uuid.uuid4()),'Index':i})
  check(state['Cycle']==1 and state['Maximum']==[1]*5 and state['Filled']==[0]*5 and item()['CuePending']==1,'fifth approval grants one progress and begins updated cycle')
  api('POST','/api/me/cue-progress/practice',a,discarded);check(sum(item()['CueBowls']['Filled'])==0,'discarded score retry stays discarded after drinking')
@@ -104,9 +107,9 @@ try:
  # Concurrent retries are serialized under the same wallet lock.
  from concurrent.futures import ThreadPoolExecutor
  shot+=1;duplicate={'RunId':run,'Shot':shot,'CueId':cid}
- before=sum(item()['CueBowls']['Filled'])
+ before=item()['CueProgress']
  with ThreadPoolExecutor(max_workers=5) as pool:list(pool.map(lambda _:api('POST','/api/me/cue-progress/practice',a,duplicate),range(5)))
- check(sum(item()['CueBowls']['Filled'])==before+1,'concurrent duplicate scoring requests award only once')
+ check(item()['CueProgress']==before+1,'concurrent duplicate scoring requests award only once')
  member=admin.get(base+'/admin/members/'+a['UserId']+'?tab=cues',timeout=30);member.raise_for_status()
  check('바가지 자동 마시기' in BeautifulSoup(member.text,'html.parser').get_text() and '켜짐' in BeautifulSoup(member.text,'html.parser').get_text(),'administrator member page displays live bowl state')
  action,values,_=form(base+'/admin/charts/shop/edit/'+str(cid));post_form(action,values,{'Input.BowlAuto':'false'})
@@ -118,6 +121,50 @@ try:
  reset=item();check(reset['CuePending']==0 and reset['CueSteps']==0 and reset['CueBowls']['Filled']==[0]*5 and reset['CueBowls']['Cycle']==prior_cycle+1,'administrator reset clears bowls and changes the cycle')
  post_form(reset_url,reset_values,{'confirmReset':'true','reason':'isolated bowl reset'})
  check(item()['CueBowls']['Cycle']==prior_cycle+1,'administrator reset retry does not reset the next round again')
+ # Only follow-through can grow. Maximum-level rows are excluded by the server.
+ action,values,_=form(base+'/admin/charts/shop/edit/'+str(cid))
+ changes={'Input.Reach':'1','Input.BowlAuto':'false'}
+ for i in range(5):changes['Input.Initial['+str(i)+']']='50' if i==1 else '100';changes['Input.Maximum['+str(i)+']']='51' if i==1 else '100'
+ post_form(action,values,changes)
+ page=BeautifulSoup(admin.get(member_url,timeout=30).text,'html.parser');reset_form=page.select_one('.cue-reset form')
+ reset_url=urljoin(member_url,reset_form['action']);reset_values=[(e['name'],e.get('value','')) for e in reset_form.select('input[name]') if e.get('type')!='checkbox']
+ post_form(reset_url,reset_values,{'confirmReset':'true','reason':'isolated cap test'})
+ current=item();check(current['CueBowls']['Completed']==[True,False,True,True,True],'maximum-level rows are marked completed on inventory read')
+ _,point_data=point(2);current=item()
+ check(current['CueBowls']['Filled']==[0,1,0,0,0],'only the remaining non-maxed stat receives scores; full excess is discarded')
+ invalid={'CueId':cid,'Operation':str(uuid.uuid4()),'Cycle':current['CueBowls']['Cycle'],'Index':0}
+ r=requests.post(base+'/api/me/cue-bowls/drink',headers={'Authorization':'Bearer '+a['AccessToken']},json=invalid,timeout=30)
+ check(r.status_code==409,'maximum-level stat cannot be grown by a forged API request')
+ grow_all=invalid|{'Operation':str(uuid.uuid4()),'Index':-1}
+ done=api('POST','/api/me/cue-bowls/drink',a,grow_all)
+ check(done['Completed']==[True]*5 and done['Filled']==[0]*5 and item()['CueSteps']==1,'atomic grow-all excludes capped rows and consumes all eligible bowls once')
+ api('POST','/api/me/cue-bowls/drink',a,grow_all);check(item()['CueSteps']==1,'atomic grow-all retry cannot grant a second level')
+ cycle=done['Cycle'];point(2);check(item()['CueBowls']['Cycle']==cycle and item()['CueSteps']==1,'fully maxed cue discards scores without free completed cycles')
+ action,values,_=form(base+'/admin/charts/shop/edit/'+str(cid));post_form(action,values,{'Input.BowlAuto':'true'})
+ check(item()['CueBowls']['Cycle']==cycle and item()['CueSteps']==1,'automatic mode cannot create growth when every stat is maxed')
+ html=BeautifulSoup(admin.get(member_url,timeout=30).text,'html.parser').get_text()
+ check('완료 · 배분 제외' in html,'administrator member page identifies completed excluded stats')
+ # All five ready bowls are committed by one request, without waiting for UI countdowns.
+ action,values,_=form(base+'/admin/charts/shop/edit/'+str(cid))
+ changes={'Input.BowlAuto':'false'}
+ for i in range(5):changes['Input.Initial['+str(i)+']']='50';changes['Input.Maximum['+str(i)+']']='100'
+ post_form(action,values,changes)
+ page=BeautifulSoup(admin.get(member_url,timeout=30).text,'html.parser');reset_form=page.select_one('.cue-reset form')
+ reset_url=urljoin(member_url,reset_form['action']);reset_values=[(e['name'],e.get('value','')) for e in reset_form.select('input[name]') if e.get('type')!='checkbox']
+ post_form(reset_url,reset_values,{'confirmReset':'true','reason':'isolated atomic growth test'})
+ for i in range(5):point()
+ current=item();batch={'CueId':cid,'Operation':str(uuid.uuid4()),'Cycle':current['CueBowls']['Cycle'],'Index':-1}
+ api('POST','/api/me/cue-bowls/drink',a,batch)
+ check(item()['CueSteps']==1 and item()['CueBowls']['Filled']==[0]*5,'one request persists all five approvals before any client animation')
+ point();before=item()['CueProgress'];api('POST','/api/me/cue-bowls/drink',a,batch)
+ check(item()['CueProgress']==before and sum(item()['CueBowls']['Filled'])==1,'replayed batch operation preserves newly earned next-cycle points')
+ # Existing cycles may have approved every non-capped row under the previous rule.
+ prior=item();old_state=prior['CueBowls']|{'Filled':[1,0,0,0,0],'Drunk':[False,True,True,True,True],'Completed':[False]*5}
+ with db.cursor() as c:
+  c.execute(sql.SQL("UPDATE {}.shop_user_inventory SET cue_ability=jsonb_set(cue_ability,'{{Initial,0}}','100'::jsonb) WHERE user_id=%s AND product_id=%s").format(sql.Identifier(schema)),(a['UserId'],cid))
+  c.execute(sql.SQL("UPDATE {}.shop_cue_progress SET bowls=%s::jsonb WHERE user_id=%s AND product_id=%s").format(sql.Identifier(schema)),(json.dumps(old_state),a['UserId'],cid))
+ current=item();check(current['CueSteps']==prior['CueSteps']+1 and current['CueBowls']['Cycle']==prior['CueBowls']['Cycle']+1,'legacy cycle with all eligible rows approved completes once after capped-row exclusion')
+ check(item()['CueSteps']==current['CueSteps'],'repeated normalization does not grant another progress round')
  result.update(passed=True,checks=checks,isolatedSchema=True,liveAccountsUntouched=True)
 except Exception as e:
  result['error']=str(e);print('FAIL',str(e),flush=True)

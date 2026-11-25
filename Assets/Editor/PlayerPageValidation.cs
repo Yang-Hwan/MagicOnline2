@@ -24,6 +24,7 @@ public static class PlayerPageValidation
     static void Check(bool ok,string message){if(!ok)throw new Exception(message);checks++;}
     public static void Run()
     {
+
         Directory.CreateDirectory("Logs/PlayerPage");checks=0;var savedCodes=BackendChart.commonCodeData;BackendChart.commonCodeData=new List<CommonCodeData>{new CommonCodeData{ComCd="LvPlayMax",IsUse="Y",ComVal=1000}};var scene=default(UnityEngine.SceneManagement.Scene);RenderTexture target=null;
         try{
             scene=EditorSceneManager.OpenPreviewScene("Assets/Scenes/Consist.unity");var roots=scene.GetRootGameObjects();
@@ -63,6 +64,36 @@ public static class PlayerPageValidation
             Check(!Find("AutoDrink"),"Member cannot change product auto mode");
             Check(Find("StatLevel1").GetComponent<TMP_Text>().text.Contains("밀기")&&Find("StatLevel4").GetComponent<TMP_Text>().text.Contains("조준"),"Rows use requested names");
             Invoke("DrawPlayerLocker");Check(Find("GrowthNotice")&&!Find("GrowthNotice").GetComponent<Button>(),"List growth indicator is not an action");
+            items[0].CueAbility.Maximum[0]=60;Invoke("OpenPlayerCue",items[0]);
+            Check(!Find("DrinkBowl0").GetComponent<Button>().interactable&&Find("DrinkBowl0Label").GetComponent<TMP_Text>().text=="완료","Maxed graph row is completed and disabled");
+            Check(Mathf.Abs(((RectTransform)Find("Fill0")).rect.width-540)<.01f,"Maxed stat graph remains at 100 percent");
+            items[0].CueAbility.Maximum[0]=80;items[0].CueBowls.Filled[0]=20;Invoke("OpenPlayerCue",items[0]);
+            var before=items[0];var after=new ShopProductData{Id=before.Id,Name=before.Name,Visual=before.Visual,CueAbility=before.CueAbility,CuePending=before.CuePending,CueBowls=new CueBowlState()};after.CueBowls.Drunk[0]=true;
+            var growthTask=(System.Threading.Tasks.Task)typeof(BottomMenuView).GetMethod("AnimateCueGrowth",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(menu,new object[]{before,after,0,(RectTransform)Find("PlayerDialog")});
+            var playback=Find("GrowthEffect0").GetComponent<CueGrowthPlayback>();
+            Check(playback.Remaining==20&&Find("BowlValue0").GetComponent<TMP_Text>().text=="+20","Growth starts at the charged amount");
+            playback.Sample(.3f);Check(playback.Remaining==19&&Find("BowlValue0").GetComponent<TMP_Text>().text=="+19","Growth decrements one unit per 0.3 seconds");
+            playback.Sample(.6f);Check(playback.Remaining==18,"Second decrement occurs at 0.6 seconds");
+            playback.Sample(.31f);float right=playback.SweepX;playback.Sample(.45f);Check(playback.SweepX<right,"Each light pulse sweeps from right to left");
+            var region=(RectTransform)playback.transform;Check(region.GetComponent<RectMask2D>()&&region.rect.width==540&&region.rect.height==23,"Growth light is clipped to the graph only");
+            Render("ui-cue-growth-tick");playback.Sample(6);Check(playback.Remaining==0,"Twenty units finish at six seconds");
+            Invoke("ClosePlayerDialog");Invoke("OpenPlayerCue",after);
+            Check(!Find("GrowthEffect0")&&!Find("DrinkBowl0").GetComponent<Button>().interactable&&Find("BowlValue0").GetComponent<TMP_Text>().text=="0/20","Reopened committed state has no repeated animation or growth action");
+            Render("ui-cue-growth-complete");
+            Check(CueLevelUpMotion.ShouldShow(0,1,new[]{50,60,70},new[]{51,61,71}),"Level-up celebration requires a committed step and actual stat growth");
+            Check(!CueLevelUpMotion.ShouldShow(0,0,new[]{50},new[]{50})&&!CueLevelUpMotion.ShouldShow(100,101,new[]{100},new[]{100}),"Ordinary bowl approvals and fully maxed stats cannot trigger level-up celebration");
+            Check(CueLevelUpGraphic.FlashIntensity(.035f)>.9f&&CueLevelUpGraphic.FlashIntensity(.285f)>.9f&&CueLevelUpGraphic.FlashIntensity(.22f)==0&&CueLevelUpGraphic.FlashIntensity(.46f)==0,"Progress flare flashes twice with a dark interval and ends before the badge");
+            var celebration=CueLevelUpMotion.Play((RectTransform)Find("PlayerDialog"));celebration.Sample(.035f);Render("ui-cue-progress-flash");celebration.Sample(.65f);Render("ui-cue-level-up");
+            Check(celebration.GetComponentInChildren<CueLevelUpGraphic>().GetComponent<CanvasRenderer>(),"Procedural level-up light has a native canvas renderer");
+            Check(celebration.GetComponentInChildren<CueLevelUpGraphic>().material.shader.name=="MagicOnline/UI/CueLevelUpLight"&&celebration.GetComponentInChildren<CueLevelUpGraphic>().material.shader.isSupported,"Additive light shader is loaded and supported");
+            Check(celebration.GetComponentsInChildren<Button>(true).Length==0,"Level-up celebration has no growth or confirmation button");
+            Check(celebration.GetComponentsInChildren<TMP_Text>(true).Length==0,"Celebration title uses image art without font text");
+            Check(celebration.GetComponentsInChildren<Graphic>(true).All(g=>!g.raycastTarget)&&!celebration.GetComponent<CanvasGroup>().blocksRaycasts,"Level-up never traps popup dismissal");
+            Check(celebration.GetComponentsInChildren<Image>(true).Length==2,"Only dim backdrop and approved title artwork without badge or digits");
+            celebration.Sample(.49f);Check(celebration.transform.Find("Level-up artwork").GetComponent<CanvasGroup>().alpha==0,"Electricity precedes artwork by half a second");celebration.Sample(.85f);Render("ui-cue-level-up");
+            Check(celebration.GetComponentsInChildren<Transform>(true).All(t=>!t.name.Contains("digit")&&!t.name.Contains("badge")),"No representative cue level number or badge remains");
+            celebration.Sample(CueLevelUpMotion.Duration);Check(celebration.Finished&&celebration.GetComponent<CanvasGroup>().alpha==0,"Level-up automatically fades away");
+            Invoke("ClosePlayerDialog");Check(!celebration,"Closing the popup disposes the visual and its materials");Invoke("OpenPlayerCue",after);Check(!Find("Cue level-up celebration"),"Reopening a committed popup never repeats celebration");
             if(File.Exists("Logs/Bowls/ui-only.request")){File.Delete("Logs/Bowls/ui-only.request");File.WriteAllText("Logs/Bowls/ui-result.json","{\"passed\":true,\"checks\":"+checks+",\"liveAccountsUntouched\":true}");return;}
             Invoke("ClosePlayerDialog");Check(!Find("PlayerDialog"),"Bowl dialog dismisses without altering member data");
 

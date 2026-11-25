@@ -32,7 +32,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             var button=Hit(id,parent,x,y,w,h,action);button.interactable=enabled;return button;
         }
         float playerCueScroll;
-        static bool CueCanGrow(ShopProductData cue)=>cue.CueBowls!=null&&!cue.CueBowls.Auto&&Enumerable.Range(0,5).Any(cue.CueBowls.Ready);
+        static bool CueCanGrow(ShopProductData cue)=>cue.CueBowls!=null&&!cue.CueBowls.Auto&&Enumerable.Range(0,5).Any(i=>!CueMaxed(cue,i)&&cue.CueBowls.Ready(i));
         void DrawPlayerCues()
         {
             var items=PlayerOwned("Cue");

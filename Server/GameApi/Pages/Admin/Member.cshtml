@@ -20,7 +20,7 @@
 else if(Model.Tab=="cues"){
 <section class="panel"><h2>보유 큐대 · @Model.Cues.Count 개</h2>
 @if(Model.EditError!=null){<p class="error" role="alert">@Model.EditError</p>}
-<p class="hint">바가지 5종을 채우고 모두 마시기 완료 시 진도 +1 · 도달 진도마다 능력치가 최고 레벨까지 1씩 상승합니다. 유효 능력치는 등급을 반영한 값이며, 성장한 성능은 다음 경기부터 적용됩니다.</p>
+<p class="hint">최대 레벨 항목을 제외한 바가지를 채우고 모두 마시기 완료 시 진도 +1 · 도달 진도마다 능력치가 최고 레벨까지 1씩 상승합니다. 유효 능력치는 등급을 반영한 값이며, 성장한 성능은 다음 경기부터 적용됩니다.</p>
 @if(Model.Cues.Count==0){<p class="empty">보유한 큐대가 없습니다.</p>}
 @foreach(var cue in Model.Cues){
 <article class="member-cue">
@@ -30,11 +30,11 @@ else if(Model.Tab=="cues"){
 <div class="stat"><span>@(cue.Maxed ? "성장 완료" : "다음 레벨까지 진도")</span>
 <strong>@(cue.Maxed ? "MAX" : $"{cue.Pending:N0} / {cue.Reach:N0}")</strong>
 <p>바가지 자동 마시기: @(cue.Bowls.Auto ? "켜짐" : "꺼짐") · 회차 @(cue.Bowls.Cycle+1)</p>
-<ul>@for(int i=0;i<5;i++){<li>@(new[]{"파워","팔로스루","당점","시간","가이드"}[i]): @cue.Bowls.Filled[i] / @cue.Bowls.Maximum[i] · @(cue.Bowls.Drunk[i]?"마시기 완료":cue.Bowls.Ready(i)?"승인 대기":"채우는 중")</li>}</ul>
+<ul>@for(int i=0;i<5;i++){<li>@(new[]{"파워","팔로스루","당점","시간","가이드"}[i]): @cue.Bowls.Filled[i] / @cue.Bowls.Maximum[i] · @(cue.Bowls.Completed[i]?"완료 · 배분 제외":cue.Bowls.Drunk[i]?"마시기 완료":cue.Bowls.Ready(i)?"승인 대기":"채우는 중")</li>}</ul>
 @if(!cue.Maxed){<progress value="@cue.Pending" max="@cue.Reach" aria-label="@cue.Name 레벨 진도"></progress><small>바가지 전체 완료 @(cue.Reach-cue.Pending)회 남음</small>}
 </div></div>
 <div class="table-scroll"><table><thead><tr><th>능력치</th><th>초기 레벨</th><th>현재 레벨</th><th>최고 레벨</th><th>등급 반영 능력치</th><th>상태</th></tr></thead><tbody>
-@for(int i=0;i<5;i++){<tr><th>@(new[]{"파워","팔로스루","당점","시간","가이드"}[i])</th><td>@cue.Initial[i]</td><td><strong>@cue.Levels[i]</strong></td><td>@cue.Maximum[i]</td><td>@cue.Effective[i]%</td><td>@(cue.Levels[i]>=cue.Maximum[i] ? "최고 레벨" : "성장 중")</td></tr>}
+@for(int i=0;i<5;i++){<tr><th>@(new[]{"파워","팔로스루","당점","시간","가이드"}[i])</th><td>@cue.Initial[i]</td><td><strong>@cue.Levels[i]</strong></td><td>@cue.Maximum[i]</td><td>@cue.Effective[i]%</td><td>@(cue.Levels[i]>=cue.Maximum[i] ? "완료" : "성장 중")</td></tr>}
 </tbody></table></div>
 @if(Model.CanEdit){
 <details class="cue-reset"><summary>이 큐대 초기화 · 상점 최신 설정 적용</summary>

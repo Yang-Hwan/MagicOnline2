@@ -1,0 +1,18 @@
+{
+  "mode": "built-in image_gen",
+  "reference": "codex-clipboard-f5028fcf-a1d0-4935-b827-04612548cc3b.png",
+  "prompts": [
+    [
+      "Title",
+      "Edit target: reference board middle panel. Extract/reconstruct ONLY its gold beveled italic CUE LEVEL UP heading and the two gold laurel branches flanking it, faithfully matching the beautiful lettering, highlights and proportions. One isolated horizontal game UI sprite on true transparent background. Remove ALL panel, box, backdrop, badge, numbers, buttons, Korean text. Exact text CUE LEVEL UP. Tight balanced horizontal composition, subtle local gold glints. No stars."
+    ],
+    [
+      "Badge",
+      "Edit target: reference board middle panel. Extract faithfully ONLY its central ornate faceted navy blue and polished gold hexagonal level badge, with its beautiful rear gold radiant rays and elegant cyan orbital light streaks. DELETE all text and numbers inside badge leaving clean empty navy interior. NO title, laurels, UI panel, outer popup box, buttons, scene or backdrop. True transparent background outside the isolated badge/rays/orbits. Preserve luxurious reference shape and light, not a circular glowing disc. Badge centered; leave roomy interior to display 3 digits."
+    ],
+    [
+      "Digits",
+      "Style reference: gold italic beveled Lv.51 in middle panel of supplied board. Create transparent game UI numeral sprite atlas with EXACTLY ten gold beveled italic numerals, consistent style/size/baseline. Layout exact uniform 5 columns and 2 rows: first row 0 1 2 3 4, second row 5 6 7 8 9. Each digit centered within equal cell, generous clear gaps, no overlap. Sharp polished golden faces, bright edge bevels, dark thin brown extrusion matching reference. No Lv., no words, no decorations, no panel, no glow behind sheet, true transparent background. All ten digits same cap height."
+    ]
+  ]
+}

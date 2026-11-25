@@ -38,7 +38,7 @@ case "Cue":
 <div style="grid-column:1/-1"><p>파워·팔로스루는 게이지 범위를 유지하며 최대 성능만 제한합니다. 당점은 이동 반경을 제한합니다. 가이드는 수구·첫 적구 예상 경로의 표시 길이입니다. 유효 능력치 100%는 기존 길이, 50%는 절반이며 0%는 숨깁니다. 등급 계수도 다른 능력치와 동일하게 적용합니다. 시간 범위는 공통코드 <a href="/admin/charts?name=CommonCode">Cue / Sec</a>의 ComVal·ComVal2를 사용합니다.</p>
 <table><thead><tr><th>능력치</th><th>초기 레벨</th><th>최고 레벨</th><th>초기 유효 능력치</th><th>바가지 최대값</th></tr></thead><tbody>
 @for(int i=0;i<5;i++){<tr><th>@(new[]{"파워","팔로스루","당점","시간","가이드"}[i])</th><td><input asp-for="Input.Initial[i]" type="number" min="0" max="100" required></td><td><input asp-for="Input.Maximum[i]" type="number" min="0" max="100" required></td><td class="cue-effective">—</td><td><input asp-for="Input.BowlMaximum[i]" type="number" min="1" max="10000" required></td></tr>}
-</tbody></table><p>1득점마다 덜 찬 바가지 하나에 무작위 +1. 5종 모두 마시기 완료 시 진도 +1. 모두 가득 차 승인 대기 중인 추가 득점은 소멸하며 보관하지 않습니다. 최대값 변경은 다음 바가지 회차부터 적용합니다. 도달 진도마다 다섯 능력치가 각 최고 레벨까지 1씩 상승합니다. 뱅크샷 2점은 바가지에 2회 배분합니다. 경기 중 장비 성능은 고정되며 성장은 다음 경기부터 반영됩니다.</p></div>
+</tbody></table><p>1득점마다 덜 찬 바가지 하나에 무작위 +1. 최대 레벨 항목은 배분에서 제외하고, 나머지 항목 모두 마시기 완료 시 진도 +1. 모두 가득 차 승인 대기 중인 추가 득점은 소멸하며 보관하지 않습니다. 최대값 변경은 다음 바가지 회차부터 적용합니다. 도달 진도마다 다섯 능력치가 각 최고 레벨까지 1씩 상승합니다. 뱅크샷 2점은 바가지에 2회 배분합니다. 경기 중 장비 성능은 고정되며 성장은 다음 경기부터 반영됩니다.</p></div>
 <script>
 (()=>{const grade=document.querySelector('[name="Input.Grade"]');const update=()=>document.querySelectorAll('.cue-effective').forEach((el,i)=>{const v=+document.querySelector('[name="Input.Initial['+i+']"]').value;el.textContent=Math.round(v*(grade.value==='B'?.9:grade.value==='C'?.8:1))+'%';});document.addEventListener('input',update);update();})();
 </script>

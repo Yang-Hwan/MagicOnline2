@@ -36,6 +36,7 @@ public sealed partial class AdminMemberService
         var bowls=savedBowls.ValueKind==JsonValueKind.Null?new Assets.Scripts.Prack.BackSys.GameData.CueBowlState():JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueBowlState>(savedBowls.GetRawText(),Database.Json)!;
         bowls.Auto=JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(latest,Database.Json)!.BowlAuto;
         bowls.Reset(JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(latest,Database.Json)!.BowlMaximum);
+        bowls.SetCompleted(JsonSerializer.Deserialize<Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings>(latest,Database.Json)!,0);
         await using(var reset=Database.Command(c,"INSERT INTO shop_cue_progress(user_id,product_id,shots,steps,progress,bowls) VALUES($1,$2,0,0,0,$3::jsonb) ON CONFLICT(user_id,product_id) DO UPDATE SET shots=0,steps=0,progress=0,bowls=excluded.bowls",member,cue,JsonSerializer.Serialize(bowls,Database.Json)))await reset.ExecuteNonQueryAsync();
         // Keep historical scoring keys so already processed shots cannot be credited again.
         string after=JsonSerializer.Serialize(new{CueId=cue,Ability=JsonSerializer.Deserialize<JsonElement>(latest),Shots=0,Steps=0,Progress=0,Bowls=bowls});

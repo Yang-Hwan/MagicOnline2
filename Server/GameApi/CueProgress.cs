@@ -36,7 +36,7 @@ public static class CueProgress
             return await equipment.CurrentProfile(user);
         }).RequireAuthorization();
     }
-    sealed record Growth(CueBowlState Bowls,int[] NextMaximum,int Reach,long Steps,long Progress,long Shots);
+    sealed record Growth(CueBowlState Bowls,int[] NextMaximum,int Reach,long Steps,long Progress,long Shots,CueAbilitySettings Ability,bool NeedsSync);
     static Growth Load(NpgsqlConnection c,Guid user,long cue)
     {
         using var cmd=Database.Command(c,"""
@@ -50,12 +50,15 @@ public static class CueProgress
         var ability=JsonSerializer.Deserialize<CueAbilitySettings>(r.GetString(0),Database.Json)!;
         var latest=JsonSerializer.Deserialize<CueAbilitySettings>(r.GetString(1),Database.Json)!;
         var state=r.IsDBNull(2)?new CueBowlState{Maximum=(int[])latest.BowlMaximum.Clone()}:JsonSerializer.Deserialize<CueBowlState>(r.GetString(2),Database.Json)!;
+        string original=JsonSerializer.Serialize(state,Database.Json);
         state.Auto=latest.BowlAuto;
-        return new(state,latest.BowlMaximum,ability.Reach,r.GetInt64(3),r.GetInt64(4),r.GetInt64(5));
+        state.SetCompleted(ability,r.GetInt64(3)+r.GetInt64(4)/ability.Reach);
+        return new(state,latest.BowlMaximum,ability.Reach,r.GetInt64(3),r.GetInt64(4),r.GetInt64(5),ability,r.IsDBNull(2)||original!=JsonSerializer.Serialize(state,Database.Json));
     }
     static void Save(NpgsqlConnection c,Guid user,long cue,Growth growth,long accepted,long rounds)
     {
         long progress=growth.Progress+rounds;
+        growth.Bowls.SetCompleted(growth.Ability,growth.Steps+progress/growth.Reach);
         using var cmd=Database.Command(c,"""
             INSERT INTO shop_cue_progress(user_id,product_id,shots,steps,progress,bowls) VALUES($1,$2,$3,$4,$5,$6::jsonb)
             ON CONFLICT(user_id,product_id) DO UPDATE SET shots=excluded.shots,steps=excluded.steps,progress=excluded.progress,bowls=excluded.bowls
@@ -64,9 +67,14 @@ public static class CueProgress
     }
     static long ApproveAutomatic(Growth growth)
     {
-        var state=growth.Bowls;if(!state.Auto)return 0;
-        for(int i=0;i<5;i++)if(state.Ready(i))state.Drunk[i]=true;
-        if(!state.Complete)return 0;state.Reset(growth.NextMaximum);return 1;
+        var state=growth.Bowls;
+        for(int i=0;i<5;i++)if(state.Auto&&state.Ready(i)){state.Drunk[i]=true;state.Filled[i]=0;}
+        if(!state.Complete)return 0;NextRound(growth,1);return 1;
+    }
+    static void NextRound(Growth growth,long rounds)
+    {
+        growth.Bowls.Reset(growth.NextMaximum);
+        growth.Bowls.SetCompleted(growth.Ability,growth.Steps+(growth.Progress+rounds)/growth.Reach);
     }
     // Product policy changes apply on the next member read/score, including already-full bowls.
     public static async Task SyncPolicies(Database db,Guid user)
@@ -75,15 +83,14 @@ public static class CueProgress
         using(var gate=Database.Command(c,"SELECT user_id FROM wallets WHERE user_id=$1 FOR UPDATE",user))gate.ExecuteScalar();
         var ids=new List<long>();
         using(var query=Database.Command(c,"""
-            SELECT g.product_id FROM shop_cue_progress g JOIN shop_cues c ON c.product_id=g.product_id
-            WHERE g.user_id=$1 AND COALESCE((g.bowls->>'Auto')::boolean,false)<>COALESCE((c.ability->>'BowlAuto')::boolean,false)
+            SELECT i.product_id FROM shop_user_inventory i JOIN shop_cues c ON c.product_id=i.product_id WHERE i.user_id=$1
             """,user))using(var r=query.ExecuteReader())while(r.Read())ids.Add(r.GetInt64(0));
-        foreach(long cue in ids){var growth=Load(c,user,cue);Save(c,user,cue,growth,0,ApproveAutomatic(growth));}
+        foreach(long cue in ids){var growth=Load(c,user,cue);long rounds=ApproveAutomatic(growth);if(growth.NeedsSync||rounds>0)Save(c,user,cue,growth,0,rounds);}
         await tx.CommitAsync();
     }
     static async Task<CueBowlState> ChangeBowl(BowlAction input,ClaimsPrincipal caller,Database db)
     {
-        if(input.CueId<1||input.Operation==Guid.Empty||(input.Index<0||input.Index>4))throw new ApiFault(400,"InvalidBowlAction");
+        if(input.CueId<1||input.Operation==Guid.Empty||(input.Index< -1||input.Index>4))throw new ApiFault(400,"InvalidBowlAction");
         var user=Guid.Parse(caller.FindFirstValue(ClaimTypes.NameIdentifier)!);
         await using var c=await db.Source.OpenConnectionAsync();await using var tx=await c.BeginTransactionAsync();
         using(var gate=Database.Command(c,"SELECT user_id FROM wallets WHERE user_id=$1 FOR UPDATE",user))gate.ExecuteScalar();
@@ -93,9 +100,10 @@ public static class CueProgress
             if(operation.ExecuteScalar()==null){await tx.CommitAsync();return state;}
         }
         if(state.Auto)throw new ApiFault(409,"이 큐대는 상품 설정에 따라 자동으로 마십니다.");
-        if(state.Cycle!=input.Cycle||!state.Ready(input.Index))throw new ApiFault(409,"가득 찬 바가지만 마실 수 있습니다. 새로고침해 주세요.");
-        state.Drunk[input.Index]=true;
-        long rounds=0;if(state.Complete){rounds=1;state.Reset(growth.NextMaximum);}
+        var indices=input.Index<0?Enumerable.Range(0,5).Where(state.Ready).ToArray():new[]{input.Index};
+        if(state.Cycle!=input.Cycle||indices.Length==0||indices.Any(i=>!state.Ready(i)))throw new ApiFault(409,"가득 찬 성장 가능 항목만 처리할 수 있습니다. 새로고침해 주세요.");
+        foreach(int index in indices){state.Drunk[index]=true;state.Filled[index]=0;}
+        long rounds=0;if(state.Complete){rounds=1;NextRound(growth,rounds);}
         Save(c,user,input.CueId,growth,0,rounds);await tx.CommitAsync();return state;
     }
     static void Award(NpgsqlConnection c,Guid user,long cue,string key,int shots)
@@ -108,7 +116,7 @@ public static class CueProgress
         for(int n=0;n<shots;n++){
             if(!growth.Bowls.Add(System.Security.Cryptography.RandomNumberGenerator.GetInt32(60)))break;
             accepted++;
-            if(growth.Bowls.Complete){rounds++;growth.Bowls.Reset(growth.NextMaximum);}
+            if(growth.Bowls.Complete){rounds++;NextRound(growth,rounds);}
         }
         Save(c,user,cue,growth,accepted,rounds);
     }
