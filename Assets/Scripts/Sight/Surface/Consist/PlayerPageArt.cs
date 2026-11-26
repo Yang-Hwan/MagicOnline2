@@ -11,7 +11,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         public void Load(string key)
         {
             if(string.IsNullOrWhiteSpace(key))return;
-            if(!Uri.TryCreate(key,UriKind.Absolute,out var uri)){Fit(Resources.Load<Texture2D>(key));return;}
+            if(!Uri.TryCreate(key,UriKind.Absolute,out var uri)){Fit(Assets.Scripts.Often.DailyCueArt.Load(key));return;}
             if(Application.isPlaying && (uri.Scheme=="https" || uri.Scheme=="http" && uri.IsLoopback))StartCoroutine(Download(key));
         }
         IEnumerator Download(string key)

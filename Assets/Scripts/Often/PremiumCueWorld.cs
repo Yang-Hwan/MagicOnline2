@@ -30,7 +30,7 @@ namespace Assets.Scripts.Often
         public static PremiumCueWorld Equip(Transform slider,string key)
         {
             var style=PremiumCueDesign.Style(key);var standard=slider?slider.Find("Cue3D/Standard3DCue"):null;
-            var image=Resources.Load<Texture2D>(key);var shader=Resources.Load<Shader>("Gameplay/PremiumCues/PremiumCue");
+            var image=DailyCueArt.Load(key);var shader=Resources.Load<Shader>("Gameplay/PremiumCues/PremiumCue");
             if(style==PremiumCueStyle.None || !standard || !image || !shader)return null;
             var node=new GameObject("PremiumCue");node.layer=standard.gameObject.layer;node.transform.SetParent(standard,false);
             var cue=node.AddComponent<PremiumCueWorld>();cue.standard=standard;cue.bounds=standard.GetComponent<MeshFilter>().sharedMesh.bounds;cue.artwork=image;cue.style=style;

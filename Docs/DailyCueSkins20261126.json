@@ -1,0 +1,314 @@
+[
+  {
+    "key": "SilverCyborg",
+    "name": "실버 사이보그",
+    "source": "exec-500647d0-d33b-4415-a4ff-a569a4048677.png",
+    "row": 0,
+    "rows": 2,
+    "priceGem": 600
+  },
+  {
+    "key": "DarkKnight",
+    "name": "다크 나이트",
+    "source": "exec-500647d0-d33b-4415-a4ff-a569a4048677.png",
+    "row": 1,
+    "rows": 2,
+    "priceGem": 600
+  },
+  {
+    "key": "InfernalDemon",
+    "name": "인페르노 데몬",
+    "source": "exec-f7b06064-3896-4321-a29b-923bc3583bc3.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 650
+  },
+  {
+    "key": "OceanSovereign",
+    "name": "오션 소버린",
+    "source": "exec-a2531701-415b-41cc-b161-2f315e49373b.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 650
+  },
+  {
+    "key": "OlympianThunder",
+    "name": "올림피안 썬더",
+    "source": "exec-f6ec44f1-a47d-4bc0-8fbf-a60c4424d992.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 650
+  },
+  {
+    "key": "CelestialGoddess",
+    "name": "셀레스티얼 여신",
+    "source": "exec-a7db6e5c-64b6-469e-87f8-13148e05200a.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 600
+  },
+  {
+    "key": "AzureDragon",
+    "name": "청룡",
+    "source": "exec-c6868c6b-3c32-4723-b113-5f6992599925.png",
+    "row": 0,
+    "rows": 2,
+    "priceGem": 650
+  },
+  {
+    "key": "GoldenTiger",
+    "name": "황금 호랑이",
+    "source": "exec-c6868c6b-3c32-4723-b113-5f6992599925.png",
+    "row": 1,
+    "rows": 2,
+    "priceGem": 650
+  },
+  {
+    "key": "VenusBloom",
+    "name": "비너스 블룸",
+    "source": "exec-34a2bc26-7325-4eac-8877-c1d1a328aa85.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 600
+  },
+  {
+    "key": "CosmicSovereign",
+    "name": "코스믹 소버린",
+    "source": "exec-aaab0474-2ace-40ca-b47f-aab89e44dc7f.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 700
+  },
+  {
+    "key": "AbyssalSoul",
+    "name": "어비스 소울",
+    "source": "exec-1506d1bc-c041-425a-9be7-7ea1a63120e8.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 650
+  },
+  {
+    "key": "LunarMystique",
+    "name": "루나 미스틱",
+    "source": "exec-6b08b78c-f223-488a-885d-e68c63a8c3af.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 600
+  },
+  {
+    "key": "PhoenixRebirth",
+    "name": "불사조 리버스",
+    "source": "exec-0cba3bbb-bae2-4a00-b54e-423d90678c1d.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 650
+  },
+  {
+    "key": "AurumClassic",
+    "name": "아우룸 골드",
+    "source": "exec-6143a0df-cdff-4c2e-9e0b-a70a253adf6f.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 250
+  },
+  {
+    "key": "IonStriker",
+    "name": "이온 스트라이커",
+    "source": "exec-bd7e3274-76b4-4afe-843e-28a4d1be41ca.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 500
+  },
+  {
+    "key": "CheerRed",
+    "name": "치어 레드",
+    "source": "exec-1b2f2283-5f5a-47ed-8c63-f211f393a997.png",
+    "row": 0,
+    "rows": 5,
+    "priceGem": 200
+  },
+  {
+    "key": "CheerBlue",
+    "name": "치어 블루",
+    "source": "exec-1b2f2283-5f5a-47ed-8c63-f211f393a997.png",
+    "row": 1,
+    "rows": 5,
+    "priceGem": 200
+  },
+  {
+    "key": "CheerYellow",
+    "name": "치어 옐로",
+    "source": "exec-1b2f2283-5f5a-47ed-8c63-f211f393a997.png",
+    "row": 2,
+    "rows": 5,
+    "priceGem": 200
+  },
+  {
+    "key": "CheerGreen",
+    "name": "치어 그린",
+    "source": "exec-1b2f2283-5f5a-47ed-8c63-f211f393a997.png",
+    "row": 3,
+    "rows": 5,
+    "priceGem": 200
+  },
+  {
+    "key": "CheerPurple",
+    "name": "치어 퍼플",
+    "source": "exec-1b2f2283-5f5a-47ed-8c63-f211f393a997.png",
+    "row": 4,
+    "rows": 5,
+    "priceGem": 200
+  },
+  {
+    "key": "SignatureInk",
+    "name": "시그니처 만년필",
+    "source": "exec-b08fd2c7-91da-4aa2-b2c8-6e1e9e150c85.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 300
+  },
+  {
+    "key": "SapphirePrism",
+    "name": "사파이어 프리즘",
+    "source": "exec-fa198643-88b2-4932-8848-ac894be82dc8.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 350
+  },
+  {
+    "key": "GiftParade",
+    "name": "기프트 퍼레이드",
+    "source": "exec-93bbd13f-786c-4249-bdb3-7495fd42e9d8.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 200
+  },
+  {
+    "key": "RoyalJoust",
+    "name": "로열 마상창",
+    "source": "exec-44e5f84f-829d-4f68-9d91-1959522b525d.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 400
+  },
+  {
+    "key": "RainbowAurora",
+    "name": "레인보우 오로라",
+    "source": "exec-b4ad5f8b-d052-4148-b5a8-bae98344bc8b.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 300
+  },
+  {
+    "key": "BlossomGarden",
+    "name": "블라썸 가든",
+    "source": "exec-eff9ee3c-258b-4aed-9020-e1e0d1f89036.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 450
+  },
+  {
+    "key": "HyperExpress",
+    "name": "하이퍼 익스프레스",
+    "source": "exec-a99422b0-6754-478e-9a78-e7bf7b11ee02.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 450
+  },
+  {
+    "key": "SteamLegend",
+    "name": "스팀 레전드",
+    "source": "exec-f62367b6-eb9f-4320-9c2f-56390ab8a70d.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 450
+  },
+  {
+    "key": "PhotonEdge",
+    "name": "포톤 광선검",
+    "source": "exec-e263532c-85ea-4ea7-a5e2-6d42a1559d02.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 500
+  },
+  {
+    "key": "CobraSovereign",
+    "name": "킹 코브라",
+    "source": "exec-28f143b0-1851-4a92-bf0b-65833ffa1064.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 600
+  },
+  {
+    "key": "PearlDawn",
+    "name": "펄 던",
+    "source": "exec-e07f3985-dcf9-4839-955a-91035e08a928.png",
+    "row": 0,
+    "rows": 4,
+    "priceGem": 250
+  },
+  {
+    "key": "TropicalJade",
+    "name": "트로피컬 제이드",
+    "source": "exec-e07f3985-dcf9-4839-955a-91035e08a928.png",
+    "row": 1,
+    "rows": 4,
+    "priceGem": 250
+  },
+  {
+    "key": "MidnightLapis",
+    "name": "미드나잇 라피스",
+    "source": "exec-e07f3985-dcf9-4839-955a-91035e08a928.png",
+    "row": 2,
+    "rows": 4,
+    "priceGem": 250
+  },
+  {
+    "key": "AmberNoir",
+    "name": "앰버 느와르",
+    "source": "exec-e07f3985-dcf9-4839-955a-91035e08a928.png",
+    "row": 3,
+    "rows": 4,
+    "priceGem": 250
+  },
+  {
+    "key": "FrostBloom",
+    "name": "프로스트 블룸",
+    "source": "exec-d1c3f064-c480-4ac0-85f4-bf135aba2fe2.png",
+    "row": 0,
+    "rows": 4,
+    "priceGem": 500
+  },
+  {
+    "key": "VioletStorm",
+    "name": "바이올렛 스톰",
+    "source": "exec-d1c3f064-c480-4ac0-85f4-bf135aba2fe2.png",
+    "row": 1,
+    "rows": 4,
+    "priceGem": 500
+  },
+  {
+    "key": "ScarletHeart",
+    "name": "스칼렛 하트",
+    "source": "exec-d1c3f064-c480-4ac0-85f4-bf135aba2fe2.png",
+    "row": 2,
+    "rows": 4,
+    "priceGem": 500
+  },
+  {
+    "key": "EmeraldWyrm",
+    "name": "에메랄드 웜",
+    "source": "exec-d1c3f064-c480-4ac0-85f4-bf135aba2fe2.png",
+    "row": 3,
+    "rows": 4,
+    "priceGem": 500
+  },
+  {
+    "key": "BlossomEntwine",
+    "name": "꽃덩굴",
+    "source": "exec-f4acc5c5-e28f-4c4a-b993-374a5e00f669.png",
+    "row": 0,
+    "rows": 1,
+    "priceGem": 350
+  }
+]

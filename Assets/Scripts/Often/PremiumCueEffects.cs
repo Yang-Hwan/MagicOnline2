@@ -5,11 +5,12 @@ using UnityEngine.UI;
 
 namespace Assets.Scripts.Often
 {
-    public enum PremiumCueStyle { None,Thunder,Nebula,Flame }
+    public enum PremiumCueStyle { None,Thunder,Nebula,Flame,Illustrated }
     public static class PremiumCueDesign
     {
         public static PremiumCueStyle Style(string key)
         {
+            if(DailyCueArt.Contains(key))return PremiumCueStyle.Illustrated;
             switch(key){case "Gameplay/PremiumCues/ThunderGod":return PremiumCueStyle.Thunder;case "Gameplay/PremiumCues/Nebula":return PremiumCueStyle.Nebula;case "Gameplay/PremiumCues/CrimsonFlame":return PremiumCueStyle.Flame;default:return PremiumCueStyle.None;}
         }
         public static Color Tint(PremiumCueStyle style)=>style==PremiumCueStyle.Thunder?new Color(.15f,.7f,1):style==PremiumCueStyle.Nebula?new Color(.7f,.25f,1):new Color(1,.28f,.025f);
@@ -44,7 +45,7 @@ namespace Assets.Scripts.Often
         }
         public void Build(PremiumCueStyle style,float time,float strength)
         {
-            Vertices.Clear();Colors.Clear();Indices.Clear();if(style==PremiumCueStyle.None)return;
+            Vertices.Clear();Colors.Clear();Indices.Clear();if(style==PremiumCueStyle.None||style==PremiumCueStyle.Illustrated)return;
             strength=Mathf.Clamp01(strength);var tint=PremiumCueDesign.Tint(style);tint.a=.65f+strength*.35f;
             if(style==PremiumCueStyle.Thunder)
             {
@@ -90,7 +91,7 @@ namespace Assets.Scripts.Often
         bool usesGlow;
         public static PremiumCuePreview Attach(RawImage image,string key)
         {
-            var style=PremiumCueDesign.Style(key);if(style==PremiumCueStyle.None || !image)return null;
+            var style=PremiumCueDesign.Style(key);if(style==PremiumCueStyle.None || style==PremiumCueStyle.Illustrated || !image)return null;
             var node=new GameObject("AnimatedCueEffects",typeof(RectTransform),typeof(CanvasRenderer));node.transform.SetParent(image.transform,false);
             var rect=(RectTransform)node.transform;rect.anchorMin=Vector2.zero;rect.anchorMax=Vector2.one;rect.offsetMin=rect.offsetMax=Vector2.zero;
             var effect=node.AddComponent<PremiumCuePreview>();effect.Style=style;effect.raycastTarget=false;

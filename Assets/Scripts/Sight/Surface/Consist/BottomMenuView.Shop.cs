@@ -97,7 +97,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 if(string.IsNullOrWhiteSpace(asset) && product.Kind=="CoinPack")asset="Gameplay/level-up-Coin";
                 if(string.IsNullOrWhiteSpace(asset) && product.Kind=="GemPack")asset="Gameplay/level-up-Jem";
                 if(Application.isPlaying)StartCoroutine(LoadShopImage(asset,image,placeholder));
-                else {var local=Resources.Load<Texture2D>(asset??"");if(local)SetShopImage(local,image,placeholder);}
+                else {var local=DailyCueArt.Load(asset??"");if(local)SetShopImage(local,image,placeholder);}
                 if(product.Kind=="Cue")PremiumCuePreview.Attach(image,product.Visual);
                 Text("ProductName", shopCards, product.Name, x + 12, 510, 318, 65, 30, Color.white, autoSize: true);
                 string price = product.Kind == "CoinPack" ? $"코인 {product.CoinAmount+product.CoinBonus:N0}개\n보석 {product.PriceGem:N0}개" : product.Kind == "GemPack" ? $"보석 {product.GemAmount:N0} + {product.GemBonus:N0}\n현금 가격 준비 중" : $"보석 {product.PriceGem:N0}개";
@@ -135,7 +135,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             var panel=Dialog(p.Name,"");Clear(panel);Place(panel,216,150,1240,650);
             Box("Border",panel,0,0,1240,650,Yellow);Box("Background",panel,3,3,1234,644,new Color(.035f,.04f,.055f));
-            Text("Title",panel,p.Name+" · 움직이는 특수효과",35,20,1170,65,38,Yellow);
+            Text("Title",panel,p.Name+(DailyCueArt.Contains(p.Visual)?" · 큐대 스킨":" · 움직이는 특수효과"),35,20,1170,65,38,Yellow);
             var image=Art("PremiumPreview",panel,null,45,115,1150,210);image.color=Color.clear;
             var placeholder=Text("Loading",panel,"큐대를 불러오는 중…",45,170,1150,55,27,Color.gray);
             StartCoroutine(LoadShopImage(p.Visual,image,placeholder));PremiumCuePreview.Attach(image,p.Visual);
@@ -213,7 +213,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             if (string.IsNullOrWhiteSpace(key)) yield break;
             if (!Uri.TryCreate(key, UriKind.Absolute, out var uri))
             {
-                var local = Resources.Load<Texture2D>(key);
+                var local = DailyCueArt.Load(key);
                 if (local && target) SetShopImage(local,target,placeholder);
                 yield break;
             }
