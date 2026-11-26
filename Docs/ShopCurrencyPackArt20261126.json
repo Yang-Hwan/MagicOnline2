@@ -1,0 +1,92 @@
+{
+  "date": "2026-11-26",
+  "tiers": [
+    "소량",
+    "소형",
+    "중형",
+    "대형",
+    "최대"
+  ],
+  "assets": [
+    {
+      "name": "GemPack01",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-b9db478f-22c3-4149-9fe4-b099ad01165a.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/GemPack01",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY cyan-blue diamonds. Subject: Tier 1 of 5, smallest quantity: exactly three loose large cut cyan-blue diamonds in a modest triangular cluster. No container. Bright ice-blue and turquoise crystal facets with white highlights.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    },
+    {
+      "name": "GemPack02",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-6a25b53d-bdb9-4394-9532-b9c8010bd3ad.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/GemPack02",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY cyan-blue diamonds. Subject: Tier 2 of 5, small quantity: a small open dark charcoal drawstring pouch with restrained golden stitching, holding about eight cut cyan-blue diamonds, two spilled nearby. Clearly more gems than the three-gem smallest tier. Bright ice-blue crystal facets.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    },
+    {
+      "name": "GemPack03",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-c8395d27-ac36-44e1-9266-b9bf5f8e6968.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/GemPack03",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY cyan-blue diamonds. Subject: Tier 3 of 5, medium quantity: a rectangular compact open black metal presentation case with gold trim filled with roughly twenty cyan-blue diamonds, a small spilled cluster in front. Clearly more generous than a pouch. Bright ice-blue faceted gems.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    },
+    {
+      "name": "GemPack04",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-00add8a6-9a87-4500-a98e-90337e9088e8.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/GemPack04",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY cyan-blue diamonds. Subject: Tier 4 of 5, large quantity: a substantial open black treasure chest with gold brass frame and hinges, overflowing with dozens of cyan-blue cut diamonds, several spilling toward viewer. Large abundant mound, luxurious but clean silhouette.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    },
+    {
+      "name": "GemPack05",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-f810ef03-b3f8-445a-937b-621692fb49a1.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/GemPack05",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY cyan-blue diamonds. Subject: Tier 5 of 5, maximum quantity: an impressive open dark charcoal steel treasure vault with thick golden frame and a round vault door swung aside, densely filled with a mountain of hundreds of cyan-blue diamonds spilling out in front. Largest and most abundant tier, compact readable silhouette, three-quarter front view. No money, coins, writing, crown or characters.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    },
+    {
+      "name": "CoinPack01",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-dff623bf-54e7-45f0-bf78-89db5dae6d6d.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/CoinPack01",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY gold coins, warm rich golden metallic sheen and amber shadow, NOT gems. Subject: Tier 1 of 5, smallest quantity: a modest pile of about eight shiny golden round coins, one leaning upright coin in front and two very short stacks. Each coin has a plain raised circular billiard-ball emblem without writing or numbers. No container.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    },
+    {
+      "name": "CoinPack02",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-c7ac343b-aa5d-4549-b940-e5e5dd924ed8.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/CoinPack02",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY gold coins, warm rich golden metallic sheen and amber shadow, NOT gems. Subject: Tier 2 of 5, small quantity: a cluster of five neatly stacked columns of shiny gold round coins of varied heights, about thirty coins in total, three loose coins at front. Plain raised circular billiard-ball emblem without writing or numbers. No container, clearly more coins than the smallest loose pile.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    },
+    {
+      "name": "CoinPack03",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-2c93555d-9f70-457d-9393-a57e456ae0d1.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/CoinPack03",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY gold coins, warm rich golden metallic sheen and amber shadow, NOT gems. Subject: Tier 3 of 5, medium quantity: a plump small open dark charcoal cloth money sack with golden drawstring, filled with many shiny gold round coins, a few short stacks and loose coins spilling at front. Plain raised circular billiard-ball emblem, no writing or numbers. Clearly more generous than a handful of stacks.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    },
+    {
+      "name": "CoinPack04",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-4aca9f1d-7f35-426e-b486-37f40fc19add.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/CoinPack04",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY gold coins, warm rich golden metallic sheen and amber shadow, NOT gems. Subject: Tier 4 of 5, large quantity: a substantial open black treasure chest with gold brass frame and hinges, overflowing with hundreds of shiny gold round coins, stacked and spilling in a generous mound at front. Plain raised circular billiard-ball emblem without writing or numbers. No gems.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    },
+    {
+      "name": "CoinPack05",
+      "source": "C:\\Users\\oyh52\\.codex\\generated_images\\01a2160a-334f-77c3-88b7-4300b0696bdd\\exec-ec8f8484-1b18-4c6c-a2fe-0e0bf68ee1b7.png",
+      "resource": "Gameplay/ShopCurrencyPacks20261126/CoinPack05",
+      "prompt": "Use case: stylized-concept. Asset type: single standalone purchasable currency pack sprite for a Korean billiards game shop. Style: polished hand-painted 3D comic game inventory illustration, crisp bold dark ink outlines, faceted highlights, premium arcade art matching a black/yellow comic billiards UI. Three-quarter front view, centered, square canvas, all objects fully visible with 12% transparent safe margin, clear silhouette readable at 200 pixels. Genuine transparent RGBA background. No backdrop, no ground plane, no UI card or outer border, no labels, letters, numerals, price, watermark, or extra currency types. Limit glow to small local edge highlights, no broad haze. Currency: ONLY gold coins, warm rich golden metallic sheen and amber shadow, NOT gems. Subject: Tier 5 of 5, maximum quantity: an impressive open dark charcoal steel treasure vault with thick golden frame and a round vault door swung aside, densely filled with a mountain of thousands of shiny golden round coins spilling out into abundant stacks in front. Largest and most abundant tier. Plain raised circular billiard-ball emblem without writing or numbers. Compact clear silhouette. No gems, paper money, crown or characters.",
+      "tool": "built-in image_gen",
+      "transparentBackground": true
+    }
+  ]
+}

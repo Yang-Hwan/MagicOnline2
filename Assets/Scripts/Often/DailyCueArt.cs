@@ -11,6 +11,11 @@ namespace Assets.Scripts.Often
         public const string Prefix="Gameplay/DailyCues20261126/";
         static readonly Dictionary<string,Texture2D> images=new Dictionary<string,Texture2D>();
         public static bool Contains(string key)=>key!=null&&key.StartsWith(Prefix,StringComparison.Ordinal);
+        public static bool TryGetCached(string key,out Texture2D image)
+        {
+            image=null;
+            return key!=null && images.TryGetValue(key,out image) && image;
+        }
         public static Texture2D Load(string key)
         {
             if(!Contains(key))return Resources.Load<Texture2D>(key);

@@ -17,6 +17,7 @@ Server/**/obj/
 Server/**/appsettings.Local.json
 Server/**/.env
 Server/**/TestResults/
+Server/GameApi/App_Data/
 
 # Local builds, checkpoint archives, recovered scenes and database backups.
 /Build/

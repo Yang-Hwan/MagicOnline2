@@ -5,12 +5,11 @@
 }
 <div class="breadcrumb"><a href="/admin/charts">차트 관리</a> / <a asp-page="Shop">상점 상품</a></div>
 <section class="panel"><h1>@ViewData["Title"]</h1>
-<form method="post" class="chart-form">
+<form method="post" enctype="multipart/form-data" class="chart-form" id="shop-edit-form">
 <div asp-validation-summary="All" class="error" role="alert"></div>
 <input asp-for="Input.Kind" type="hidden"><input asp-for="Input.Revision" type="hidden">
 <div class="chart-fields">
 <label>상품명<input asp-for="Input.Name" required maxlength="120"></label>
-<label>대표 이미지 경로<input asp-for="Input.Thumbnail"></label>
 <label>상품 설명<textarea asp-for="Input.Description"></textarea></label>
 <label>정렬 순서<input asp-for="Input.Order"></label>
 @if(Model.Input.Kind!="GemPack"){<label>가격 (보석)<input asp-for="Input.Price" min="0" required></label>}
@@ -19,6 +18,31 @@
 <label><input asp-for="Input.Visible">상점에 표시</label>
 <label><input asp-for="Input.Purchasable">판매 허용</label>
 </div>
+<section class="shop-image-editor" aria-labelledby="shop-image-heading">
+<h2 id="shop-image-heading">대표 이미지</h2>
+<p class="hint">상점 상품 카드에 표시할 이미지입니다. 아래 이미지에서 선택하거나 새 PNG를 올려 주세요. 새 파일을 선택하면 해당 파일이 우선 적용됩니다.</p>
+@if(Model.Input.Kind=="Cue"){<p class="hint">대표 이미지 교체는 상점 진열에 적용됩니다. 장착 시 외형은 아래 큐대 리소스 경로를 사용합니다.</p>}
+<div class="shop-image-current">
+<div class="shop-image-preview"><img id="shop-image-preview" src="@Model.ImagePreview" alt="선택한 상품 이미지" hidden="@(Model.ImagePreview==null)"><span id="shop-image-empty" hidden="@(Model.ImagePreview!=null)">미리보기 없음</span></div>
+<div class="shop-image-controls">
+<label>이미지 경로<input asp-for="Input.Thumbnail" data-preview="@Model.ImagePreview" maxlength="2048" placeholder="목록에서 선택하거나 기존 이미지 경로 입력"></label>
+<label>새 이미지 파일<input asp-for="ImageFile" type="file" accept="image/png,.png"><small>PNG · 최대 8MB · 가로·세로 최대 4096픽셀 · 투명 배경 지원</small></label>
+<div class="shop-image-actions">
+<label><input type="radio" name="SelectedImage" value="" id="shop-image-keep" checked="@(string.IsNullOrWhiteSpace(Model.SelectedImage))">직접 입력한 경로 사용</label>
+<label><input type="radio" name="SelectedImage" value="__clear" checked="@(Model.SelectedImage=="__clear")">대표 이미지 해제</label>
+</div>
+<p id="shop-image-feedback" class="hint" role="status">이미지를 고른 뒤 하단의 저장 버튼을 눌러 적용하세요.</p>
+</div></div>
+@foreach(var group in Model.ImageOptions.GroupBy(image=>image.Group).OrderBy(group=>group.Key=="보석 팩"?0:group.Key=="코인 팩"?1:group.Key=="업로드 이미지"?2:3)){
+<details class="shop-image-group" open="@(group.Key=="보석 팩" || group.Key=="코인 팩")">
+<summary>@group.Key <span>@group.Count()종</span></summary>
+<div class="shop-image-grid">
+@foreach(var image in group){
+<label class="shop-image-option"><input type="radio" name="SelectedImage" value="@image.Key" data-preview="@image.PreviewUrl" checked="@(Model.SelectedImage==image.Key)"><img src="@image.PreviewUrl" alt="@image.Label" loading="lazy"><span>@image.Label</span></label>
+}
+</div></details>
+}
+</section>
 <h2>상품 상세</h2><div class="chart-fields">
 @switch(Model.Input.Kind){
 case "GemPack":
@@ -39,9 +63,6 @@ case "Cue":
 <table><thead><tr><th>능력치</th><th>초기 레벨</th><th>최고 레벨</th><th>초기 유효 능력치</th><th>바가지 최대값</th></tr></thead><tbody>
 @for(int i=0;i<5;i++){<tr><th>@(new[]{"파워","팔로스루","당점","시간","가이드"}[i])</th><td><input asp-for="Input.Initial[i]" type="number" min="0" max="100" required></td><td><input asp-for="Input.Maximum[i]" type="number" min="0" max="100" required></td><td class="cue-effective">—</td><td><input asp-for="Input.BowlMaximum[i]" type="number" min="1" max="10000" required></td></tr>}
 </tbody></table><p>1득점마다 덜 찬 바가지 하나에 무작위 +1. 최대 레벨 항목은 배분에서 제외하고, 나머지 항목 모두 마시기 완료 시 진도 +1. 모두 가득 차 승인 대기 중인 추가 득점은 소멸하며 보관하지 않습니다. 최대값 변경은 다음 바가지 회차부터 적용합니다. 도달 진도마다 다섯 능력치가 각 최고 레벨까지 1씩 상승합니다. 뱅크샷 2점은 바가지에 2회 배분합니다. 경기 중 장비 성능은 고정되며 성장은 다음 경기부터 반영됩니다.</p></div>
-<script>
-(()=>{const grade=document.querySelector('[name="Input.Grade"]');const update=()=>document.querySelectorAll('.cue-effective').forEach((el,i)=>{const v=+document.querySelector('[name="Input.Initial['+i+']"]').value;el.textContent=Math.round(v*(grade.value==='B'?.9:grade.value==='C'?.8:1))+'%';});document.addEventListener('input',update);update();})();
-</script>
 break;
 case "Character":
 foreach(var emotion in ShopEditModel.Emotions){
@@ -55,3 +76,4 @@ break;
 }
 </div><div class="chart-actions"><button class="primary" type="submit">저장</button><a class="button" asp-page="Shop">목록으로</a></div>
 </form></section>
+<script src="~/admin-assets/shop-images.js" asp-append-version="true" defer></script>

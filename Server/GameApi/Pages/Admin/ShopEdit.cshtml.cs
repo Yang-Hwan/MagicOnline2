@@ -7,17 +7,23 @@ using Npgsql;
 
 namespace MagicOnline.GameApi.Pages.Admin;
 
-public class ShopEditModel(Database db) : PageModel
+[RequestSizeLimit(ShopImages.MaxBytes + 256 * 1024)]
+public class ShopEditModel(Database db, ShopImages images) : PageModel
 {
     public static readonly string[] Emotions=["기본","감사","미안","미소","환희","짜증","우울","좌절","분노"];
     [BindProperty] public Product Input { get; set; } = new();
+    [BindProperty] public IFormFile? ImageFile { get; set; }
+    [BindProperty] public string? SelectedImage { get; set; }
+    public IReadOnlyList<ShopImages.ImageOption> ImageOptions => images.List();
+    public string? ImagePreview => images.Preview(Input.Thumbnail);
+    public string? PreviewFor(string? key) => images.Preview(key);
     public class Product
     {
         public string Kind { get; set; } = "";
         public int Revision { get; set; }
         [Required(ErrorMessage="상품명을 입력해 주세요."),StringLength(120)] public string Name { get; set; } = "";
         public string? Description { get; set; }
-        public string? Thumbnail { get; set; }
+        [StringLength(2048)] public string? Thumbnail { get; set; }
         public int? Price { get; set; }
         public int Order { get; set; }
         public bool Visible { get; set; }
@@ -86,6 +92,7 @@ public class ShopEditModel(Database db) : PageModel
     {
         if(!CanEdit) return Forbid(AdminSecurity.Scheme);
         var p=Input;
+        p.Thumbnail = string.IsNullOrWhiteSpace(p.Thumbnail) ? null : p.Thumbnail.Trim();
         if(!ShopModel.Kinds.ContainsKey(p.Kind)) return BadRequest();
         string? error=p.Kind switch {
             "GemPack" when p.Amount<=0 || p.Bonus<0 => "기본 보석은 1 이상, 추가 보석은 0 이상으로 입력해 주세요.",
@@ -99,7 +106,24 @@ public class ShopEditModel(Database db) : PageModel
         if(p.Kind=="CoinPack" && p.Price is null or <1)error="코인 상품의 보석 가격은 1 이상으로 입력해 주세요.";
         if(p.Starts>=p.Ends) error="판매 종료 시각은 시작 시각보다 늦어야 합니다.";
         if(error!=null) ModelState.AddModelError("",error);
+        if (SelectedImage == "__clear") p.Thumbnail = null;
+        else if (!string.IsNullOrWhiteSpace(SelectedImage))
+        {
+            if (images.Preview(SelectedImage) == null) ModelState.AddModelError("", "선택한 이미지가 없습니다. 다시 선택해 주세요.");
+            else p.Thumbnail = SelectedImage;
+        }
+        // Never publish an image from an otherwise invalid product form.
         if(!ModelState.IsValid) return Page();
+        ShopImages.UploadedImage? uploaded = null;
+        if (ImageFile != null)
+        {
+            try { uploaded = await images.Save(ImageFile, HttpContext.RequestAborted); p.Thumbnail = uploaded.Key; }
+            catch (ApiFault failure) { ModelState.AddModelError("", failure.Message); return Page(); }
+        }
+        ModelState.Remove("Input.Thumbnail");
+        // A server-relative upload key must resolve in this server's shared image storage.
+        if (p.Thumbnail?.StartsWith("/shop-images/", StringComparison.Ordinal) == true && images.Preview(p.Thumbnail) == null)
+        { ModelState.AddModelError("", "이미지 파일을 찾을 수 없습니다. 새 PNG를 올리거나 목록에서 다시 선택해 주세요."); return Page(); }
         await using var c=await db.Source.OpenConnectionAsync();
         await using var tx=await c.BeginTransactionAsync();
         async Task Run(string sql,params object[] args){
@@ -110,6 +134,9 @@ public class ShopEditModel(Database db) : PageModel
             if(!string.IsNullOrWhiteSpace(key)) await Run("INSERT INTO shop_content_assets(asset_key) VALUES($1) ON CONFLICT DO NOTHING",key.Trim());
         }
         await Asset(p.Thumbnail);
+        if (uploaded != null)
+            await Run("UPDATE shop_content_assets SET content_hash=$2,content_type='image/png',width=$3,height=$4 WHERE asset_key=$1",
+                uploaded.Key, uploaded.Hash, uploaded.Width, uploaded.Height);
         object Db(object? value)=>value??DBNull.Value;
         object Time(DateTime? value)=>Db(value.HasValue?new DateTimeOffset(DateTime.SpecifyKind(value.Value,DateTimeKind.Unspecified),TimeSpan.FromHours(9)).UtcDateTime:null);
         object[] common=[p.Kind,p.Name.Trim(),p.Description??"",Db(p.Thumbnail?.Trim()),Db(p.Kind=="GemPack"?null:p.Price),

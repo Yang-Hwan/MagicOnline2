@@ -24,6 +24,7 @@ builder.Services.AddSingleton<Guilds>();
 builder.Services.AddSingleton<GuildLeague>();
 builder.Services.AddHostedService<GuildLeagueMaintenance>();
 builder.Services.AddSingleton<ShopPurchases>();
+builder.Services.AddSingleton<ShopImages>();
 builder.Services.AddSingleton<ShopEquipment>();
 builder.Services.AddSingleton<MatchEquipment>();
 builder.Services.AddSingleton<MatchPlayerInformation>();
@@ -54,7 +55,10 @@ app.Use(async (context, next) => {
     if (admin)
     {
         if (!AdminSecurity.Enabled(app.Environment, app.Configuration)) { context.Response.StatusCode = 404; return; }
-        context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; style-src 'self'; script-src 'none'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'";
+        bool imageEditor = context.Request.Path.StartsWithSegments("/admin/charts/shop/edit");
+        context.Response.Headers.ContentSecurityPolicy = imageEditor
+            ? "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' blob:; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+            : "default-src 'self'; style-src 'self'; script-src 'none'; img-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'";
         context.Response.Headers.XContentTypeOptions = "nosniff";
         context.Response.Headers["Referrer-Policy"] = "no-referrer";
     }
@@ -86,6 +90,7 @@ Friends.Map(app);
 Guilds.Map(app);
 GuildLeague.Map(app);
 ShopCatalog.Map(app);
+ShopImages.Map(app);
 ShopPurchases.Map(app);
 ShopEquipment.Map(app);
 MatchEquipment.Map(app);

@@ -12,6 +12,10 @@
     <PackageReference Include="Npgsql" Version="8.0.8" />
     <ProjectReference Include="../MatchSettlement/MatchSettlement.csproj" />
     <Content Include="Migrations/*.sql" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../Assets/Resources/Gameplay/ShopCurrencyPacks20261126/*.png" Link="ShopImages/Builtin/Gameplay/ShopCurrencyPacks20261126/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../Assets/Resources/Gameplay/DailyCues20261126/*.png" Link="ShopImages/Builtin/Gameplay/DailyCues20261126/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../Assets/Resources/Gameplay/PremiumCues/*.png" Link="ShopImages/Builtin/Gameplay/PremiumCues/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../Assets/Resources/Gameplay/level-up-*.png" Link="ShopImages/Builtin/Gameplay/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="../../Docs/BackendSeed/*.csv" Link="Seed/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

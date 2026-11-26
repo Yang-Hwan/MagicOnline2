@@ -88,3 +88,13 @@ dotnet run --project Server/GameApi.Tests/GameApi.Tests.csproj -- http://127.0.0
 저장 즉시 API 차트에 반영되며 Unity는 재로그인 시 갱신한다. 기존 경기의 규칙 스냅샷은 유지된다. 행별 `삭제`에서 항목을 확인한 뒤 삭제할 수 있다. Owner·Operator만 삭제할 수 있으며 차트 버전 확인·잠금·삭제 전후 감사 기록을 같은 트랜잭션으로 처리한다. 출석 보상은 마지막 일차부터 삭제하고 1일차는 유지한다. 관리자 실행 스크립트는 게임 API와 파일 잠금이 충돌하지 않도록 `bin/AdminServer`에 별도로 빌드한다.
 
 검증: `dotnet run --project Server/AdminChart.Tests/AdminChart.Tests.csproj -- http://127.0.0.1:5082` (관리자 서버 실행 필요). DB 검사는 임시 스키마에 실제 차트를 복사해 진행하고 종료 시 해당 스키마를 정리한다. HTTP 검사는 기존 개발 관리자 로그인과 화면·유효성 검사·CSRF를 확인한다. 실제 차트 값은 변경하지 않는다.
+
+## 상점 상품 이미지
+
+차트 관리 → 상점 상품 → 등록/수정의 **대표 이미지**에서 생성된 보석 팩 5종·코인 팩 5종과 기존 큐대 이미지를 선택한다. 선택 즉시 미리보기를 표시하며, 하단 **저장**을 눌러 상품에 적용한다. 새 PNG 파일을 고르면 선택한 기존 이미지보다 우선한다. 대표 이미지 해제도 가능하며, 큐대의 경기 중 외형은 별도의 큐대 리소스 경로가 결정한다.
+
+업로드는 Owner·Operator만 가능하다. 최대 8MB, 가로·세로 최대 4096픽셀의 PNG를 받으며 파일 시그니처·청크 CRC·완결 여부를 확인한다. 동일 파일은 SHA-256 기반 키로 재사용하고, 교체하거나 대표 이미지 연결을 해제해도 원본 파일은 유지한다. 저장은 기존 상품 버전 확인과 감사 기록을 따른다. 서버 기본 제공 이미지는 빌드·배포 출력의 `ShopImages/Builtin`에 함께 포함된다.
+
+업로드 저장소 기본값은 서버 콘텐츠 루트의 `App_Data/shop-images`다. 게임 API와 관리자 서버를 별도 프로세스/서버로 운용할 때는 **양쪽에 같은 공유 영속 경로**를 `ShopImages__UploadDirectory`로 지정한다. 로컬 5080·5082 서버는 같은 `Server/GameApi` 콘텐츠 루트에서 실행하면 기본 저장소를 공유한다. 차트 내보내기 JSON에는 이미지 키와 메타데이터만 포함되므로, 서버 이전 시 업로드 저장소도 함께 백업·복원한다. Unity는 `/shop-images/uploads/...png` 키를 설정된 게임 API 주소에 연결해 다운로드한다.
+
+검증: `dotnet build Server/GameApi/GameApi.csproj -o Server/GameApi/bin/ShopImageReview` 후 `python Server/GameApi/Run-ShopImagesSmoke.py`. 로컬 DB의 임시 스키마와 별도 이미지 폴더에서 선택·업로드·재사용·권한·CSRF·버전 충돌·파일 오류를 검사하고 실제 상품/회원 데이터는 변경하지 않는다.
