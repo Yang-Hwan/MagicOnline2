@@ -24,6 +24,7 @@ namespace Assets.Scripts.Sight.Surface.Hall
         [SerializeField] TextMeshProUGUI txtNickNmSelf;
         [SerializeField] TextMeshProUGUI txtNickNmOther;
         CancellationTokenSource cancelSource;
+        bool opponentSoundPlayed;
 
         private void Awake()
         {
@@ -45,6 +46,8 @@ namespace Assets.Scripts.Sight.Surface.Hall
 
         private void OnEnable()
         {
+            GameAudio.Music("Lounge");
+            opponentSoundPlayed = false;
             BackendMatchHistory.Instance.ClearStartError();
             txtCountDown.text = "입장 중";
             txtNickNmSelf.text = UserInfo.DisplayName;
@@ -81,6 +84,7 @@ namespace Assets.Scripts.Sight.Surface.Hall
         // 방지정 후 플레이정보 변경시 PunNetwork.RoomPlayerUpdate
         async void NetworkManager_OnNetworkPlayerList(PlayerProfile[] players)
         {
+            if (players.Length > 1 && !opponentSoundPlayed) { opponentSoundPlayed = true; GameAudio.Play(SoundCue.Notify); }
             txtCountDown.text = "0";
             txtNickNmSelf.text = UserInfo.DisplayName;
             txtNickNmOther.text = "";

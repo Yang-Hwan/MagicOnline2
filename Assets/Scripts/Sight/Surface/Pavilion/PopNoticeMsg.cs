@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
@@ -37,6 +37,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                     msg = Assets.Scripts.Exert.Match.PoolPlayer.currentPlayer.ProtectsFinishScore ? "파울" : "파울 -1";
                     break;
                 case NoticeHitBall.Finish:
+                    GameAudio.Play(SoundCue.FinishReady, .65f);
                     msg = "3쿠션으로 끝내기 매치입니다.";
                     break;
                 case NoticeHitBall.Survival:

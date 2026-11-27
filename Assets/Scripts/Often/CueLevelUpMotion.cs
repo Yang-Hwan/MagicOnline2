@@ -44,9 +44,9 @@ namespace Assets.Scripts.Often
         {
             group=GetComponent<CanvasGroup>();group.interactable=false;group.blocksRaycasts=false;
             var card=transform.parent.Find("CueDetailCard");
-            if(card){string[] names={"GrowAll","GrowAllFace","GrowAllLabel","CueSkin"};hidden=new GameObject[names.Length];previouslyActive=new bool[names.Length];for(int i=0;i<names.Length;i++){var node=card.Find(names[i]);if(!node)continue;hidden[i]=node.gameObject;previouslyActive[i]=hidden[i].activeSelf;hidden[i].SetActive(false);}}
+            if(card){string[] names={"GrowAll","GrowAllFace","GrowAllLabel","CueSkin"};hidden=new GameObject[names.Length];previouslyActive=new bool[names.Length];for(int i=0;i<names.Length;i++){var node=card.Find(names[i])??card.Find("GrowthPanel/"+names[i]);if(!node)continue;hidden[i]=node.gameObject;previouslyActive[i]=hidden[i].activeSelf;hidden[i].SetActive(false);}}
             light=Node("Progress electricity",570,800,0).gameObject.AddComponent<CueLevelUpGraphic>();light.raycastTarget=false;
-            var track=card?card.Find("CueRoundTrack") as RectTransform:null;
+            var track=card?card.Find("GrowthPanel/CueRoundTrack") as RectTransform:null;
             if(track){light.rectTransform.position=track.TransformPoint(track.rect.center);}
             var shader=Resources.Load<Shader>("Gameplay/CueLevelUp/Light");if(shader){lightMaterial=new Material(shader);light.material=lightMaterial;}
             var art=Node("Level-up artwork",1300,840,0);artwork=art.gameObject.AddComponent<CanvasGroup>();artwork.blocksRaycasts=false;artwork.interactable=false;
@@ -67,7 +67,7 @@ namespace Assets.Scripts.Often
             light.color=Color.white;light.phase=elapsed;light.SetVerticesDirty();
         }
         void OnDisable(){Finished=true;}
-        void OnDestroy(){if(hidden!=null)for(int i=0;i<hidden.Length;i++)if(hidden[i])hidden[i].SetActive(previouslyActive[i]);foreach(var sprite in sprites)Release(sprite);Release(lightMaterial);}
+        void OnDestroy(){if(transform.parent && transform.parent.gameObject.activeInHierarchy && hidden!=null)for(int i=0;i<hidden.Length;i++)if(hidden[i])hidden[i].SetActive(previouslyActive[i]);foreach(var sprite in sprites)Release(sprite);Release(lightMaterial);}
         static void Release(UnityEngine.Object value){if(!value)return;if(Application.isPlaying)Destroy(value);else DestroyImmediate(value);}
     }
 

@@ -283,13 +283,40 @@ namespace Assets.Scripts.Sight.Surface.Consist
 
         void Settings()
         {
-            var panel = Dialog("설정", "게임 소리를 켜거나 끌 수 있습니다.");
-            SolidButton(AudioListener.volume > 0 ? "소리 끄기" : "소리 켜기", panel, 270, 230, 300, 60, () =>
-            { AudioListener.volume = AudioListener.volume > 0 ? 0 : 1; Settings(); });
+            var panel = Dialog("설정", "");
+            AudioVolumeRow(panel, "배경음악", "Music", 130, GameAudio.MusicVolume);
+            AudioVolumeRow(panel, "경기 효과음", "Game", 196, GameAudio.GameVolume);
+            AudioVolumeRow(panel, "UI · 연출음", "Ui", 262, GameAudio.UiVolume);
+            SolidButton(GameAudio.Muted ? "전체 소리 켜기" : "전체 소리 끄기", panel, 270, 335, 300, 48, () =>
+            { GameAudio.SetMuted(!GameAudio.Muted); Settings(); });
+        }
+
+        void AudioVolumeRow(RectTransform parent, string title, string channel, float y, float value)
+        {
+            Text(channel + "Label", parent, title, 55, y, 220, 38, 26, Color.white, TextAlignmentOptions.MidlineLeft);
+            var number = Text(channel + "Percent", parent, Mathf.RoundToInt(value * 100) + "%", 690, y, 95, 38, 25, Yellow);
+            var root = Node(channel + "Volume", parent, 290, y, 370, 40);
+            Box("Track", root, 0, 14, 370, 12, new Color(.18f, .2f, .24f)).raycastTarget = true;
+            var fillArea = Node("FillArea", root, 0, 14, 370, 12);
+            var fill = Box("Fill", fillArea, 0, 0, 370, 12, Yellow);
+            var handleArea = Node("HandleArea", root, 10, 0, 350, 40);
+            var handle = Box("Handle", handleArea, 0, 5, 20, 30, Color.white);
+            handle.raycastTarget = true;
+            var slider = root.gameObject.AddComponent<Slider>();
+            slider.fillRect = fill.rectTransform;
+            slider.handleRect = handle.rectTransform;
+            slider.targetGraphic = handle;
+            slider.SetValueWithoutNotify(value);
+            slider.onValueChanged.AddListener(level =>
+            {
+                GameAudio.SetVolume(channel, level);
+                number.text = Mathf.RoundToInt(level * 100) + "%";
+            });
         }
 
         RectTransform Dialog(string title, string message)
         {
+            GameAudio.Play(SoundCue.Open, .4f);
             CloseModal();
             modal = Node("Modal", design, 0, 0, Width, Height);
             Box("Shade", modal, 0, 0, Width, Height, new Color(0, 0, 0, .82f)).raycastTarget = true;
@@ -302,7 +329,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             return panel;
         }
 
-        void CloseModal() { CloseGuildState(); if (modal) { modal.gameObject.SetActive(false); Dispose(modal.gameObject); modal = null; } }
+        void CloseModal() { CloseGuildState(); if (modal) { GameAudio.Play(SoundCue.Close, .35f); modal.gameObject.SetActive(false); Dispose(modal.gameObject); modal = null; } }
         void RefreshUser()
         {
             if (!initialized) return;
@@ -450,6 +477,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         }
         IEnumerator AnimateBustNotice()
         {
+            GameAudio.Play(SoundCue.Notify);
             // Unscaled time keeps the banner moving even if gameplay time is paused.
             var notice = BackendGame.Instance.PendingBustNotice;
             const float x = (Width - 720) / 2;

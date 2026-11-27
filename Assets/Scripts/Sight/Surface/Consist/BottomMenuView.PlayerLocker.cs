@@ -143,6 +143,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 playerItems=inventory?.Products??Array.Empty<ShopProductData>();
                 playerSaving=false;ClosePlayerDialog();DrawPlayerHeader();DrawPlayerLocker();
                 headerRequest++;headerOwner=owner;ShowHeaderCharacter(playerItems.FirstOrDefault(p=>p.Kind=="Character" && p.Equipped));
+                GameAudio.Play(SoundCue.Equip, .7f);
                 playerStatus.text=equipped?"장착했습니다. 다음 경기·연습 입장부터 반영됩니다.":"장착을 해제했습니다.";
             } catch(Exception){if(PlayerCurrent(request))playerStatus.text="장착 결과를 확인하지 못했습니다. 새로고침 후 다시 확인해 주세요.";}
             finally{playerSaving=false;if(this && playerPage && playerOwner==owner && request!=playerRequest)ReloadPlayerPage();}

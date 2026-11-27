@@ -1,3 +1,4 @@
+using Assets.Scripts.Often;
 using System;
 using Assets.Scripts.Sight.Surface.Consist;
 using Assets.Scripts.Prack.BackSys.GameData;
@@ -177,6 +178,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 StartPrizeFlight(won ? selfAvatar : otherAvatar, Time.unscaledTimeAsDouble);
             TickPrizeFlight(Time.unscaledTimeAsDouble);
             selfName.text = s.SelfName; otherName.text = s.OtherName; selfInfo.text = s.SelfInfo; otherInfo.text = s.OtherInfo;
+            if (previousOtherVote != s.OtherVote && s.OtherVote != null && s.OtherVote.Contains("요청")) GameAudio.Play(SoundCue.Request);
+            previousOtherVote = s.OtherVote;
             selfVote.text = s.SelfVote; otherVote.text = s.OtherVote; status.text = s.Status; settlement.text = s.Settlement;
             rematch.interactable = s.CanRematch; save.interactable = s.CanSave; leave.interactable = s.CanLeave;
             StyleStatus(selfStatus, selfVote); StyleStatus(otherStatus, otherVote);
@@ -197,6 +200,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         void OnEnable()
         {
+            GameAudio.Music("Lounge");
+            previousOtherVote = null;
             // Each visit starts a fresh count, including consecutive matches with the same prize.
             FriendSocial.Lounge=this;
             friendTarget=null;
@@ -235,6 +240,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             }
             coinFlightStarted = now;
             prizeFlightActive = true;
+            GameAudio.Play(SoundCue.Coin, .65f);
         }
         void TickPrizeFlight(double now)
         {
@@ -263,6 +269,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             }
             prizeFlightActive = pending;
         }
+        string previousOtherVote;
+        bool prizeCountSoundDone;
         void RefreshPrize(long? amount)
         {
             if (!amount.HasValue) {
@@ -276,6 +284,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 animatedPrize = amount;
                 ResetPrizeFlight();
                 prizeCountStarted = now;
+                prizeCountSoundDone = false;
             }
             long displayed = amount.Value;
             if (Application.isPlaying && amount.Value > 0) {
@@ -284,6 +293,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 if (progress < 1)
                     displayed = (long)(amount.Value * (decimal)(1 - (1 - progress) * (1 - progress)));
             }
+            if (amount.Value > 0 && now - prizeCountStarted < PrizeCountDuration) GameAudio.Play(SoundCue.Count, .25f);
+            else if (amount.Value > 0 && !prizeCountSoundDone) { prizeCountSoundDone = true; GameAudio.Play(SoundCue.CountDone, .6f); }
             prizeAmount.text = displayed.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
         }
         RawImage WinnerBadge(string name, float x)

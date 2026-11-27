@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Exert.Match;
+using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Often;
 using Assets.Scripts.Sight.Surface.Pavilion;
@@ -615,6 +615,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             _targetEquip = TargetEquip.None;
             inShot = true;
             IsShotAnimating = true;
+            Assets.Scripts.Often.GameAudio.Play(Assets.Scripts.Often.SoundCue.Pull, .25f);
             inMove = true;
 
             // 라인초기화 

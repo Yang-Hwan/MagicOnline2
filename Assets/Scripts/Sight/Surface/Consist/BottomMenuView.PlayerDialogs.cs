@@ -114,6 +114,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             return max[index]==min[index]?1:Mathf.Clamp01((float)(level-min[index])/(max[index]-min[index]));
         }
         static bool CueMaxed(ShopProductData cue,int index)=>cue.CueAbility!=null&&CueLevels(cue)[index]>=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(cue.CueAbility.Maximum)[index];
+        const float CueProgressWidth=850, CueProgressHeight=32;
         void OpenPlayerCue(ShopProductData cue)
         {
             ClosePlayerDialog();playerCueDialogId=cue.Id;
@@ -124,39 +125,43 @@ namespace Assets.Scripts.Sight.Surface.Consist
             CueChrome("CueTitleBand",card,10,10,1280,104,CueLockerGraphic.Finish.Header);
             Text("CueTitle",card,cue.Name,180,22,940,57,43,CueIvory,TextAlignmentOptions.Center,true);
             var levels=CueLevels(cue);var ability=cue.CueAbility;
-            int Display(int level)=>ability==null?level:ability.Percent(level);
-            Text("CueGradeLevel",card,(ability?.Grade??"A")+"급  ·  Lv."+Display(levels.Min()),440,77,420,35,25,CueIvory);
+            Text("CueGradeLevel",card,(ability?.Grade??"A")+"급",440,77,420,35,25,CueIvory);
             ModalBackdrop.Attach(shade,card,ClosePlayerDialog);
-            CueChrome("SkinWell",card,30,125,1240,105,CueLockerGraphic.Finish.Inset);
+            CueChrome("SkinWell",card,30,123,1240,78,CueLockerGraphic.Finish.Inset);
             PlayerCueArt(card,cue,53,133,884,53);
+            CueButton("EquipCue",card,cue.Equipped?"장착해제":"장착하기",988,136,250,52,()=>SetPlayerEquipment(cue,!cue.Equipped),false,!playerSaving);
+            var growth=Node("GrowthPanel",card,0,0,1300,840);
+            CueChrome("GrowthFrame",growth,20,219,1260,605,CueLockerGraphic.Finish.Group);
+            CueChrome("GrowthTitleTab",growth,40,224,250,43,CueLockerGraphic.Finish.Header);
+            Text("GrowthTitle",growth,"큐대 성장",40,224,250,43,29,CueIvory);
             long reach=Math.Max(1,ability?.Reach??1),progress=Math.Max(0,cue.CuePending)%reach;
             bool growthComplete=ability!=null&&Enumerable.Range(0,5).All(i=>CueMaxed(cue,i));
             string progressText=ability==null?"진도 정보 없음":growthComplete?"진도 완료 · MAX":$"진도 {progress:N0} / {reach:N0}";
-            Text("CueRoundProgress",card,progressText,53,191,315,32,22,CueIvory,TextAlignmentOptions.MidlineLeft);
-            CueChrome("CueRoundTrack",card,380,199,550,20,CueLockerGraphic.Finish.Inset);
+            Text("CueRoundProgress",growth,progressText,52,275,340,51,37,CueIvory,TextAlignmentOptions.MidlineLeft);
+            CueChrome("CueRoundTrack",growth,386,281,856,38,CueLockerGraphic.Finish.Inset);
             float progressRatio=growthComplete?1:ability==null?0:(float)progress/reach;
-            CueChrome("CueRoundFill",card,383,202,544*progressRatio,14,CueLockerGraphic.Finish.Gold);
-            CueButton("EquipCue",card,cue.Equipped?"장착해제":"장착하기",988,151,250,52,()=>SetPlayerEquipment(cue,!cue.Equipped),false,!playerSaving);
+            CueChrome("CueRoundFill",growth,389,284,CueProgressWidth*progressRatio,CueProgressHeight,CueLockerGraphic.Finish.Gold);
+            Box("GrowthHeaderDivider",growth,40,336,1220,1,new Color(.25f,.68f,.92f,.35f));
             var bowls=cue.CueBowls;
             for(int row=0;row<5;row++){
-                int index=CueRowOrder[row];float y=250+row*79;bool maxed=CueMaxed(cue,index);
-                CueChrome("StatRow"+index,card,24,y,1252,73,maxed?CueLockerGraphic.Finish.Muted:CueLockerGraphic.Finish.Inset);
-                Text("StatLevel"+index,card,CueRowNames[row]+"  Lv."+CueDisplayLevel(cue,index,levels[index]),40,y+16,240,42,29,maxed?CueQuiet:CueIvory,TextAlignmentOptions.MidlineLeft);
+                int index=CueRowOrder[row];float y=347+row*67;bool maxed=CueMaxed(cue,index);
+                CueChrome("StatRow"+index,growth,40,y,1220,61,maxed?CueLockerGraphic.Finish.Muted:CueLockerGraphic.Finish.Inset);
+                Text("StatLevel"+index,growth,CueRowNames[row]+"  Lv."+CueDisplayLevel(cue,index,levels[index]),55,y+10,225,42,29,maxed?CueQuiet:CueIvory,TextAlignmentOptions.MidlineLeft);
                 float fraction=CueFraction(cue,index,levels[index]);
-                CueChrome("Track"+index,card,292,y+21,546,31,CueLockerGraphic.Finish.Inset);
-                CueChrome("Fill"+index,card,295,y+25,540*fraction,23,CueLockerGraphic.Finish.Fill);
+                CueChrome("Track"+index,growth,292,y+15,546,31,CueLockerGraphic.Finish.Inset);
+                var fill= CueChrome("Fill"+index,growth,295,y+19,540*fraction,23,CueLockerGraphic.Finish.Fill);
                 if(!maxed&&ability!=null&&bowls!=null&&bowls.Ready(index)){
                     var next=Assets.Scripts.Prack.BackSys.GameData.CueAbilitySettings.WithGuide(ability.LevelsFromSteps(cue.CueSteps+(cue.CuePending+1)/Math.Max(1,ability.Reach)));
                     float gain=CueFraction(cue,index,next[index])-fraction;
-                    if(gain>0)Box("Preview"+index,card,295+540*fraction,y+25,540*gain,23,new Color(1,1,.8f,.6f));
+                    if(gain>0)fill.GetComponent<CueLockerGraphic>().previewEndWidth=540*(fraction+gain);
                 }
                 bool done=maxed||(bowls!=null&&bowls.Drunk[index]);bool ready=!maxed&&bowls!=null&&bowls.Ready(index)&&!bowls.Auto;
                 string value=maxed?"—":bowls==null?"—":ready?"+"+bowls.Filled[index]:$"{bowls.Filled[index]}/{bowls.Maximum[index]}";
-                Text("BowlValue"+index,card,value,860,y+16,200,40,29,CueIvory);
-                CueButton("DrinkBowl"+index,card,done?"완료":"성장",1080,y+14,176,47,()=>ChangeCueBowl(cue,index),true,ready&&!playerSaving);
+                Text("BowlValue"+index,growth,value,860,y+10,200,40,29,CueIvory);
+                CueButton("DrinkBowl"+index,growth,done?"완료":"성장",1080,y+7,176,47,()=>ChangeCueBowl(cue,index),true,ready&&!playerSaving);
             }
-            if(bowls!=null&&bowls.Auto)Text("AutoPolicy",card,"자동 성장 적용 중",35,730,755,31,20,CueQuiet,TextAlignmentOptions.MidlineLeft);
-            CueButton("GrowAll",card,playerSaving?"처리 중…":"모두성장",450,726,400,76,()=>ChangeCueBowl(cue,-1),true,!playerSaving&&CueCanGrow(cue));
+            if(bowls!=null&&bowls.Auto)Text("AutoPolicy",growth,"자동 성장 적용 중",55,680,755,31,20,CueQuiet,TextAlignmentOptions.MidlineLeft);
+            CueButton("GrowAll",growth,playerSaving?"처리 중…":"모두성장",450,725,400,76,()=>ChangeCueBowl(cue,-1),true,!playerSaving&&CueCanGrow(cue));
         }
         [Serializable] sealed class BowlActionInput {public long CueId,Cycle;public string Operation;public int Index;}
         async void ChangeCueBowl(ShopProductData cue,int index)
@@ -177,7 +182,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                     await AnimateCueRoundProgress(before,cue,dialog);
                     if(dialog&&playerDialog==dialog&&CueLevelUpMotion.ShouldShow(before.CueSteps,cue.CueSteps,CueLevels(before),CueLevels(cue))){
                         var card=dialog.Find("CueDetailCard");
-                        var header=card.Find("CueGradeLevel")?.GetComponent<TMP_Text>();int level=cue.CueAbility.Percent(CueLevels(cue).Min());if(header)header.text=cue.CueAbility.Grade+"급  ·  Lv."+level;
+                        var header=card.Find("CueGradeLevel")?.GetComponent<TMP_Text>();if(header)header.text=cue.CueAbility.Grade+"급";
                         var celebration=CueLevelUpMotion.Play(dialog);
                         while(celebration&&dialog&&playerDialog==dialog&&!celebration.Finished)await System.Threading.Tasks.Task.Yield();
                         if(celebration)Dispose(celebration.gameObject);
@@ -189,11 +194,11 @@ namespace Assets.Scripts.Sight.Surface.Consist
         }
         async System.Threading.Tasks.Task AnimateCueGrowthSequence(ShopProductData before,ShopProductData after,int[] indices,RectTransform dialog)
         {
-            if(!dialog)return;var card=dialog.Find("CueDetailCard");if(!card)return;
+            if(!dialog)return;var card=dialog.Find("CueDetailCard/GrowthPanel");if(!card)return;
             var levels=CueLevels(before);
-            var header=card.Find("CueGradeLevel")?.GetComponent<TMP_Text>();if(header&&before.CueAbility!=null)header.text=before.CueAbility.Grade+"급  ·  Lv."+before.CueAbility.Percent(levels.Min());
+            var header=dialog.Find("CueDetailCard/CueGradeLevel")?.GetComponent<TMP_Text>();if(header&&before.CueAbility!=null)header.text=before.CueAbility.Grade+"급";
             var progress=card.Find("CueRoundProgress")?.GetComponent<TMP_Text>();var progressFill=(RectTransform)card.Find("CueRoundFill");
-            if(before.CueAbility!=null){long reach=Math.Max(1,before.CueAbility.Reach);if(progress)progress.text=$"진도 {before.CuePending:N0} / {reach:N0}";if(progressFill)progressFill.sizeDelta=new Vector2(544*(float)before.CuePending/reach,14);}
+            if(before.CueAbility!=null){long reach=Math.Max(1,before.CueAbility.Reach);if(progress)progress.text=$"진도 {before.CuePending:N0} / {reach:N0}";if(progressFill)progressFill.sizeDelta=new Vector2(CueProgressWidth*(float)before.CuePending/reach,CueProgressHeight);}
             // All data is already committed. Keep later rows visually waiting their turn.
             foreach(int stat in indices){
                 var value=card.Find("BowlValue"+stat)?.GetComponent<TMP_Text>();if(value)value.text="+"+before.CueBowls.Filled[stat];
@@ -213,20 +218,20 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             if(!dialog||playerDialog!=dialog||before.CueAbility==null)return;
             if(before.CueSteps==after.CueSteps&&before.CuePending==after.CuePending)return;
-            var card=dialog.Find("CueDetailCard");var fill=(RectTransform)card.Find("CueRoundFill");var label=card.Find("CueRoundProgress")?.GetComponent<TMP_Text>();
+            var card=dialog.Find("CueDetailCard/GrowthPanel");var fill=(RectTransform)card.Find("CueRoundFill");var label=card.Find("CueRoundProgress")?.GetComponent<TMP_Text>();
             long reach=Math.Max(1,before.CueAbility.Reach),target=after.CueSteps>before.CueSteps?reach:after.CuePending;float started=Time.unscaledTime;
             while(dialog&&playerDialog==dialog&&Time.unscaledTime-started<.42f){
                 float t=Mathf.SmoothStep(0,1,(Time.unscaledTime-started)/.42f),value=Mathf.Lerp(before.CuePending,target,t);
-                if(fill)fill.sizeDelta=new Vector2(544*value/reach,14);if(label)label.text=$"진도 {Mathf.RoundToInt(value):N0} / {reach:N0}";await System.Threading.Tasks.Task.Yield();
+                if(fill)fill.sizeDelta=new Vector2(CueProgressWidth*value/reach,CueProgressHeight);if(label)label.text=$"진도 {Mathf.RoundToInt(value):N0} / {reach:N0}";await System.Threading.Tasks.Task.Yield();
             }
-            if(dialog&&playerDialog==dialog){if(fill)fill.sizeDelta=new Vector2(544*(float)target/reach,14);if(label)label.text=$"진도 {target:N0} / {reach:N0}";}
+            if(dialog&&playerDialog==dialog){if(fill)fill.sizeDelta=new Vector2(CueProgressWidth*(float)target/reach,CueProgressHeight);if(label)label.text=$"진도 {target:N0} / {reach:N0}";}
         }
         async System.Threading.Tasks.Task AnimateCueGrowth(ShopProductData before,ShopProductData after,int stat,RectTransform dialog)
         {
-            if(!dialog)return;var card=dialog.Find("CueDetailCard");if(!card)return;
-            int row=Array.IndexOf(CueRowOrder,stat);float y=250+row*79;
+            if(!dialog)return;var card=dialog.Find("CueDetailCard/GrowthPanel");if(!card)return;
+            int row=Array.IndexOf(CueRowOrder,stat);float y=347+row*67;
             int amount=before.CueBowls.Filled[stat];if(amount<1)return;
-            var effects=Node("GrowthEffect"+stat,card,295,y+25,540,23);
+            var effects=Node("GrowthEffect"+stat,card,295,y+19,540,23);
             effects.gameObject.AddComponent<RectMask2D>();
             var group=effects.gameObject.AddComponent<CanvasGroup>();group.blocksRaycasts=false;
             Box("Glow",effects,0,0,540,23,new Color(1,.83f,.25f,.24f));

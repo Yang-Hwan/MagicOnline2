@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using Assets.Scripts.Often;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -52,6 +53,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             current.rect.localScale = Vector3.one * .85f;
             current.opacity.alpha = 1;
             current.elapsed = 0;current.positive=result>0;
+            GameAudio.Play(result < 0 ? SoundCue.Foul : result > 1 ? SoundCue.Combo : SoundCue.Score, .75f, result > 0 ? 1 + Mathf.Min(result - 1, 5) * .06f : 1);
         }
 
         bool SetArtwork(int result)

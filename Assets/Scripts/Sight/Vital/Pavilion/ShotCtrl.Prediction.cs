@@ -49,7 +49,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         {
             Vector3 origin=cueBall.body.position,dir=Vector3.ProjectOnPlane(cueSlider.forward,Vector3.up).normalized;
             float radius=cueBall.GetComponent<SphereCollider>().radius*Mathf.Abs(cueBall.transform.lossyScale.x);
-            float nearest=3+lineLength;Ball target=null;float thickness=0;
+            float nearest=Assets.Scripts.Often.CueGuideLength.Approach;Ball target=null;float thickness=0;
             foreach(var ball in physicsManager.balls) {
                 if(ball==cueBall || !ball.gameObject.activeInHierarchy)continue;
                 float r=ball.GetComponent<SphereCollider>().radius*Mathf.Abs(ball.transform.lossyScale.x);
@@ -60,7 +60,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             {nearest=rail.distance;target=null;}
             quickPreviewDistance=nearest;
             quickPreview.Clear();quickPreview.Add(origin);quickPreview.Add(origin+dir*nearest);
-            RenderPredictedPath(cueBallLines,cueBallLineMaterials,quickPreview,nearest);
+            DrawPredictedPath(cueBallLines,cueBallLineMaterials,quickPreview,nearest);
             foreach(var line in targetBallLines)line.positionCount=0;
             SetBallChecker(origin+dir*nearest,target ? target.id : -1);
             if(target)physicsManager.ringCue.FigureVal(thickness);
@@ -121,7 +121,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             }
             if(pendingPreview && Time.unscaledTime>=nextPreviewTime) {
                 if(prediction==null) {prediction=new ShotPrediction(physicsManager);PreviewSceneBuilds++;}
-                prediction.Begin(Array.IndexOf(physicsManager.balls,cueBall),previousPreviewImpulse,8,3+lineLength,true,lineLength);
+                prediction.Begin(Array.IndexOf(physicsManager.balls,cueBall),previousPreviewImpulse,8,Assets.Scripts.Often.CueGuideLength.Approach+Assets.Scripts.Often.CueGuideLength.AfterContact,true,Assets.Scripts.Often.CueGuideLength.AfterContact);
                 pendingPreview=false;
             }
             if(prediction!=null && prediction.IsCalculating) {
@@ -132,10 +132,13 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 // A completed zero/sub-pixel path must not erase the visible approach
                 // line. Practice already applies this guard for very small powers.
                 if(prediction.cuePath.Count<2 || prediction.PathDistance<.0001f)return;
-                RenderPredictedPath(cueBallLines,cueBallLineMaterials,prediction.cuePath,3+lineLength);
+                // Keep the geometric approach when a weak shot stops before contact.
+                if(prediction.FirstContactDistance<0)return;
+                float cueLimit=Assets.Scripts.Often.CueGuideLength.CueLimit(prediction.FirstContactDistance,Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter.GuideScale);
+                DrawPredictedPath(cueBallLines,cueBallLineMaterials,prediction.cuePath,cueLimit);
                 bool reachesTarget=Assets.Scripts.Often.CueGuideLength.ReachesContact(prediction.cuePath,
-                    3+lineLength,Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter.GuideScale,prediction.ContactPathIndex);
-                if(reachesTarget)RenderPredictedPath(targetBallLines,targetBallLineMaterials,prediction.targetPath,float.PositiveInfinity);
+                    cueLimit,1f,prediction.ContactPathIndex);
+                if(reachesTarget)RenderPredictedPath(targetBallLines,targetBallLineMaterials,prediction.targetPath,Assets.Scripts.Often.CueGuideLength.Target);
                 else foreach(var line in targetBallLines)if(line)line.positionCount=0;
                 SetBallChecker(prediction.contactCentre,prediction.targetIndex<0 ? -1 : physicsManager.balls[prediction.targetIndex].id);
                 if(prediction.targetIndex>=0)physicsManager.ringCue.FigureVal(prediction.contactThickness);
@@ -145,9 +148,13 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void RenderPredictedPath(LineRenderer[] lines,Material[] materials,List<Vector3> points,float limit)
         {
+            limit=Assets.Scripts.Often.CueGuideLength.Limit(points,limit,Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter.GuideScale);
+            DrawPredictedPath(lines,materials,points,limit);
+        }
+        void DrawPredictedPath(LineRenderer[] lines,Material[] materials,List<Vector3> points,float limit)
+        {
             foreach(var line in lines) line.positionCount=0;
             if(points.Count<2 || lines.Length==0) return;
-            limit=Assets.Scripts.Often.CueGuideLength.Limit(points,limit,Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter.GuideScale);
             if(limit<=0)return;
             if(previewRenderBuffer.Length<points.Count+1)Array.Resize(ref previewRenderBuffer,Mathf.NextPowerOfTwo(points.Count+1));
             int count=1;previewRenderBuffer[0]=points[0];float length=0;

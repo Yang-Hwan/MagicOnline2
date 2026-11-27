@@ -1,3 +1,4 @@
+using Assets.Scripts.Often;
 using System;
 using System.Globalization;
 using System.Linq;
@@ -50,6 +51,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 }
                 status.gameObject.SetActive(false);
                 DrawAttendance(panel, calendar.Rows, calendar.TodayDay);
+                GameAudio.Play(SoundCue.Attendance, .5f);
             }
             catch (Exception e)
             {

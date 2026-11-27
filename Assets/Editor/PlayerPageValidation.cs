@@ -57,6 +57,8 @@ public static class PlayerPageValidation
             items[0].CueBowls=new CueBowlState{Filled=new[]{10,10,0,0,10}};Invoke("DrawPlayerLocker");Render("ui-cues");
             items[0].CueBowls=new CueBowlState{Filled=new[]{10,10,0,0,10}};
             Invoke("OpenPlayerCue",items[0]);Render("ui-cue-bowls");
+            Check(Find("CueRoundProgress").parent==Find("GrowthPanel")&&Find("StatRow0").parent==Find("GrowthPanel")&&Find("GrowAll").parent==Find("GrowthPanel"),"Progress, five stats and grow-all share one growth panel");
+            Check(Find("GrowthTitle").GetComponent<TMP_Text>().text=="큐대 성장"&&((RectTransform)Find("CueRoundTrack")).rect.height>30,"Growth title and larger progress gauge establish parent hierarchy");
             Check(Enumerable.Range(0,5).All(i=>Find("DrinkBowl"+i)),"All five bowl drink controls exist");
             Check(Find("DrinkBowl1").GetComponent<Button>().interactable&&!Find("DrinkBowl0").GetComponent<Button>().interactable,"Only full unapproved bowls enable drinking");
             Check(Find("BowlValue1").GetComponent<TMP_Text>().text=="+10"&&!Find("CloseCue"),"Ready amount is visible and detail has no close button");
@@ -64,6 +66,17 @@ public static class PlayerPageValidation
             Check(!Find("AutoDrink"),"Member cannot change product auto mode");
             Check(Find("StatLevel1").GetComponent<TMP_Text>().text.Contains("밀기")&&Find("StatLevel4").GetComponent<TMP_Text>().text.Contains("조준"),"Rows use requested names");
             Invoke("DrawPlayerLocker");Check(Find("GrowthNotice")&&!Find("GrowthNotice").GetComponent<Button>(),"List growth indicator is not an action");
+            Check(Find("CueGradeLevel").GetComponent<TMP_Text>().text=="B급","Header contains only the grade");
+            var previewCue=new ShopProductData{Id=999,Name="미리보기 검증",CueAbility=new CueAbilitySettings{Initial=new[]{20,20,20,20,20},Maximum=new[]{60,60,60,60,60},Reach=1},CueSteps=20,CueBowls=new CueBowlState{Filled=new[]{20,0,0,0,0}}};
+            Invoke("OpenPlayerCue",previewCue);Render("ui-continuous-preview");
+            var previewGraphic=Find("Fill0").GetComponent<CueLockerGraphic>();
+            Check(previewGraphic.previewEndWidth>previewGraphic.rectTransform.rect.width&&!Find("Preview0"),"Preview shares the current bar instead of using a second rectangle");
+            using(var mesh=new VertexHelper()){
+                typeof(CueLockerGraphic).GetMethod("OnPopulateMesh",BindingFlags.Instance|BindingFlags.NonPublic,null,new[]{typeof(VertexHelper)},null).Invoke(previewGraphic,new object[]{mesh});
+                var vertices=new List<UIVertex>();mesh.GetUIVertexStream(vertices);float boundary=previewGraphic.rectTransform.rect.xMax;
+                Check(vertices.Any(v=>v.position.x>boundary+.01f&&v.color.a>0&&v.color.a<128),"Predicted extension is translucent");
+                Check(vertices.Any(v=>v.position.x<boundary-.01f&&v.color.a==255),"Current segment stays opaque");
+            }
             items[0].CueAbility.Maximum[0]=60;Invoke("OpenPlayerCue",items[0]);
             Check(!Find("DrinkBowl0").GetComponent<Button>().interactable&&Find("DrinkBowl0Label").GetComponent<TMP_Text>().text=="완료","Maxed graph row is completed and disabled");
             Check(Mathf.Abs(((RectTransform)Find("Fill0")).rect.width-540)<.01f,"Maxed stat graph remains at 100 percent");

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -325,6 +325,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 if(owner!=GameApiClient.UserId)return;
                 if (receipt == null || receipt.ProductId != input.ProductId) throw new InvalidOperationException("InvalidPurchaseReceipt");
                 PlayerPrefs.DeleteKey(key); PlayerPrefs.Save();
+                if (this && owner == GameApiClient.UserId) GameAudio.Play(SoundCue.Reward);
                 var product = shopProducts.FirstOrDefault(p => p.Id == receipt.ProductId);
                 if (product != null && product.Kind!="CoinPack") product.Owned = true;
                 if(receipt.GrantedCoin>0)BackendGame.Instance.UserMainData.Coin=receipt.BalanceCoin;
@@ -334,6 +335,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             }
             catch (GameApiException e)
             {
+                GameAudio.Play(SoundCue.Error, .5f);
                 bool terminal = e.Status >= 400 && e.Status < 500 && e.Status != 401 && e.Status != 408 && e.Status != 429;
                 if (terminal) { PlayerPrefs.DeleteKey(key); PlayerPrefs.Save(); }
                 message = e.Message == "ShopInsufficientGems" ? "보석이 부족합니다." :

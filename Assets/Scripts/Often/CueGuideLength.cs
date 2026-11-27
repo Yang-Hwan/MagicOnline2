@@ -4,6 +4,11 @@ namespace Assets.Scripts.Often
 {
     public static class CueGuideLength
     {
+        public const float Approach = 10f;
+        public const float AfterContact = 2f;
+        public const float Target = 1f;
+        public static float CueLimit(float firstContactDistance,float scale)
+            => firstContactDistance<0 ? Approach : firstContactDistance+AfterContact*Mathf.Clamp01(scale);
         public static bool ReachesContact(IList<Vector3> points, float originalLimit, float scale, int contactIndex)
         {
             if(scale<=0 || contactIndex<1 || contactIndex>=points.Count)return false;

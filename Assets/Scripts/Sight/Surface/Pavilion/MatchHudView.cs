@@ -1,3 +1,4 @@
+using Assets.Scripts.Often;
 using System;
 using System.Globalization;
 using Assets.Scripts.Exert.BackSys;
@@ -199,10 +200,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             }
             portraitGlows[ActiveSide].SetTime(VisualTime);
         }
-        public void SetTurn(int side){if(shotClockAlarm)shotClockAlarm.ResetTurn();ActiveSide=Mathf.Clamp(side,0,1);UpdatePortraitTurn();RemainingRatio=1;RemainingSeconds=30;TimerRunning=true;graphic.SetVerticesDirty();}
+        public void SetTurn(int side){if(side==0)GameAudio.Play(SoundCue.Turn,.5f);if(shotClockAlarm)shotClockAlarm.ResetTurn();ActiveSide=Mathf.Clamp(side,0,1);UpdatePortraitTurn();RemainingRatio=1;RemainingSeconds=30;TimerRunning=true;graphic.SetVerticesDirty();}
         public void SetTime(float progress,float duration,bool running=true)
         {
+            float previousSeconds = RemainingSeconds;
             RemainingRatio=1-Mathf.Clamp01(progress);RemainingSeconds=RemainingRatio*Mathf.Max(1,duration);TimerRunning=running;
+            if(running && previousSeconds > 0 && RemainingSeconds <= 0)GameAudio.Play(SoundCue.Timeout,.6f);
         }
         public void StopTimer(){TimerRunning=false;if(shotClockAlarm)shotClockAlarm.Hide();}
         public void AdvanceVisual(float time,float delta)

@@ -1,4 +1,4 @@
-﻿using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
+using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Often;
 using Cysharp.Threading.Tasks;
 using System;
@@ -591,6 +591,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             _targetEquip = TargetEquip.None;
             physicsManager.BeginReplayCueStroke();
             IsShotAnimating = true;
+            Assets.Scripts.Often.GameAudio.Play(Assets.Scripts.Often.SoundCue.Pull, .25f);
             try
             {
                 GuideLineReset();

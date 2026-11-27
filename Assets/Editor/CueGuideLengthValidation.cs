@@ -18,6 +18,9 @@ public static class CueGuideLengthValidation
         try
         {
             profile.Ability=null;
+            Check(Mathf.Approximately(Assets.Scripts.Often.CueGuideLength.CueLimit(3,1),5),"100 percent preserves approach and adds two units");
+            Check(Mathf.Approximately(Assets.Scripts.Often.CueGuideLength.CueLimit(3,.5f),4),"50 percent preserves approach and adds one unit");
+            Check(Mathf.Approximately(Assets.Scripts.Often.CueGuideLength.CueLimit(3,0),3),"Zero percent still reaches first contact");
             var bentPath=new List<Vector3>{Vector3.zero,new Vector3(3,0,0),new Vector3(3,0,4)};
             Check(!Assets.Scripts.Often.CueGuideLength.ReachesContact(bentPath,4.6f,.5f,1),"Target hidden before contact");
             Check(Assets.Scripts.Often.CueGuideLength.ReachesContact(bentPath,6,.5f,1),"Target visible exactly at contact");
@@ -38,6 +41,9 @@ public static class CueGuideLengthValidation
                 Draw(float.PositiveInfinity);Check(Vector3.Distance(line.GetPosition(line.positionCount-1),new Vector3(3,0,.5f))<.001f,"50% target path across corner");
                 profile.Guide=0;Draw(float.PositiveInfinity);Check(line.positionCount==0,"0% must hide guide");
                 profile.Guide=100;Draw(float.PositiveInfinity);Check(line.GetPosition(line.positionCount-1)==new Vector3(3,0,4),"100% target path");
+                Draw(3+Assets.Scripts.Often.CueGuideLength.AfterContact);Check(Vector3.Distance(line.GetPosition(line.positionCount-1),new Vector3(3,0,2))<.001f,"First contact at three units leaves two units of cue guide");
+                Draw(Assets.Scripts.Often.CueGuideLength.Target);Check(Vector3.Distance(line.GetPosition(line.positionCount-1),Vector3.right)<.001f,"Target guide capped at one unit");
+                profile.Guide=50;Draw(Assets.Scripts.Often.CueGuideLength.Target);Check(Vector3.Distance(line.GetPosition(line.positionCount-1),Vector3.right*.5f)<.001f,"50 percent target guide capped at half a unit");
                 Check(path.Count==3&&path[2]==new Vector3(3,0,4),"Prediction geometry was modified");
             }
             File.WriteAllText("Logs/cue-guide-length-result.txt","PASS "+checks+" checks");

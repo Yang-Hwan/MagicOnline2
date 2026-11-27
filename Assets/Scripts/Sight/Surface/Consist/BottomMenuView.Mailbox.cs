@@ -1,3 +1,4 @@
+using Assets.Scripts.Often;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -233,6 +234,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                         continue;
                     }
                     mailReceived.Add(item.PostId);
+                    GameAudio.Play(SoundCue.Reward, .65f);
                     DrawMailRows(true);
                     // Keep the currently processed row visible during a long receive-all queue.
                     int index=mailSessionRows.FindIndex(r=>r.PostId==item.PostId);

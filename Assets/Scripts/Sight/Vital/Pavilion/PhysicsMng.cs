@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Exert.Match;
+using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Often;
 using Assets.Scripts.Sight.Surface.Pavilion;
@@ -466,6 +466,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 ball.strokeFollowThrough = ball == cueBall ? impulse.followThrough : -1;
                 ball.strokeSpinPersistence = ball == cueBall ? impulse.spinPersistence : -1;
             }
+            if (impulse.impulse.sqrMagnitude > .000001f) GameAudio.Play(SoundCue.Strike, Mathf.Clamp(impulse.impulse.magnitude / cueBall.body.mass / 7f, .12f, 1f));
             cueBall.body.AddForceAtPosition(impulse.impulse, impulse.point, ForceMode.Impulse);
             OnMatchReplayShot?.Invoke(cueBall, impulse);
 

@@ -1,3 +1,4 @@
+using Assets.Scripts.Often;
 using UnityEngine;
 using Assets.Scripts.Exert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital;
@@ -13,6 +14,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         void OnCollisionEnter(Collision collision)
         {
+            if (physicsMng && physicsMng.inMove) GameAudio.Impact(this, collision);
             if (!isCueBall || !physicsMng.inMove || PoolLogic.controlFromNetwork) return;
             int contactLayer = collision.collider.gameObject.layer;
             if (contactLayer == LayerMask.NameToLayer("Board"))

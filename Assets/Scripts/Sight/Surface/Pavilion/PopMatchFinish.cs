@@ -25,6 +25,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         RawImage resultArtwork;
         VictoryConfetti victoryConfetti;
         bool victoryPresented;
+        string soundedResult;
         ModalBackdrop resultBackdrop;
         Image[] legacyPanels;
         bool[] legacyPanelEnabled;
@@ -37,6 +38,11 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 title.Contains("패배") ? "match-defeat" :
                 title.Contains("비겼") || title.Contains("무승부") ? "match-draw" : null;
             if (asset != null) MatchReplayRecorder.ResultShown(gameObject.scene);
+            if (asset != null && soundedResult != asset)
+            {
+                soundedResult = asset;
+                GameAudio.Play(asset == "match-victory" ? SoundCue.Victory : asset == "match-defeat" ? SoundCue.Defeat : SoundCue.Draw);
+            }
             if (asset == "match-victory")
             {
                 if (!victoryPresented)
@@ -174,6 +180,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         public void ShowLevelUp(Assets.Scripts.Exert.BackSys.BackendMatchHistory.LevelUpAward award)
         {
+            GameAudio.Play(SoundCue.LevelUp);
             var crest = Resources.Load<Texture2D>("Gameplay/level-up-crest");
             string amount = award.Amount > 0 ? "+" + award.Amount.ToString("N0") : "";
             if (!crest || !levelNumberPrefab || !resultArtwork || award.Level > 9999)
@@ -247,13 +254,14 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             if (victoryConfetti) victoryConfetti.Stop();
             victoryPresented = false;
         }
-        void OnDisable() { CancelPendingResult(); ClearLevelUp(); StopVictoryConfetti(); }
+        void OnDisable() { soundedResult = null; CancelPendingResult(); ClearLevelUp(); StopVictoryConfetti(); }
 
 
         void PracticeResultViewNow(string winnerName, int targetHit, bool timedOut = false)
         {
             BindView();
             rectTransform.anchoredPosition = Vector2.zero;
+            if (timedOut) GameAudio.Play(SoundCue.Timeout);
             txtResult.text = timedOut ? "연습 종료" : "승리하였습니다";
             txtBrief.text = timedOut ? "연습 시간이 종료되었습니다" : $"{winnerName} · 목표 {targetHit}점 달성";
             ShowResultArtwork(txtResult.text);
@@ -325,6 +333,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public void MatchResultClose()
         {
+            soundedResult = null;
             StopVictoryConfetti();
             CancelPendingResult();
             if(resultBackdrop)resultBackdrop.gameObject.SetActive(false);

@@ -28,7 +28,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public void Cancel() { work?.Dispose(); work=null; simulatingShot=false; }
         public void Begin(int cue,Impulse impulse,float maxTime=8f,float maxDistance=4.6f,bool firstContactOnly=false,float afterContactLength=1.6f)
         {
-            Cancel();ContactPathIndex=-1;PathDistance=0;FreeFlightSteps=0;ContactSolverSteps=0;resolvedContact=false;contactReleaseSteps=0;work=CalculateSteps(cue,impulse,maxTime,maxDistance,firstContactOnly,afterContactLength);
+            Cancel();ContactPathIndex=-1;FirstContactDistance=-1;PathDistance=0;FreeFlightSteps=0;ContactSolverSteps=0;resolvedContact=false;contactReleaseSteps=0;work=CalculateSteps(cue,impulse,maxTime,maxDistance,firstContactOnly,afterContactLength);
         }
         public bool Advance(double budgetMilliseconds=2,int maxTicks=16)
         {
@@ -48,6 +48,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public readonly List<Vector3> timedCuePath = new List<Vector3>();
         public int targetIndex = -1;
         public int ContactPathIndex { get; private set; } = -1;
+        public float FirstContactDistance { get; private set; } = -1;
+        void MarkFirstContact()
+        {
+            if(FirstContactDistance>=0)return;
+            FirstContactDistance=PathDistance+(cuePath.Count>0?Vector3.Distance(cuePath[cuePath.Count-1],balls[cueIndex].position):0);
+        }
         public Vector3 contactCentre;
         public float contactThickness;
         public Vector3 initialTensor, firstSpin;
@@ -110,6 +116,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         {
             if (!simulatingShot || index!=cueIndex)return;
             if(collision.collider.gameObject.layer==LayerMask.NameToLayer("Board")) {
+                MarkFirstContact();
                 if(manager.FollowThroughProfileActive && strokeSpinPersistence>=0)
                     FollowThroughProfile.ApplySecondRailEnglish(ref strokeRailHits, balls[index], collision,
                         impactIncomingVelocity, impactIncomingSpin.y, radii[index]);
@@ -117,6 +124,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 return;
             }
             if(!collision.collider.TryGetComponent<ShotPredictionContact>(out var other))return;
+            MarkFirstContact();
             float instantWeight=manager.FollowThroughProfileActive
                 ? manager.InstantFollowDrawWeight(impactIncomingVelocity,balls[other.index].position-balls[index].position) : 1f;
             if (manager.BallImpactTrialActive)
@@ -140,7 +148,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         {
             long started=System.Diagnostics.Stopwatch.GetTimestamp();
             Vector3 origin=balls[targetIndex].position;
-            float distance=10f;
+            float distance=Assets.Scripts.Often.CueGuideLength.Target;
             targetGuideHit=false;
             if(direction.sqrMagnitude>.000001f)
             {
@@ -309,7 +317,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 foreach(var b in balls) if(b.gameObject.activeSelf && (b.linearVelocity.magnitude>manager.PredictionCloth.stopSpeed || b.angularVelocity.magnitude>manager.PredictionCloth.stopSpin)) settled=false;
                 still=settled ? still+Time.fixedDeltaTime : 0;
                 if(distance>=maxDistance || still>=manager.PredictionCloth.stopDelay) break;
-                if(firstContactOnly && ((firstContactDistance>=0 && distance-firstContactDistance>=afterContactLength) ||
+                if(firstContactOnly && ((FirstContactDistance>=0 && distance-FirstContactDistance>=afterContactLength) ||
                     (balls[cue].linearVelocity.magnitude<manager.PredictionCloth.stopSpeed &&
                      Vector3.ProjectOnPlane(balls[cue].angularVelocity,Vector3.up).magnitude*radii[cue]<manager.PredictionCloth.stopSpeed))) break;
                 yield return tick+1;

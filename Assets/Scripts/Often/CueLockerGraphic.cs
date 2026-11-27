@@ -1,16 +1,26 @@
 using UnityEngine;
+using System.Collections.Generic;
 using UnityEngine.UI;
 namespace Assets.Scripts.Often
 {
     [RequireComponent(typeof(CanvasRenderer))]
     public sealed class CueLockerGraphic : MaskableGraphic
     {
-        public enum Finish { Panel, Inset, Gold, Muted, Fill, Blue, Header, Background }
+        public enum Finish { Panel, Inset, Gold, Muted, Fill, Blue, Header, Background, Group }
         public Finish finish;
+        public float previewEndWidth;
         protected override void OnPopulateMesh(VertexHelper vh)
         {
-            vh.Clear();var r=rectTransform.rect;float radius=Mathf.Min(9,r.height*.22f);
+            vh.Clear();var r=rectTransform.rect;float solidEnd=r.xMax;
+            bool preview=finish==Finish.Fill&&previewEndWidth>r.width;
+            if(preview)r.width=previewEndWidth;
+            float radius=Mathf.Min(9,r.height*.22f);
             if(r.width<1||r.height<1)return;
+            if(finish==Finish.Group){
+                Layer(vh,r,24,new Color(.02f,.36f,.66f),new Color(.16f,.87f,1));
+                r=Inset(r,3);Layer(vh,r,21,new Color(.01f,.04f,.13f),new Color(.025f,.16f,.30f));
+                r=Inset(r,2);Layer(vh,r,19,new Color(.015f,.06f,.15f),new Color(.025f,.15f,.27f));return;
+            }
             bool gold=finish==Finish.Gold,fill=finish==Finish.Fill,blue=finish==Finish.Blue||finish==Finish.Header;
             bool backdrop=finish==Finish.Background,panel=finish==Finish.Panel;
             Layer(vh,new Rect(r.x+1,r.y-3,r.width,r.height),radius,new Color(0,0,0,.35f),new Color(0,0,0,.35f));
@@ -33,6 +43,28 @@ namespace Assets.Scripts.Often
                 float size=Mathf.Min(r.width*.18f,r.height*.75f);
                 Ring(vh,new Vector2(r.x+r.width*.77f,r.y+r.height*.48f),size,.13f*size,new Color(.25f,.84f,1,backdrop?.13f:.055f));
                 Ring(vh,new Vector2(r.x+r.width*.23f,r.y+r.height*.45f),size*.67f,.10f*size,new Color(.25f,.84f,1,backdrop?.11f:.04f));
+            }
+            if(preview)SplitPreview(vh,solidEnd);
+        }
+        // Split the same bar mesh at the current value: no second cap or border at the join.
+        static void SplitPreview(VertexHelper vh,float edge)
+        {
+            var triangles=new List<UIVertex>();vh.GetUIVertexStream(triangles);vh.Clear();
+            for(int i=0;i<triangles.Count;i+=3){
+                Emit(false);Emit(true);
+                void Emit(bool future){
+                    var polygon=new List<UIVertex>(4);
+                    for(int j=0;j<3;j++){
+                        var a=triangles[i+j];var b=triangles[i+(j+1)%3];
+                        bool insideA=future?a.position.x>=edge:a.position.x<=edge;
+                        bool insideB=future?b.position.x>=edge:b.position.x<=edge;
+                        if(insideA)polygon.Add(a);
+                        if(insideA!=insideB){float t=(edge-a.position.x)/(b.position.x-a.position.x);var cut=a;cut.position=Vector3.Lerp(a.position,b.position,t);cut.color=Color.Lerp(a.color,b.color,t);cut.uv0=Vector4.Lerp(a.uv0,b.uv0,t);polygon.Add(cut);}
+                    }
+                    int start=vh.currentVertCount;
+                    foreach(var vertex in polygon){var v=vertex;if(future){var c=v.color;c.a=(byte)(c.a*.42f);v.color=c;}vh.AddVert(v);}
+                    for(int n=1;n+1<polygon.Count;n++)vh.AddTriangle(start,start+n,start+n+1);
+                }
             }
         }
         void Dot(VertexHelper vh,Vector2 centre,float radius,Color tint)

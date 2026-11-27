@@ -48,6 +48,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             var shader=Resources.Load<Shader>("Gameplay/Sentiments/ProudHalo/HaloMask");
             if(!shader)throw new System.InvalidOperationException("s8_5 halo transparency shader is missing");
             rayMaterial=new Material(shader);rayMaterial.SetVector("_UVRect",new Vector4(0,.5f,.5f,.5f));
+            rayMaterial.SetFloat("_RayVariation",1);
+            rayMaterial.SetFloat("_InnerRadius",.0125f);
+            rayMaterial.SetFloat("_InnerFeather",.01375f);
+            rayMaterial.SetFloat("_CenterCompression",.10f);
             ringMaterial=new Material(shader);ringMaterial.SetVector("_UVRect",new Vector4(.5f,.5f,.5f,.5f));ringMaterial.SetFloat("_InnerRadius",.27f);ringMaterial.SetFloat("_InnerFeather",.045f);ringMaterial.SetFloat("_OuterFeather",.09f);
             rays.material=rayMaterial;foreach(var ring in rings)ring.material=ringMaterial;
         }
@@ -70,13 +74,15 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             var rect=image.rectTransform;rect.anchoredPosition=Vector2.Scale(new Vector2(p.x-.5f,p.y-.5f),extent);rect.sizeDelta=new Vector2(dx.magnitude,dy.magnitude);rect.localRotation=Quaternion.Euler(0,0,Mathf.Atan2(dx.y,dx.x)*Mathf.Rad2Deg);image.color=new Color(1,1,1,Mathf.Clamp01(alpha));
         }
         void Update(){if(playing)Sample(Time.unscaledTime-started);}
+        // Stable per-particle variation: seeking and sampling never depend on frame rate or Random state.
+        static float Variation(int index,int salt){float value=Mathf.Sin((index+1)*127.1f+salt*311.7f)*43758.5453f;return value-Mathf.Floor(value);}
         public void Sample(float time)
         {
             if(!playing||!root)return;if(time>=Duration){Stop();return;}
             float clear=1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(2.35f,3.35f,time));
             float unfold=Mathf.SmoothStep(0,1,Mathf.InverseLerp(.42f,.95f,time));
             float pulse=Mathf.Exp(-Mathf.Pow((time-1.2f)/.19f,2))+Mathf.Exp(-Mathf.Pow((time-1.95f)/.22f,2));
-            Place(rays,center,depth*Mathf.Lerp(.54f,.96f,unfold),unfold*clear*(.70f+pulse*.30f),time*9);
+            Place(rays,center,depth*Mathf.Lerp(.54f,.96f,unfold)*6f,unfold*clear*(.70f+pulse*.30f)*.25f,time*9);
             for(int i=0;i<rings.Length;i++){
                 float age=time-(.58f+i*.76f),t=Mathf.Clamp01(age/.90f);
                 Place(rings[i],center,depth*Mathf.Lerp(.30f,1.08f,t),age>=0?Mathf.Sin(t*Mathf.PI)*clear*.80f:0);
@@ -90,12 +96,17 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 Place(stars[i],p,depth*(.09f+i%2*.025f)*(1+Mathf.Sin(t*Mathf.PI)*.25f),alpha,i*19+time*10);
             }
             for(int i=0;i<motes.Length;i++){
-                float angle=i*137.508f*Mathf.Deg2Rad,t=Mathf.Clamp01(time/.65f),radius=Mathf.Lerp(.32f+i%4*.03f,.09f,t);
+                float angle=(i*137.508f+Variation(i,1)*22)*Mathf.Deg2Rad;
+                float delay=Variation(i,2)*.14f,travel=Mathf.Lerp(.38f,.78f,Variation(i,3));
+                float t=Mathf.Clamp01((time-delay)/travel);
+                float radius=Mathf.Lerp(Mathf.Lerp(.28f,.46f,Variation(i,4)),.06f,Mathf.Pow(t,Mathf.Lerp(.7f,1.8f,Variation(i,5))));
                 float alpha=Mathf.Sin(t*Mathf.PI)*.75f;
                 var p=Point(Mathf.Cos(angle)*radius,Mathf.Sin(angle)*radius);
-                if(time>=.65f){
-                    float age=time-(2.20f+i*.017f),life=.85f+i%4*.07f,u=Mathf.Clamp01(age/life);
-                    p=Point(Mathf.Cos(angle)*(.12f+i%5*.037f),Mathf.Sin(angle)*.17f+u*.24f);
+                if(time>=delay+travel){
+                    float age=time-(2.05f+Variation(i,6)*.43f),life=Mathf.Lerp(.65f,1.18f,Variation(i,7)),u=Mathf.Clamp01(age/life);
+                    float spread=angle+(Variation(i,8)-.5f)*.8f;
+                    float distance=Mathf.Lerp(.06f,.15f,Variation(i,9))+Mathf.Lerp(.16f,.48f,Variation(i,10))*(1-Mathf.Pow(1-u,1.5f));
+                    p=Point(Mathf.Cos(spread)*distance,Mathf.Sin(spread)*distance);
                     alpha=age>=0?Mathf.Sin(u*Mathf.PI)*(1-u):0;
                 }
                 Place(motes[i],p,depth*(.018f+i%3*.006f),alpha,time*15+i*23);

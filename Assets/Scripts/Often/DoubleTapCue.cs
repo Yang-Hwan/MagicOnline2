@@ -40,6 +40,7 @@ namespace Assets.Scripts.Often
 
         public void Strike()
         {
+            GameAudio.Play(SoundCue.Pulse, .3f);
             properties.SetFloat(FlashStart, Time.time);
             SetCharge(0);
         }

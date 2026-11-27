@@ -69,7 +69,7 @@ public sealed class GuidePredictionValidation : MonoBehaviour
             cost.targetGuideQueryMilliseconds=light.targetGuideQueryMilliseconds;cost.targetGuideHit=light.targetGuideHit;
             cost.targetGuideLength=Vector3.Distance(light.targetPath[0],light.targetPath[1]);
             targetStart=light.targetPath[0];targetEnd=light.targetPath[1];originalCuePath=new List<Vector3>(light.timedCuePath);
-            cost.passed=light.targetIndex==3 && cost.remainingBalls==1 && light.targetPath.Count==2 && cost.simplifiedFrames<cost.fullFrames && cost.targetGuideHit && cost.targetGuideLength>.35f;
+            cost.passed=light.targetIndex==3 && cost.remainingBalls==1 && light.targetPath.Count==2 && cost.simplifiedFrames<cost.fullFrames && cost.targetGuideLength>.35f && cost.targetGuideLength<=Assets.Scripts.Often.CueGuideLength.Target+.0001f;
         }
         timer.Stop();cost.simplifiedMilliseconds=(float)timer.Elapsed.TotalMilliseconds;
         var obstacle=manager.ballcs[2].body;var oldPosition=obstacle.position;bool slept=obstacle.IsSleeping();

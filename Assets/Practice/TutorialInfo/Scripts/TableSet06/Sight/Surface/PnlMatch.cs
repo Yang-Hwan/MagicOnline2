@@ -1,4 +1,6 @@
-﻿using PracticeSceneFlow = Assets.Scripts.Often.PracticeSceneFlow;
+using GameAudio = Assets.Scripts.Often.GameAudio;
+using SoundCue = Assets.Scripts.Often.SoundCue;
+using PracticeSceneFlow = Assets.Scripts.Often.PracticeSceneFlow;
 using MatchHudView = Assets.Scripts.Sight.Surface.Pavilion.MatchHudView;
 ﻿using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Often;
@@ -214,6 +216,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
 
         private void OnEnable()
         {
+            GameAudio.Music("Match");
+            GameAudio.Play(SoundCue.Start, .65f);
             //Debug.Log($"PnlMatch OnEnable -----------------");
             if (!BindRuntimeEvents()) return;
             MatchInit();

@@ -26,7 +26,13 @@ namespace Assets.Scripts.Often
         }
         public void ApplyReplayState(ReplayState state){bounds=state.bounds;style=state.style;charge=state.charge;flash=state.flash;replayNormal=state.normal;UpdateGeometry(state.time);}
         public void SetCharge(float value){charge=Mathf.Clamp01(value);}
-        public void Strike(){flash=Time.time;charge=0;}
+        public void Strike()
+        {
+            flash=Time.time;charge=0;
+            if(style==PremiumCueStyle.Thunder) GameAudio.Play(SoundCue.Spark,.3f);
+            else if(style==PremiumCueStyle.Nebula) GameAudio.Play(SoundCue.Pulse,.3f);
+            else if(style==PremiumCueStyle.Flame) GameAudio.Play(SoundCue.Flame,.3f);
+        }
         public static PremiumCueWorld Equip(Transform slider,string key)
         {
             var style=PremiumCueDesign.Style(key);var standard=slider?slider.Find("Cue3D/Standard3DCue"):null;

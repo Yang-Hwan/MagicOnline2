@@ -1,4 +1,6 @@
-﻿using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
+using GameAudio = Assets.Scripts.Often.GameAudio;
+using SoundCue = Assets.Scripts.Often.SoundCue;
+using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Often;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
@@ -514,6 +516,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
                 
 
+                if (impulse.impulse.sqrMagnitude > .000001f) GameAudio.Play(SoundCue.Strike, Mathf.Clamp(impulse.impulse.magnitude / cuball.mass / 7f, .12f, 1f));
                 cuball.AddForceAtPosition(impulse.impulse, impulse.point, ForceMode.Impulse);
             }
 

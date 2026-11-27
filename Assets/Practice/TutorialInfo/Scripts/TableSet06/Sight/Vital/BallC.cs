@@ -1,3 +1,4 @@
+using GameAudio = Assets.Scripts.Often.GameAudio;
 using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Often;
 using System;
@@ -191,6 +192,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         // 충돌직전 
         public void OnCollisionEnter(Collision collision)
         {
+            if (physicsManager && physicsManager.inMove) GameAudio.Impact(this, collision);
             bool online = physicsManager.OnlineAdapter != null && physicsManager.OnlineAdapter.CanSimulate;
             if (!PoolCoach.Instance.isMatchTimePlay && !online) return;
 

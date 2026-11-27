@@ -1,3 +1,4 @@
+using Assets.Scripts.Often;
 using System.Collections;
 using System.Linq;
 using Assets.Scripts.Exert.Network;
@@ -183,6 +184,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             var label = self ? selfMessage : otherMessage;
             var box = (RectTransform)label.transform.parent;
             label.text = message;
+            GameAudio.Play(SoundCue.Chat, .5f);
             float width = Mathf.Clamp(label.GetPreferredValues(message).x + 40, 125, Mathf.Min(420, Panel.rect.width - 16));
             box.sizeDelta = new Vector2(width, Mathf.Max(54, label.GetPreferredValues(message, width - 18, Mathf.Infinity).y + 20));
             Place(box, self ? ownAvatar : opponentAvatar, self);

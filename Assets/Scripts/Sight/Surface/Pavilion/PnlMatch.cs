@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Exert.Match;
+using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Exert.Network;
 using Assets.Scripts.Often;
 using Assets.Scripts.Sight.Vital.Pavilion;
@@ -251,6 +251,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         private void OnEnable()
         {
+            GameAudio.Music("Match");
+            GameAudio.Play(SoundCue.Start, .65f);
             matchViewLifetime?.Cancel();
             matchViewLifetime?.Dispose();
             matchViewLifetime = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());

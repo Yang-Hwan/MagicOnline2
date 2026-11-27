@@ -1,3 +1,4 @@
+using Assets.Scripts.Often;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -176,6 +177,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
                 string path=challenge?"/challenge/"+id:"/"+id+"/answer";
                 await GameApiClient.Request<object>(Api+path,"POST",new Choice{Accept=accept});
                 Hide();waiting=null;
+                GameAudio.Play(accept ? SoundCue.Accept : SoundCue.Cancel, .6f);
                 if(!challenge && accept){FriendsChanged?.Invoke();Toast("친구가 되었습니다.");}
             }
             catch(Exception e){Toast(e.Message);}
@@ -191,6 +193,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         {
             if(shown==key && banner)return;
             Hide();shown=key;
+            GameAudio.Play(yes != null && no != null ? SoundCue.Request : SoundCue.Notify, .65f);
             var root=Rect("Friend Notice",overlay.transform,0,0,1000,102);
             root.anchorMin=root.anchorMax=root.pivot=new Vector2(.5f,1);root.anchoredPosition=new Vector2(0,-9);
             banner=root.gameObject;

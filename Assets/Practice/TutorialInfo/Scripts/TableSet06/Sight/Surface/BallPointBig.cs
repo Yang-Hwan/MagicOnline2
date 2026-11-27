@@ -1,3 +1,5 @@
+using GameAudio = Assets.Scripts.Often.GameAudio;
+using SoundCue = Assets.Scripts.Often.SoundCue;
 using Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital;
 using UnityEngine;
 
@@ -276,6 +278,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
                     isOff = true;
                 }
 
+                if (outLineTypeStart == OutLineType.InSide) GameAudio.Play(SoundCue.Aim, .4f);
                 outLineTypeStart = OutLineType.None;
                 canControl = false;
                 isDrag = false;

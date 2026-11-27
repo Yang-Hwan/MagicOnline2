@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Exert.Match;
+using Assets.Scripts.Exert.Match;
 using Assets.Scripts.Often;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
@@ -89,6 +89,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
 
         public void AddCoins(Vector3 collectedCoinPosition, int amount, int current_turn)
         {
+            GameAudio.Play(SoundCue.Coin, .4f);
             CoinPickUpAnimate(collectedCoinPosition, amount, current_turn).Forget();
             //Debug.Log("ADD COIN ~~~~~~~ " + amount + ", collectedCoinPosition : " + collectedCoinPosition);
         }
@@ -102,6 +103,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
             var coin=coinsQueue.Dequeue();
             if(!coin) { arrived?.Invoke();return; }
             visualCoins.Add(coin);
+            GameAudio.Play(SoundCue.Coin, .3f);
             coin.SetActive(true);coin.transform.position=position;
             coin.transform.DOMove(targetCoin[playerId].position,UnityEngine.Random.Range(minAnimDuration,maxAnimDuration))
                 .SetEase(easeType).SetLink(gameObject,LinkBehaviour.KillOnDestroy).OnComplete(()=> {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -275,6 +275,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             if(actor.HasAnimation) {
                 active=actor;elapsed=0;
                 actor.PlayAnimation(position);
+                GameAudio.Emotion(actor.category);
                 LogDisplayed(actor.category,$"{actor.name} · {actor.phrase}",preview);
                 return;
             }
@@ -300,7 +301,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             imageRect.sizeDelta=size;imageRect.anchoredPosition=origin;imageRect.localScale=Vector3.one;
             image.color=Color.white;
             elapsed=0;earlyFade=-1;nextSafetyCheck=0;image.enabled=true;
-            LogDisplayed(actor.category,$"{actor.name} · {actor.phrase}",preview);
+            GameAudio.Emotion(actor.category);
+                LogDisplayed(actor.category,$"{actor.name} · {actor.phrase}",preview);
         }
         bool Project(Vector3 world,out Vector2 point)
         {

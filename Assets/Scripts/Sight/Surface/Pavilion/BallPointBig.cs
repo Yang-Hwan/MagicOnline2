@@ -1,3 +1,4 @@
+using Assets.Scripts.Often;
 using CuePointGuide = Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital.CuePointGuide;
 using Assets.Scripts.Sight.Vital.Pavilion;
 using UnityEngine;
@@ -281,6 +282,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                     isOff = true;
                 }
 
+                if (outLineTypeStart == OutLineType.InSide) GameAudio.Play(SoundCue.Aim, .4f);
                 outLineTypeStart = OutLineType.None;
                 canControl = false;
                 isDrag = false;
