@@ -34,7 +34,7 @@ namespace Assets.Scripts.Often
             OnlineSession = null;
             bool replay = mode == Mode.Replay || mode == Mode.MatchReplay;
             int balls = mode == Mode.Stage ? StageMissions.Get(StageMissions.Current).balls : mode == Mode.ThreeBall ? 3 : 4;
-            Configuration = MatchConfiguration.Practice(balls, replay);
+            Configuration = !replay && mode != Mode.Stage ? MatchConfiguration.VersusComputer(balls) : MatchConfiguration.Practice(balls, replay);
             ReturnToPracticeMenu = false;
             SceneManager.LoadScene(ScenePath);
         }

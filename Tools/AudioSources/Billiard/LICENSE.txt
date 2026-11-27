@@ -1,0 +1,32 @@
+Billiard contact recordings and derived game clips
+License: CC0 1.0 Universal
+https://creativecommons.org/publicdomain/zero/1.0/
+Retrieved: 2026-11-27
+
+539854-source.wav
+Title: billiard ball clack
+Author: Za-Games
+Source: https://freesound.org/people/Za-Games/sounds/539854/
+Public HQ preview: https://cdn.freesound.org/previews/539/539854_12029332-hq.mp3
+The author describes solid billiard balls being struck together.
+Derived assets: Ball_1.wav, Ball_2.wav, Ball_3.wav
+
+709674-source.wav
+Title: SFXPool-Int_Hitting pool balls-Ruan_OwSfx
+Author: rvdw2004
+Source: https://freesound.org/people/rvdw2004/sounds/709674/
+Public HQ preview: https://cdn.freesound.org/previews/709/709674_14710320-hq.mp3
+The author describes hitting a pool ball.
+Derived asset: Strike.wav (the isolated single contact near 0.509 seconds,
+with a warmer frequency balance for the cue-tip contact).
+
+The bundled source WAV files are PCM decodes of the public HQ MP3 previews,
+not the original uploaded WAV masters. Both source pages identify CC0 and
+permit copying, editing, distribution, and commercial use.
+
+Processing: mono PCM 44.1 kHz / 16 bit; leading silence removal; 100 Hz
+rumble filter; gentle high-frequency rolloff; room-tail attenuation;
+short edge fades; peak headroom; three subtle ball-contact variants.
+No synthetic pitched oscillator or artificial reverberation was added.
+Rebuild with: python Tools/prepare_billiard_impacts.py (numpy, scipy).
+Prepared masters are copied by Tools/generate_game_audio.py on regeneration.

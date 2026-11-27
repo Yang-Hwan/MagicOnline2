@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,10 +10,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
     public partial class PhysicsMng
     {
         public const int ReplaySlotCount = 20;
+        const int MaximumReplaySlots = 100;
+        public int ActiveReplaySlotCount => !IsMatchReplayLayout && selectedReplayFolder == StageReplayFolderId ? MaximumReplaySlots : ReplaySlotCount;
         const int ReplaySlotsPerRow = 10;
         bool replayLoadMode, replayLineBeforeLoad, replaySavePanelOpen;
         int selectedReplaySlot;
-        readonly bool[] replaySlotFilled = new bool[ReplaySlotCount];
+        readonly bool[] replaySlotFilled = new bool[MaximumReplaySlots];
         Button[] replaySlotButtons;
         Button replaySave, replayLoad;
         string replaySlotMessage = "";
@@ -28,7 +30,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         public string GetReplaySlotTitle(int slot)
         {
-            if (slot < 0 || slot >= ReplaySlotCount) return "";
+            if (slot < 0 || slot >= ActiveReplaySlotCount) return "";
             try
             {
                 string path = ReplayTitlePath(slot);
@@ -44,7 +46,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         public bool SetReplaySlotTitle(int slot, string title)
         {
-            if (slot < 0 || slot >= ReplaySlotCount) return false;
+            if (slot < 0 || slot >= ActiveReplaySlotCount) return false;
             title = NormalizeReplayTitle(title);
             try
             {
@@ -239,7 +241,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         public void SelectReplaySlot(int slot)
         {
-            if (slot < 0 || slot >= ReplaySlotCount || !ReplaySlotReady) return;
+            if (slot < 0 || slot >= ActiveReplaySlotCount || !ReplaySlotReady) return;
             selectedReplaySlot = slot;
             if (replayLoadMode)
             {
@@ -250,7 +252,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         void RefreshReplaySlots()
         {
-            for (int i = 0; i < ReplaySlotCount; i++) replaySlotFilled[i] = File.Exists(ReplaySlotPath(i));
+            Assets.Scripts.Often.ReplaySlotOrder.Recover(ReplaySlotDirectory);
+            for (int i = 0; i < MaximumReplaySlots; i++) replaySlotFilled[i] = File.Exists(ReplaySlotPath(i));
         }
 
         void InstallBundledReplaySlots()
@@ -277,7 +280,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         public bool SaveReplaySlot(int slot)
         {
-            if (slot < 0 || slot >= ReplaySlotCount || replayLoadMode || !CanReplayShot) return false;
+            if (slot < 0 || slot >= ActiveReplaySlotCount || replayLoadMode || !CanReplayShot) return false;
             CommitReplayTitle();
             string path = ReplaySlotPath(slot), temp = path + ".tmp";
             try
@@ -394,7 +397,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         public bool LoadReplaySlot(int slot)
         {
-            if (slot < 0 || slot >= ReplaySlotCount || !replayLoadMode || !ReplaySlotReady) return false;
+            if (slot < 0 || slot >= ActiveReplaySlotCount || !replayLoadMode || !ReplaySlotReady) return false;
             try
             {
                 var frames = new List<ReplayFrame>();
@@ -414,8 +417,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         {
             if (replaySlotButtons == null)
             {
-                replaySlotButtons = new Button[ReplaySlotCount];
-                for (int i = 0; i < ReplaySlotCount; i++)
+                replaySlotButtons = new Button[MaximumReplaySlots];
+                for (int i = 0; i < MaximumReplaySlots; i++)
                 {
                     int slot = i;
                     var button = ReplayButton($"Replay Slot {i + 1:00}", $"{i + 1:00}", 0, () => SelectReplaySlot(slot));
@@ -424,6 +427,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                     var rect = (RectTransform)button.transform; rect.anchoredPosition = new Vector2(-300 + (i % ReplaySlotsPerRow) * 68, rowY - (i / ReplaySlotsPerRow) * rowGap); rect.sizeDelta = new Vector2(60, 34);
                     button.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = rect.sizeDelta;
                     replaySlotButtons[i] = button;
+                    var drag = button.gameObject.AddComponent<Assets.Scripts.Often.ReplaySlotDrag>();
+                    drag.Initialize(i, () => CanMoveStageReplaySlot(slot), MoveStageReplaySlot);
                 }
                 replaySave = ReplayButton("Replay Save", "저장", 0, SaveSelectedReplay);
                 var saveRect = (RectTransform)replaySave.transform; saveRect.anchoredPosition = new Vector2(264, -80); saveRect.sizeDelta = new Vector2(124, 38);
@@ -437,11 +442,13 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             }
             UpdateReplayTitle();
             UpdateReplayFolders();
+            if (!IsMatchReplayLayout) UpdateStageReplaySlotLayout();
             replayLoad.gameObject.SetActive(PracticeToolsVisible && !matchArchiveSaveMode); replayLoad.interactable = ReplaySlotReady;
             replaySave.gameObject.SetActive(!replayLoadMode);
             replaySave.interactable = (matchArchiveSaveMode ? OnlineAdapter != null && OnlineAdapter.CanSaveMatchReplay : CanReplayShot) && selectedReplaySlot >= 0;
-            for (int i = 0; i < ReplaySlotCount; i++)
+            for (int i = 0; i < MaximumReplaySlots; i++)
             {
+                replaySlotButtons[i].gameObject.SetActive(i < ActiveReplaySlotCount);
                 replaySlotButtons[i].interactable = ReplaySlotReady && (!replayLoadMode || replaySlotFilled[i]);
                 replaySlotButtons[i].GetComponent<Image>().color = i == selectedReplaySlot ? new Color(.72f, .46f, .08f) :
                     replaySlotFilled[i] ? new Color(.1f, .48f, .4f) : new Color(.24f, .27f, .3f);

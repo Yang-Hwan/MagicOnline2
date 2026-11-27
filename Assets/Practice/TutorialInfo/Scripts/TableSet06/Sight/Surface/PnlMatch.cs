@@ -695,6 +695,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             else egg.anchoredPosition = destination;
         }
 
+        public void RefreshComputerOpponent() => RefreshPracticeScoreboard();
+
         void RefreshPracticeScoreboard()
         {
             if (!PoolCoach.Instance.isRulePractice || PoolPlayer.mainPlayer == null) return;

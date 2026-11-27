@@ -39,7 +39,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             root.anchorMax = Vector2.one;
             root.offsetMin = root.offsetMax = Vector2.zero;
 
-            string[] labels = { "3구 연습", "4구 연습", "리플레이 - 개별", "리플레이 - 시합" };
+            string[] labels = { "3구 · 컴퓨터 대전", "4구 · 컴퓨터 대전", "리플레이 - 개별", "리플레이 - 시합" };
             string[] names = { "Three Ball Practice", "Four Ball Practice", "Individual Replay", "Match Replay" };
             var icons = new[] { three, four, replay, replay };
             var modes = new[] { PracticeSceneFlow.Mode.ThreeBall, PracticeSceneFlow.Mode.FourBall,

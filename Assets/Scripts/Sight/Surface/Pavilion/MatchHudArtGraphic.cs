@@ -7,7 +7,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
     [RequireComponent(typeof(CanvasRenderer))]
     public sealed class MatchHudArtGraphic : MaskableGraphic
     {
-        public const float RingWidth=13.6f,RingHeight=37,Spacing=14.4f;
+        public const float RailLength=290*.8f;
+        public const float RingWidth=13.6f*.8f,RingHeight=37,Spacing=14.4f*.8f;
+        public static float RailStart(int side)=>side==0?214:1345-RailLength;
         const float SheetWidth=2172,SheetHeight=724;
         MatchHudView view;
         Texture2D artwork;
@@ -22,12 +24,12 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public static float Position(MatchHudView view,int side,int index)
         {
-            var n=view.Counters[side];int count=Mathf.Min(15,n.Target);float start=side==0?214:1055;
-            float x=MatchHudGraphic.RingX(side,index,Mathf.Min(count,n.Displayed),count,start,290,Spacing);
+            var n=view.Counters[side];int count=Mathf.Min(15,n.Target);float start=RailStart(side);
+            float x=MatchHudGraphic.RingX(side,index,Mathf.Min(count,n.Displayed),count,start,RailLength,Spacing);
             if(n.Moving!=index)return x;
             float p=n.Progress(view.VisualTime),ease=p<.5f?4*p*p*p:1-Mathf.Pow(-2*p+2,3)/2;
-            float from=MatchHudGraphic.RingX(side,index,Mathf.Min(count,n.FromScore),count,start,290,Spacing);
-            float to=MatchHudGraphic.RingX(side,index,Mathf.Min(count,n.ToScore),count,start,290,Spacing);
+            float from=MatchHudGraphic.RingX(side,index,Mathf.Min(count,n.FromScore),count,start,RailLength,Spacing);
+            float to=MatchHudGraphic.RingX(side,index,Mathf.Min(count,n.ToScore),count,start,RailLength,Spacing);
             return Mathf.Lerp(from,to,ease);
         }
         enum TileKind { Artwork, SilverBead, RedBead }

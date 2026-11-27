@@ -1,0 +1,121 @@
+{
+  "items": [
+    {
+      "code": "s1_4",
+      "label": "폭탄 2발 폭발",
+      "duration": 2.2,
+      "events": [
+        0.65,
+        1.35
+      ],
+      "kind": "CC0 recording edit"
+    },
+    {
+      "code": "s5_10",
+      "label": "망치로 벽을 3번 타격",
+      "duration": 2.2499773242630385,
+      "events": [
+        0.35,
+        1,
+        1.65
+      ],
+      "kind": "CC0 recording edit"
+    },
+    {
+      "code": "s5_11",
+      "label": "아이처럼 아~앙 우는 소리",
+      "duration": 4.249977324263039,
+      "events": [
+        0.12
+      ],
+      "kind": "CC0 adult-performed child-cry imitation"
+    },
+    {
+      "code": "s5_4",
+      "label": "까마귀 까아",
+      "duration": 1.2499773242630385,
+      "events": [
+        0.2
+      ],
+      "kind": "CC0 recording edit"
+    },
+    {
+      "code": "s5_5",
+      "label": "쓸쓸한 우우우~우~",
+      "duration": 2.8,
+      "events": [
+        0
+      ],
+      "kind": "Original vowel sound design; reference mood only"
+    },
+    {
+      "code": "s5_6",
+      "label": "탕! 탕! 후 유리창 깨짐",
+      "duration": 3.2499773242630385,
+      "events": [
+        0,
+        0.5,
+        1.5
+      ],
+      "kind": "CC0 recording montage"
+    },
+    {
+      "code": "s5_7",
+      "label": "사~악 서리끼는 소리",
+      "duration": 2.8,
+      "events": [
+        0
+      ],
+      "kind": "Original granular frost and crystal design"
+    },
+    {
+      "code": "s5_8",
+      "label": "번개·천둥과 비",
+      "duration": 4.8,
+      "events": [
+        1.35,
+        1.95,
+        2.65
+      ],
+      "kind": "CC0 storm/rain recording montage"
+    },
+    {
+      "code": "s5_9",
+      "label": "악마소환",
+      "duration": 4.4,
+      "events": [
+        0,
+        2.45
+      ],
+      "kind": "Original dark vowel, reverse swell and ritual impact"
+    },
+    {
+      "code": "s6_5",
+      "label": "아름다운 음악",
+      "duration": 3.2,
+      "events": [
+        0
+      ],
+      "kind": "Original celesta/chime composition"
+    },
+    {
+      "code": "s8_4",
+      "label": "깔깔 웃음",
+      "duration": 2.58,
+      "events": [
+        0
+      ],
+      "kind": "CC0 recorded laughter edit"
+    },
+    {
+      "code": "s8_5",
+      "label": "아름다운 빛·후광",
+      "duration": 3.8,
+      "events": [
+        0,
+        1.4
+      ],
+      "kind": "Original luminous chime composition"
+    }
+  ]
+}

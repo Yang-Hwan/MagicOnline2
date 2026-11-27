@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Often;
+using Assets.Scripts.Often;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -80,7 +80,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         void UpdateMatchReplayControls()
         {
-            if (!IsMatchReplayBrowser || !replayPanel) return;
+            if (!IsReplayBrowser || !replayPanel) return;
             if (!matchReplayOperations)
             {
                 // Keep the root alive even when every optional panel is closed.
@@ -113,7 +113,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 PlaceReplayControl(replayReset.transform, matchReplayOperations, new Vector2(490, 0), new Vector2(124, 38));
                 matchReplayHeading.gameObject.SetActive(true);
                 PlaceReplayControl(matchReplayHeading.transform, matchReplayList, new Vector2(-225, 88), new Vector2(210, 38));
-                matchReplayHeading.text = "시합 리플레이";matchReplayHeading.fontSize=24;matchReplayHeading.fontStyle=TMPro.FontStyles.Bold;
+                matchReplayHeading.text = IsMatchReplayBrowser ? "시합 리플레이" : "개별 리플레이";matchReplayHeading.fontSize=24;matchReplayHeading.fontStyle=TMPro.FontStyles.Bold;
                 matchReplayHeading.color=new Color(.96f,.94f,.84f);
                 PlaceReplayControl(replayFolderScroll.transform,matchReplayList,new Vector2(70,88),new Vector2(320,32));
                 PlaceReplayControl(replayFolderAdd.transform,matchReplayList,new Vector2(268,88),new Vector2(52,32));
@@ -159,6 +159,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                     var toggleLabel=toggles[i].GetComponentInChildren<TMPro.TMP_Text>(true);toggleLabel.rectTransform.anchoredPosition=new Vector2(12,0);toggleLabel.rectTransform.sizeDelta=new Vector2(70,48);
                 }
             }
+            matchReplayJumpToggle.gameObject.SetActive(IsMatchReplayBrowser);
+            if (!IsMatchReplayBrowser) UpdateStageReplaySlotLayout();
             replayPanel.gameObject.SetActive(true);
             replayExit.gameObject.SetActive(true); replayExit.interactable = true;
             replayExit.GetComponentInChildren<TMPro.TMP_Text>(true).text = "‹  나감";

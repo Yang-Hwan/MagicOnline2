@@ -1,0 +1,18 @@
+Recorded source material: CC0 1.0 Universal.
+https://creativecommons.org/publicdomain/zero/1.0/
+Authors, source pages, and public HQ preview URLs are recorded in sources.json.
+Retrieved 2026-11-27. Each source page was checked for the CC0 license link.
+
+The source WAV files are normalized mono PCM decodes of public HQ MP3 previews,
+not the original uploaded masters. They may be edited and redistributed under CC0.
+The cry recording is an adult's performance imitating a crying child.
+
+Derived game soundtracks retain the original recordings' CC0 status.
+Ice/frost, demon summoning, the lonely vowel, and beautiful chimes are original
+procedural sound designs in Tools/prepare_sentiment_audio.py.
+
+s5_5 mood reference supplied by the user:
+https://www.youtube.com/watch?v=jWOG39mV3gA
+Title verified via YouTube oEmbed: "효과음 쓸쓸한 우우우~우~" by Fox Studio.
+The user's speaker playback was captured only as a local reference in ignored Logs.
+No captured YouTube samples are included in the shipped game assets or this folder.

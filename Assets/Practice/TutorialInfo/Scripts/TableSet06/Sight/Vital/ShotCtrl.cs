@@ -205,7 +205,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 _targetEquip = TargetEquip.None;
                 return;
             }
-            if (!canControl || IsShotAnimating || physicsManager.inMove ||
+            if (!canControl || physicsManager.IsComputerTurn || IsShotAnimating || physicsManager.inMove ||
                 (PoolCoach.Instance.Configuration.Execution == Assets.Scripts.Often.MatchExecutionMode.OnlineMatch &&
                 (physicsManager.OnlineAdapter == null || !physicsManager.OnlineAdapter.CanSubmit)))
             {
@@ -294,6 +294,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         // 큐대를 조준하기위해 준비한다.
         public void CueReadyShot()
         {
+            preparedComputerStroke=null;
             // A completed stroke belongs to the previous turn. The handle returns
             // visually during its animation, but offline play also needs to clear
             // the selected power before BuildGuideImpulse chooses the idle preview.
@@ -705,8 +706,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 physicsManager.OnlineAdapter.Submit(CaptureOnlineStroke());
                 return;
             }
-            Impulse impulse = BuildShotImpulse();
-            float angle = cuePivot.localEulerAngles.y;
+            bool computer=physicsManager.IsComputerTurn && preparedComputerStroke!=null;
+            Impulse impulse = computer ? BuildPreparedComputerImpulse() : BuildShotImpulse();
+            float angle = computer ? preparedComputerStroke.yaw : cuePivot.localEulerAngles.y;
             await physicsManager.StartShot(impulse, angle);
         }
 

@@ -241,7 +241,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         void ScoreRail(int side)
         {
-            var n=view.Counters[side];int count=Mathf.Min(15,n.Target);float x=side==0?214:1055,y=126,length=290,spacing=MatchHudArtGraphic.Spacing;
+            var n=view.Counters[side];int count=Mathf.Min(15,n.Target);float x=MatchHudArtGraphic.RailStart(side),y=126,length=MatchHudArtGraphic.RailLength,spacing=MatchHudArtGraphic.Spacing;
             Capsule(x-8,y-20,length+16,40,new Color(.015f,.022f,.025f,.9f),new Color(.015f,.02f,.025f,.9f),new Color(.015f,.02f,.025f,.9f));
             Segment(new Vector2(x-3,y+2),new Vector2(x+length+3,y+2),4.5f,new Color(.11f,.12f,.12f));Segment(new Vector2(x-3,y),new Vector2(x+length+3,y),3,new Color(.52f,.55f,.53f));Segment(new Vector2(x-3,y-.9f),new Vector2(x+length+3,y-.9f),.8f,new Color(.9f,.91f,.84f));
             int score=Mathf.Min(count,n.Displayed);float age=view.VisualTime-n.Started,progress=n.Progress(view.VisualTime),ease=progress<.5f?4*progress*progress*progress:1-Mathf.Pow(-2*progress+2,3)/2;
@@ -283,7 +283,6 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             TurnRim(0,view.TurnBlend);TurnRim(1,1-view.TurnBlend);
             Gauge(0);Gauge(1);ScoreRail(0);ScoreRail(1);
             if(view.ShowLevels){Badge(101,141,65,29);Badge(1370,141,65,29);}
-            Coin(530,123);Coin(1031,123);
             Coin(221,31);Coin(1338,31);
             if(view.IsSeries){Badge(674,15,46,43);Badge(840,15,46,43);}
         }

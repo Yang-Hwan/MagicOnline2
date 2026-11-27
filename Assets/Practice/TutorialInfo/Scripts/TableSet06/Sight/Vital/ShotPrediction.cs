@@ -26,8 +26,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public double MaxSliceMilliseconds { get; private set; }
         public Scene PreviewScene => scene;
         public void Cancel() { work?.Dispose(); work=null; simulatingShot=false; }
-        public void Begin(int cue,Impulse impulse,float maxTime=8f,float maxDistance=4.6f,bool firstContactOnly=false,float afterContactLength=1.6f)
+        public void Begin(int cue,Impulse impulse,float maxTime=8f,float maxDistance=4.6f,bool firstContactOnly=false,float afterContactLength=1.6f,int caromCushions=-1,bool accelerateCarom=true)
         {
+            requiredCaromCushions=caromCushions;
+            accelerateCaromFlight=accelerateCarom;
+            ClosestFirstBallDistance=ClosestSecondBallDistance=float.PositiveInfinity;
+            HitBallMask=0;RailContacts=0;RailsAtSecondBall=-1;
             Cancel();ContactPathIndex=-1;FirstContactDistance=-1;PathDistance=0;FreeFlightSteps=0;ContactSolverSteps=0;resolvedContact=false;contactReleaseSteps=0;work=CalculateSteps(cue,impulse,maxTime,maxDistance,firstContactOnly,afterContactLength);
         }
         public bool Advance(double budgetMilliseconds=2,int maxTicks=16)
@@ -46,6 +50,13 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public readonly List<Vector3> cuePath = new List<Vector3>();
         public readonly List<Vector3> targetPath = new List<Vector3>();
         public readonly List<Vector3> timedCuePath = new List<Vector3>();
+        public int HitBallMask { get; private set; }
+        public int RailContacts { get; private set; }
+        public int RailsAtSecondBall { get; private set; } = -1;
+        public float ClosestFirstBallDistance { get; private set; } = float.PositiveInfinity;
+        public float ClosestSecondBallDistance { get; private set; } = float.PositiveInfinity;
+        int requiredCaromCushions=-1;
+        bool accelerateCaromFlight;
         public int targetIndex = -1;
         public int ContactPathIndex { get; private set; } = -1;
         public float FirstContactDistance { get; private set; } = -1;
@@ -116,6 +127,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         {
             if (!simulatingShot || index!=cueIndex)return;
             if(collision.collider.gameObject.layer==LayerMask.NameToLayer("Board")) {
+                RailContacts++;
                 MarkFirstContact();
                 if(manager.FollowThroughProfileActive && strokeSpinPersistence>=0)
                     FollowThroughProfile.ApplySecondRailEnglish(ref strokeRailHits, balls[index], collision,
@@ -124,6 +136,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 return;
             }
             if(!collision.collider.TryGetComponent<ShotPredictionContact>(out var other))return;
+            int previousMask=HitBallMask;
+            HitBallMask |= 1 << other.index;
+            if(previousMask!=0 && HitBallMask!=previousMask && RailsAtSecondBall<0)RailsAtSecondBall=RailContacts;
             MarkFirstContact();
             float instantWeight=manager.FollowThroughProfileActive
                 ? manager.InstantFollowDrawWeight(impactIncomingVelocity,balls[other.index].position-balls[index].position) : 1f;
@@ -207,6 +222,46 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             var body=balls[cueIndex];body.position+=body.linearVelocity*dt;
             Vector3 spin=body.angularVelocity;float speed=spin.magnitude;
             if(speed>.000001f)body.rotation=Quaternion.AngleAxis(speed*dt*Mathf.Rad2Deg,spin/speed)*body.rotation;
+            FreeFlightSteps++;
+        }
+
+        bool CanIntegrateCaromFlight(float dt)
+        {
+            // AddForce/AddTorque are queued by Unity until the next native step.
+            // Always flush that first step before integrating free flight ourselves.
+            if(!accelerateCaromFlight || requiredCaromCushions<0 || !manager.CalibratedPrediction || ContactSolverSteps==0)return false;
+            for(int i=0;i<balls.Length;i++)
+            {
+                var body=balls[i];if(!body.gameObject.activeSelf)continue;
+                if(body.useGravity || body.linearDamping!=0 || body.angularDamping!=0 ||
+                    body.constraints!=RigidbodyConstraints.FreezePositionY || Mathf.Abs(body.linearVelocity.y)>.00001f)return false;
+                for(int j=i+1;j<balls.Length;j++)
+                {
+                    if(!balls[j].gameObject.activeSelf)continue;
+                    if(body.IsSleeping() && balls[j].IsSleeping())continue;
+                    Vector3 relative=balls[j].position-body.position;
+                    Vector3 delta=(body.linearVelocity-balls[j].linearVelocity)*dt;
+                    float t=delta.sqrMagnitude>0 ? Mathf.Clamp01(Vector3.Dot(relative,delta)/delta.sqrMagnitude):0;
+                    float radius=radii[i]+radii[j]+.01f;
+                    if((relative-delta*t).sqrMagnitude<radius*radius)return false;
+                }
+                if(body.IsSleeping())continue;
+                if(physics.OverlapSphere(body.position,radii[i]+.01f,nearbySurfaces,1<<LayerMask.NameToLayer("Board"),QueryTriggerInteraction.Ignore)>0)return false;
+                float speed=body.linearVelocity.magnitude;
+                if(speed>.000001f && physics.SphereCast(body.position,radii[i],body.linearVelocity/speed,out _,
+                    speed*dt+.01f,1<<LayerMask.NameToLayer("Board"),QueryTriggerInteraction.Ignore))return false;
+            }
+            return true;
+        }
+        void IntegrateCaromFlight(float dt)
+        {
+            foreach(var body in balls)
+            {
+                if(!body.gameObject.activeSelf || body.IsSleeping())continue;
+                body.position+=body.linearVelocity*dt;
+                Vector3 spin=body.angularVelocity;float speed=spin.magnitude;
+                if(speed>.000001f)body.rotation=Quaternion.AngleAxis(speed*dt*Mathf.Rad2Deg,spin/speed)*body.rotation;
+            }
             FreeFlightSteps++;
         }
 
@@ -296,7 +351,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                     }
                     impactIncomingVelocity=balls[cue].linearVelocity;
                     impactIncomingSpin=balls[cue].angularVelocity;
-                    if(firstContactOnly && resolvedContact && contactReleaseSteps==0 && CanIntegrateFreeFlight(dt))IntegrateFreeFlight(dt);
+                    if(!firstContactOnly && CanIntegrateCaromFlight(dt))IntegrateCaromFlight(dt);
+                    else if(firstContactOnly && resolvedContact && contactReleaseSteps==0 && CanIntegrateFreeFlight(dt))IntegrateFreeFlight(dt);
                     else {physics.Simulate(dt);ContactSolverSteps++;if(contactReleaseSteps>0)contactReleaseSteps--;}
                     if(tick==0 && step==0) firstSpin=balls[cue].angularVelocity;
                     if(firstContactOnly && targetIndex>=0 && firstContactDistance<0)
@@ -311,6 +367,21 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                     }
                 }
                 var p=balls[cue].position; distance+=Vector3.Distance(previous,p);PathDistance=distance;previous=p;
+                if(requiredCaromCushions>=0)
+                {
+                    int targets=balls.Length==4 ? 12 : ((1<<balls.Length)-1)&~(1<<cue);
+                    int hit=HitBallMask&targets;
+                    for(int i=0;i<balls.Length;i++)if((targets&(1<<i))!=0 && (hit&(1<<i))==0)
+                    {
+                        float gap=Mathf.Max(0,Vector3.Distance(p,balls[i].position)-radii[i]-radii[cue]);
+                        if(hit==0)ClosestFirstBallDistance=Mathf.Min(ClosestFirstBallDistance,gap);
+                        else if(RailContacts>=requiredCaromCushions)ClosestSecondBallDistance=Mathf.Min(ClosestSecondBallDistance,gap);
+                    }
+                    // Three-ball outcomes cannot be reversed after the second object
+                    // contact. Four-ball continues to catch late opponent fouls.
+                    if(balls.Length==3 && hit==targets)break;
+                    if(balls.Length==4 && (HitBallMask&(1<<(1-cue)))!=0)break;
+                }
                 cuePath.Add(p);timedCuePath.Add(p);
                 if(targetIndex>=0 && !firstContactOnly) targetPath.Add(balls[targetIndex].position);
                 bool settled=true;

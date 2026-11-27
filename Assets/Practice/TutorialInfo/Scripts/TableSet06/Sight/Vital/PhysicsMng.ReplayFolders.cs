@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
@@ -36,6 +36,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             string root = Path.Combine(ReplayRootDirectory, "Folders");
             try
             {
+                if (!IsMatchReplayLayout) {
+                    Directory.CreateDirectory(Path.Combine(root, StageReplayFolderId));
+                    folders.Add(new ReplayFolder { Id = StageReplayFolderId, Name = "스테이지 참고용 · 100" });
+                }
                 if (Directory.Exists(root))
                     foreach (string path in Directory.GetDirectories(root))
                     {
@@ -97,7 +101,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         // Called only after the in-game delete confirmation. The default directory cannot be removed.
         public bool DeleteReplayFolder(string id)
         {
-            if (!ReplaySlotReady || string.IsNullOrEmpty(id) || !Guid.TryParseExact(id, "N", out _) ||
+            if (!ReplaySlotReady || string.IsNullOrEmpty(id) || id == StageReplayFolderId || !Guid.TryParseExact(id, "N", out _) ||
                 !GetReplayFolders().Exists(folder => folder.Id == id)) return false;
             string path = Path.Combine(ReplayRootDirectory, "Folders", id);
             try
@@ -147,7 +151,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 RefreshReplayFolderButtons();
             }
             replayFolderAdd.interactable = ReplaySlotReady;
-            replayFolderDelete.interactable = ReplaySlotReady && selectedReplayFolder != "";
+            replayFolderDelete.interactable = ReplaySlotReady && selectedReplayFolder != "" && selectedReplayFolder != StageReplayFolderId;
             foreach (var button in replayFolderButtons) button.interactable = ReplaySlotReady;
         }
 
@@ -180,7 +184,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             if (!replayFolderDialog)
             {
                 replayFolderDialog = new GameObject("Replay Folder Dialog", typeof(RectTransform), typeof(Image));
-                var rect = (RectTransform)replayFolderDialog.transform; rect.SetParent(IsMatchReplayBrowser && matchReplayList ? matchReplayList : replayPanel, false);
+                var rect = (RectTransform)replayFolderDialog.transform; rect.SetParent(IsReplayBrowser && matchReplayList ? matchReplayList : replayPanel, false);
                 rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
                 rect.offsetMin = rect.offsetMax = Vector2.zero;
                 Assets.Scripts.Often.ModalBackdrop.Create(rect,()=>replayFolderDialog.SetActive(false));

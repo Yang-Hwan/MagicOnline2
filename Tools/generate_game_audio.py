@@ -1,7 +1,9 @@
-"""Generate the game's original synthesized sound bank. Requires numpy, no downloads."""
+"""Build UI/music, recorded billiard contacts and sentiment cues. Requires numpy/scipy; no downloads."""
 from pathlib import Path
 import uuid
 import wave
+import shutil
+import runpy
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,14 +41,23 @@ def meta(path, body):
 
 def save(name, samples, music=False):
     path = OUT / (name+'.wav')
-    peak = np.max(np.abs(samples))
-    samples *= (.34 if music else .72) / max(peak, .01)
-    with wave.open(str(path), 'wb') as stream:
-        stream.setnchannels(1)
-        stream.setsampwidth(2)
-        stream.setframerate(RATE)
-        stream.writeframes((samples * 32767).astype('<i2').tobytes())
-    meta(path, '''AudioImporter:
+    recorded = name in ('Strike', 'Ball_1', 'Ball_2', 'Ball_3')
+    if recorded:
+        # Keep impact(...) calls below so the other synthesized sounds retain
+        # their deterministic RNG sequence; only these four outputs use recordings.
+        master = ROOT / 'Tools/AudioSources/Billiard' / (name + '.wav')
+        if not master.exists():
+            raise FileNotFoundError('Missing recorded impact master: ' + str(master))
+        shutil.copyfile(master, path)
+    else:
+        peak = np.max(np.abs(samples))
+        samples *= (.34 if music else .72) / max(peak, .01)
+        with wave.open(str(path), 'wb') as stream:
+            stream.setnchannels(1)
+            stream.setsampwidth(2)
+            stream.setframerate(RATE)
+            stream.writeframes((samples * 32767).astype('<i2').tobytes())
+    importer = '''AudioImporter:
   serializedVersion: 7
   defaultSettings:
     serializedVersion: 2
@@ -66,7 +77,10 @@ def save(name, samples, music=False):
   userData:
   assetBundleName:
   assetBundleVariant:
-''')
+'''
+    if recorded:
+        importer = importer.replace('compressionFormat: 1', 'compressionFormat: 0').replace('sampleRateOverride: 22050', 'sampleRateOverride: 44100')
+    meta(path, importer)
 
 
 def impact(hz, duration, decay, noise):
@@ -141,4 +155,5 @@ for name, sequence in emotions.items():
 music('Lobby', 96, [(130.81, 164.81, 196), (110, 130.81, 164.81), (174.61, 220, 261.63), (146.83, 196, 246.94)], False)
 music('Lounge', 80, [(130.81, 155.56, 196), (116.54, 146.83, 174.61), (103.83, 130.81, 155.56), (98, 123.47, 146.83)], True)
 music('Match', 88, [(110, 130.81, 164.81), (98, 123.47, 146.83), (87.31, 110, 130.81), (98, 130.81, 164.81)], True)
-print(f'Generated {len(list(OUT.glob("*.wav")))} original clips in {OUT}')
+runpy.run_path(str(ROOT / 'Tools/prepare_sentiment_audio.py'), run_name='__main__')
+print(f'Generated {len(list(OUT.rglob("*.wav")))} clips in {OUT}')

@@ -10,7 +10,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public bool ItemsEnabled { get; private set; } = false;
         public bool CueGuideEnabled { get; private set; } = true;
         RectTransform optionsRect;
-        Toggle itemsToggle, cueGuideToggle;
+        Toggle itemsToggle, cueGuideToggle, computerToggle;
 
         void CreatePracticeOptions()
         {
@@ -23,6 +23,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             itemsToggle=CreateOptionToggle("아이템",-80,font);
             itemsToggle.SetIsOnWithoutNotify(ItemsEnabled);
             cueGuideToggle=CreateOptionToggle("수구라인",80,font);
+            computerToggle=CreateOptionToggle("컴퓨터",-80,font);
+            ((RectTransform)computerToggle.transform).anchoredPosition=new Vector2(-80,-60);
+            optionsRect.sizeDelta=new Vector2(330,78);
+            computerToggle.SetIsOnWithoutNotify(ComputerOpponentEnabled);
+            computerToggle.onValueChanged.AddListener(SetComputerOpponentEnabled);
             itemsToggle.onValueChanged.AddListener(SetItemsEnabled);
             cueGuideToggle.onValueChanged.AddListener(SetCueGuideEnabled);
         }
@@ -31,7 +36,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         {
             var go=new GameObject(label,typeof(RectTransform),typeof(Image),typeof(Toggle));
             go.transform.SetParent(optionsRect,false);var rect=go.GetComponent<RectTransform>();
-            rect.sizeDelta=new Vector2(150,36);rect.anchoredPosition=new Vector2(x,0);
+            rect.anchorMin=rect.anchorMax=new Vector2(.5f,1);
+            rect.sizeDelta=new Vector2(150,36);rect.anchoredPosition=new Vector2(x,-18);
             var background=go.GetComponent<Image>();background.color=new Color(.025f,.05f,.05f,.85f);
             var square=new GameObject("Checkbox",typeof(RectTransform),typeof(Image));square.transform.SetParent(rect,false);
             var sr=square.GetComponent<RectTransform>();sr.sizeDelta=new Vector2(24,24);sr.anchoredPosition=new Vector2(-53,0);
@@ -73,6 +79,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         void UpdatePracticeOptions()
         {
             if(!itemsToggle) return;
+            computerToggle.gameObject.SetActive(IsLocalPractice && !IsReplayBrowser && !IsStage);
+            computerToggle.interactable=!inMove && !shotController.IsShotAnimating && !IsPracticeReplay && !IsBallPlacement && !replayLoadMode;
+            computerToggle.SetIsOnWithoutNotify(ComputerOpponentEnabled);
             itemsToggle.interactable=IsLocalPractice;
             itemsToggle.SetIsOnWithoutNotify(ItemsEnabled);
         }

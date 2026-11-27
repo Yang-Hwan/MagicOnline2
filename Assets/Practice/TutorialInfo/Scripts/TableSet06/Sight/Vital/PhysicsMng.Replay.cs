@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -368,7 +368,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         }
         void SeekMatchReplay(float normalized)
         {
-            if (!IsMatchReplayBrowser || !CanReplayShot || replayFrames.Count < 2) return;
+            if (!IsReplayBrowser || !CanReplayShot || replayFrames.Count < 2) return;
             if (!IsPracticeReplay && !EnterPracticeReplay()) return;
             replayPlaying = false; replayClock = 0;
             ReplayFrameIndex = Mathf.Clamp(Mathf.RoundToInt(normalized * (replayFrames.Count - 1)), 0, replayFrames.Count - 1);
@@ -387,16 +387,16 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 var background = replayPanel.gameObject.AddComponent<Image>();
                 background.color = new Color(.025f, .07f, .085f, .94f);
                 replayBackdrop=Assets.Scripts.Often.ModalBackdrop.Create(replayPanel,CloseReplayPanel);
-                replayPlay = ReplayButton("Replay Play", "재생", IsMatchReplayBrowser ? -205 : IsReplayBrowser ? -144 : -264, TogglePracticeReplay);
-                replayNext = ReplayButton("Replay Next", IsMatchReplayBrowser ? "다음" : "다음 프레임", IsMatchReplayBrowser ? -65 : IsReplayBrowser ? 0 : -132, NextPracticeReplayFrame);
-                replayReset = ReplayButton("Replay Reset", IsMatchReplayBrowser ? "처음" : "재생 처음으로", IsMatchReplayBrowser ? 75 : IsReplayBrowser ? 144 : 0, ResetPracticeReplay);
+                replayPlay = ReplayButton("Replay Play", "재생", IsReplayBrowser ? -205 : IsReplayBrowser ? -144 : -264, TogglePracticeReplay);
+                replayNext = ReplayButton("Replay Next", IsReplayBrowser ? "다음" : "다음 프레임", IsReplayBrowser ? -65 : IsReplayBrowser ? 0 : -132, NextPracticeReplayFrame);
+                replayReset = ReplayButton("Replay Reset", IsReplayBrowser ? "처음" : "재생 처음으로", IsReplayBrowser ? 75 : IsReplayBrowser ? 144 : 0, ResetPracticeReplay);
                 replayExit = ReplayButton("Replay Exit", "저장 닫기", 132, CloseReplayPanel);
                 replayPlayText = replayPlay.GetComponentInChildren<TMP_Text>();
                 replayInfo = new GameObject("Replay Time", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TMP_Text>();
-                replayInfo.transform.SetParent(replayPanel, false); replayInfo.rectTransform.sizeDelta = new Vector2(IsMatchReplayBrowser ? 390 : 310, 28);
-                replayInfo.rectTransform.anchoredPosition = new Vector2(IsMatchReplayBrowser ? 140 : -170, 48);
+                replayInfo.transform.SetParent(replayPanel, false); replayInfo.rectTransform.sizeDelta = new Vector2(IsReplayBrowser ? 390 : 310, 28);
+                replayInfo.rectTransform.anchoredPosition = new Vector2(IsReplayBrowser ? 140 : -170, 48);
                 replayInfo.font = replayPlayText.font; replayInfo.fontSize = 19; replayInfo.alignment = TextAlignmentOptions.MidlineLeft; replayInfo.overflowMode = TextOverflowModes.Ellipsis; replayInfo.raycastTarget = false;
-                if (IsMatchReplayBrowser)
+                if (IsReplayBrowser)
                 {
                     replayInfo.fontSize = 16;
                     replayInfo.textWrappingMode = TextWrappingModes.NoWrap;
@@ -456,11 +456,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             }
             UpdateReplaySlots();
             if (!replayDragHeader) CreateReplayDragHeader();
-            replayPanel.gameObject.SetActive(IsMatchReplayBrowser || matchArchiveSaveMode ||
+            replayPanel.gameObject.SetActive(IsReplayBrowser || matchArchiveSaveMode ||
                 IsLocalPractice && (IsReplayBrowser ? replayLoadMode : replaySavePanelOpen));
             if (IsPracticeReplay && replayPlaying)
             {
-                replayClock += Time.unscaledDeltaTime * (IsMatchReplayBrowser ? replaySpeeds[replaySpeedIndex] : 1f);
+                replayClock += Time.unscaledDeltaTime * (IsReplayBrowser ? replaySpeeds[replaySpeedIndex] : 1f);
                 while (ReplayFrameIndex < replayFrames.Count - 1){
                     float interval=Mathf.Max(.000001f,replayFrames[ReplayFrameIndex+1].time-replayFrames[ReplayFrameIndex].time);
                     if(replayClock<interval)break;replayClock-=interval;ReplayFrameIndex++;
@@ -477,7 +477,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             replayInfo.text = !string.IsNullOrEmpty(replaySlotMessage) ? replaySlotMessage : recordingShot ? "샷 자동 기록 중" : IsPracticeReplay ?
                 $"{ReplayFrameIndex + 1} / {replayFrames.Count} 프레임 · {replayFrames[ReplayFrameIndex].time:F2}초" : "직전 샷 기록 · 재생으로 운동 상태 확인";
             if (IsPracticeReplay && !replayStroke.available) replayInfo.text = "샷 설정 정보 없음 · " + replayInfo.text;
-            if (IsMatchReplayBrowser)
+            if (IsReplayBrowser)
             {
                 replayInfo.text = MatchReplaySummary;
                 replaySeek.SetValueWithoutNotify(replayFrames.Count > 1 ? (float)ReplayFrameIndex / (replayFrames.Count - 1) : 0);

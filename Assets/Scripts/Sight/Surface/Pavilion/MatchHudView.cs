@@ -142,9 +142,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 nicknameMaterials[side].SetFloat("_OutlineWidth",.22f);nicknameMaterials[side].SetFloat("_OutlineSoftness",.02f);
                 names[side].fontSharedMaterial=nicknameMaterials[side];names[side].extraPadding=true;names[side].UpdateMeshPadding();
                 var timer=(RectTransform)p.Find("TimeInning");Place(timer,gx,GaugeTop,474,42);var hit=timer.GetComponent<Image>();if(!hit)hit=timer.gameObject.AddComponent<Image>();hit.enabled=true;hit.color=Color.clear;hit.raycastTarget=true;
-                coins[side]=Existing(p,"TxtMatchCoin",self?542:881,110,137,35,25,Gold,self?TextAlignmentOptions.MidlineRight:TextAlignmentOptions.MidlineLeft);
+                coins[side]=Existing(p,"TxtMatchCoin",self?555:881,110,124,35,25,Gold,self?TextAlignmentOptions.MidlineRight:TextAlignmentOptions.MidlineLeft);
                 p.Find("HitCountBox/HitCnt").gameObject.SetActive(false);
-                scoreTotals[side]=Label("ActualScore",Node("ActualScore",p,self?344:1055,146,160,26),"",20,Gold,TextAlignmentOptions.Center);
+                scoreTotals[side]=Label("ActualScore",Node("ActualScore",p,self?463:1011,110,86,35),"",22,Gold,TextAlignmentOptions.Center);
+                scoreTotals[side].fontSizeMin=12;
                 if(!localPractice) series[side]=Existing(p,"TxtScore",self?669:835,15,56,43,26,Gold,TextAlignmentOptions.Center);
                 if(ShowLevels)
                 {
@@ -155,9 +156,10 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 // Completed beads collect at the inner end of each score rail.
                 var finish=(RectTransform)p.Find("HitCountBox/Finish");
                 if (!finish) continue;
-                var finishSlot=Node("FinishSlot",p,self?344:1055,106,160,40);
+                float finishWidth=160*.8f;
+                var finishSlot=Node("FinishSlot",p,MatchHudArtGraphic.RailStart(side)+(self?MatchHudArtGraphic.RailLength-finishWidth:0),106,finishWidth,40);
                 finish.SetParent(finishSlot,false);
-                Place(finish,0,-800,160,40);
+                Place(finish,0,-800,finishWidth,40);
                 foreach(var g in finish.GetComponentsInChildren<Graphic>(true))g.enabled=true;
             }
             var center=(RectTransform)transform.Find("TopCenter");foreach(var g in center.GetComponentsInChildren<Graphic>(true))g.enabled=false;

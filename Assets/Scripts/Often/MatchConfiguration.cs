@@ -9,6 +9,7 @@ namespace Assets.Scripts.Often
     public sealed class MatchConfiguration
     {
         public MatchExecutionMode Execution { get; }
+        public bool HasComputerOpponent { get; private set; }
         public int BallCount { get; }
         public int HallId { get; }
         public int TargetScore { get; }
@@ -46,6 +47,14 @@ namespace Assets.Scripts.Often
                 ballCount, 0, 7, ballCount == 3 ? 3 : 0, replay ? 300 : 20 * 60, replay ? 20 : 30,
                 // Practice ball 1 is yellow. Preserve the existing replay default.
                 replay ? 0 : 1, 0, "Player 1", "Player 2");
+
+        public static MatchConfiguration VersusComputer(int ballCount)
+        {
+            var config = new MatchConfiguration(MatchExecutionMode.LocalPractice, ballCount, 0, 7,
+                ballCount == 3 ? 3 : 0, 20 * 60, 30, 0, 0, "나", "컴퓨터");
+            config.HasComputerOpponent = true;
+            return config;
+        }
 
         public static MatchConfiguration Online(SkillMatchData hall, string seat0Name, string seat1Name,
             int firstSeat, int localSeat, int turnSeconds)

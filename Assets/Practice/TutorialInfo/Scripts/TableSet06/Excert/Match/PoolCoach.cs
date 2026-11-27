@@ -15,7 +15,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
             playTime = savedPlayTime;
             maxPlayTime = savedMaxTime;
             calculateTime = true;
-            ShotCtrl.canControl = true;
+            ShotCtrl.canControl = !_physicsMng.IsComputerTurn;
             _shotCtrl.CueReadyShot();
             OnSetActivePlayer?.Invoke(PoolPlayer.turnId);
             OnUpdateTime?.Invoke(playTime);
@@ -299,6 +299,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
         {
 
             calculateTime = true;
+            if (Configuration.AllowsPracticeTools) ShotCtrl.canControl = !_physicsMng.IsComputerTurn;
             playTime = 0;           // 진행율
 
             OnStartTime?.Invoke();
@@ -361,7 +362,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Excert.Match
             }
             if (_physicsMng.inMove || _shotCtrl.IsShotAnimating) return;
 
-            if (calculateTime)
+            if (calculateTime && !(_physicsMng.IsComputerTurn && _physicsMng.ComputerIsThinking))
             {
                 CallOnUpdateTime(deltaTime);
             }

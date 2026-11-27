@@ -113,7 +113,10 @@ namespace Assets.Scripts.Often
             nextVoice = (nextVoice + 1) % voices.Length;
             voice.Stop();
             voice.clip = clip;
-            voice.pitch = Mathf.Clamp(pitch, .7f, 1.5f);
+            // Small presentation-only variation avoids a repeated sampled/musical tone.
+            float contactPitch = cue == SoundCue.Strike || cue == SoundCue.Ball
+                ? 1 + (float)(random.NextDouble() * .03 - .015) : 1;
+            voice.pitch = Mathf.Clamp(pitch * contactPitch, .7f, 1.5f);
             voice.volume = Mathf.Clamp01(strength) * (IsGame(cue) ? GameVolume : UiVolume);
             if (cue >= SoundCue.Anger && lastPlayed.TryGetValue(SoundCue.Score, out float scored) && now - scored < .5f)
                 voice.volume *= .5f;
@@ -127,16 +130,28 @@ namespace Assets.Scripts.Often
             float speed = collision.relativeVelocity.magnitude;
             if (speed < .08f) return;
             bool otherBall = collision.collider.gameObject.layer == LayerMask.NameToLayer("Ball");
-            bool rail = collision.collider.gameObject.layer == LayerMask.NameToLayer("Board");
-            if (!otherBall && !rail) return;
+            // Cushion/table contacts are silent; only ball-to-ball contacts play audio.
+            if (!otherBall) return;
+            // A fast grazing pass is a soft contact: loudness follows the closing
+            // velocity along the contact normal, not the tangential ball speed.
+            if (collision.contactCount > 0)
+            {
+                speed = Mathf.Abs(Vector3.Dot(collision.relativeVelocity, collision.GetContact(0).normal));
+                if (speed < .08f) return;
+            }
             // Both balls receive the same collision callback.
-            if (otherBall && ball.gameObject.GetEntityId() > collision.collider.gameObject.GetEntityId()) return;
-            Play(otherBall ? SoundCue.Ball : SoundCue.Cushion, Mathf.Clamp(speed / 5f, .08f, .85f));
+            if (ball.gameObject.GetEntityId() > collision.collider.gameObject.GetEntityId()) return;
+            Play(SoundCue.Ball, Mathf.Clamp(speed / 5f, .08f, .85f));
         }
 
-        public static void Emotion(int category)
+        public static void Emotion(int category, string actorCode = null, GameObject actor = null)
         {
             if (!instance || category < 1 || category > 8) return;
+            if (actor && SentimentAudioPlayer.Supports(actorCode) && instance.clips.TryGetValue(actorCode, out var clip))
+            {
+                if (Application.isPlaying && !Muted && instance.focused) SentimentAudioPlayer.Play(actor, clip);
+                return;
+            }
             if (Time.unscaledTime < instance.nextEmotion) return;
             instance.nextEmotion = Time.unscaledTime + 1.1f;
             Play((SoundCue)((int)SoundCue.Anger + category - 1), .4f);
@@ -172,6 +187,7 @@ namespace Assets.Scripts.Often
 
         void StopEffects()
         {
+            SentimentAudioPlayer.StopAll();
             foreach (var voice in voices) if (voice) voice.Stop();
             lastPlayed.Clear();
         }

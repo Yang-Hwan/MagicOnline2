@@ -529,6 +529,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
             cueBallEarlyAngle = angle;
 
+            if (IsComputerTurn && impulse.impulse != Vector3.zero) ComputerShotsPlayed++;
             OnStartShot?.Invoke(angle);
 
             await UniTask.Yield();
@@ -879,6 +880,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         [Obsolete]
         private void OnDestroy()
         {
+            StopComputerOpponent();
             StopRecordedPresentation();
             PoolCoach.Release(this);
             DisposeClothPhysics();

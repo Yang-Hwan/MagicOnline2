@@ -1,0 +1,78 @@
+{
+  "retrieved": "2026-11-27",
+  "format": "Mono 22050 Hz PCM16, normalized decodes of public HQ previews, not original uploaded masters",
+  "sources": [
+    {
+      "name": "bomb",
+      "author": "tommccann",
+      "id": 235968,
+      "page": "https://freesound.org/people/tommccann/sounds/235968/",
+      "preview": "https://cdn.freesound.org/previews/235/235968_4265427-hq.mp3",
+      "license": "CC0-1.0",
+      "duration": 7.801904761904762
+    },
+    {
+      "name": "hammer",
+      "author": "Rildo3000",
+      "id": 344438,
+      "page": "https://freesound.org/people/Rildo3000/sounds/344438/",
+      "preview": "https://cdn.freesound.org/previews/344/344438_2457542-hq.mp3",
+      "license": "CC0-1.0",
+      "duration": 10.750022675736961
+    },
+    {
+      "name": "gun",
+      "author": "unfa",
+      "id": 565130,
+      "page": "https://freesound.org/people/unfa/sounds/565130/",
+      "preview": "https://cdn.freesound.org/previews/565/565130_1038806-hq.mp3",
+      "license": "CC0-1.0",
+      "duration": 1.0220861678004536
+    },
+    {
+      "name": "glass",
+      "author": "SpliceSound",
+      "id": 156578,
+      "page": "https://freesound.org/people/SpliceSound/sounds/156578/",
+      "preview": "https://cdn.freesound.org/previews/156/156578_1480854-hq.mp3",
+      "license": "CC0-1.0",
+      "duration": 1.6016780045351473
+    },
+    {
+      "name": "cry",
+      "author": "rebeccagray",
+      "id": 824914,
+      "page": "https://freesound.org/people/rebeccagray/sounds/824914/",
+      "preview": "https://cdn.freesound.org/previews/824/824914_16493789-hq.mp3",
+      "license": "CC0-1.0",
+      "duration": 48.81786848072562
+    },
+    {
+      "name": "crow",
+      "author": "qubodup",
+      "id": 813115,
+      "page": "https://freesound.org/people/qubodup/sounds/813115/",
+      "preview": "https://cdn.freesound.org/previews/813/813115_71257-hq.mp3",
+      "license": "CC0-1.0",
+      "duration": 0.632517006802721
+    },
+    {
+      "name": "laugh",
+      "author": "squashy555",
+      "id": 240324,
+      "page": "https://freesound.org/people/squashy555/sounds/240324/",
+      "preview": "https://cdn.freesound.org/previews/240/240324_1149179-hq.mp3",
+      "license": "CC0-1.0",
+      "duration": 22.231020408163264
+    },
+    {
+      "name": "storm",
+      "author": "papedo",
+      "id": 519483,
+      "page": "https://freesound.org/people/papedo/sounds/519483/",
+      "preview": "https://cdn.freesound.org/previews/519/519483_2609218-hq.mp3",
+      "license": "CC0-1.0",
+      "duration": 8.5
+    }
+  ]
+}

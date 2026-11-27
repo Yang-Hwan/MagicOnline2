@@ -110,6 +110,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public void StopAnimation()
         {
+            Assets.Scripts.Often.SentimentAudioPlayer.StopFor(gameObject);
             if(proudHalo)proudHalo.Stop();
             if(tearFountain)tearFountain.Stop();
             if(skullCurse)skullCurse.Stop();

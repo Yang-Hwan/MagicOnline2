@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Assets.TutorialInfo.Scripts.TableSet06.Excert.Match;
 using Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface;
@@ -209,6 +209,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         {
             if (IsStage) { UpdateStage(); return; }
             UpdatePracticeOptions();
+            UpdateComputerOpponent();
             if (!undoButton) return;
             undoButton.gameObject.SetActive(PracticeToolsVisible && !externalItemSession);
             undoButton.interactable = CanUndoShot;
