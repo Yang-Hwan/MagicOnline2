@@ -11,8 +11,7 @@ namespace Assets.Scripts.Often
     public sealed class CueAimPopup : MonoBehaviour
     {
         RectTransform ball, anglePanel, root;
-        TMP_Text pointTab, angleTab, degrees;
-        Image pointUnderline, angleUnderline;
+        TMP_Text degrees;
         Slider slider;
         CueAngleLines lines;
         Action<Vector2> setPoint;
@@ -36,12 +35,7 @@ namespace Assets.Scripts.Often
             };input.Accept=e=>{GameAudio.Play(SoundCue.Aim,.4f);close();};
             input.Valid=e=>RectTransformUtility.ScreenPointToLocalPointInRectangle(ball,e.position,e.pressEventCamera,out var p)&&p.magnitude<=ball.rect.width*.5f;
             foreach(var g in ball.GetComponentsInChildren<Graphic>())if(g!=hit)g.raycastTarget=false;
-            Bar(root,"Tab box border",0,440,606,88,new Color(.45f,.52f,.53f,1));
-            Bar(root,"Tab box background",0,440,602,84,Color.black);
-            pointTab=Tab("당점",-150,()=>Select(false));angleTab=Tab("큐각도",150,()=>Select(true));
-            Bar(root,"Tab divider",0,440,2,58,new Color(.45f,.52f,.53f,1));
-            pointUnderline=Bar(root,"Contact underline",-150,398,130,3,new Color(.3f,1,.75f));
-            angleUnderline=Bar(root,"Angle underline",150,398,155,3,new Color(.3f,1,.75f));
+
             anglePanel=Rect(root,"Angle content",0,0,900,750);
             var view=Rect(anglePanel,"Cue side view",0,0,850,600);
             lines=view.gameObject.AddComponent<CueAngleLines>();lines.raycastTarget=false;
@@ -70,11 +64,11 @@ namespace Assets.Scripts.Often
         }
         public void Refresh(){if(!slider)return;float v=readAngle();slider.SetValueWithoutNotify(v);ShowAngle(v);Select(angleMode);Fit();}
         void ShowAngle(float value){lines.Angle=value;lines.SetVerticesDirty();degrees.text=Mathf.RoundToInt(value)+"°";}
-        void Select(bool angle){angleMode=angle;ball.gameObject.SetActive(!angle);anglePanel.gameObject.SetActive(angle);pointTab.color=angle?new Color(.72f,.76f,.77f):Color.white;angleTab.color=angle?Color.white:new Color(.72f,.76f,.77f);pointTab.transform.parent.GetComponent<Image>().color=angle?TabIdle:TabActive;angleTab.transform.parent.GetComponent<Image>().color=angle?TabActive:TabIdle;pointUnderline.enabled=!angle;angleUnderline.enabled=angle;}
-        static readonly Color TabIdle=new Color(.005f,.008f,.01f,1),TabActive=new Color(.01f,.06f,.045f,1);
+        public void ShowMode(bool angle){Select(angle);Refresh();}
+        void Select(bool angle){angleMode=angle;ball.gameObject.SetActive(!angle);anglePanel.gameObject.SetActive(angle);}
+
         void LateUpdate(){Fit();}
         void Fit(){if(!root)return;var canvas=GetComponentInParent<Canvas>();if(!canvas)return;var area=((RectTransform)canvas.transform).rect.size;float s=Mathf.Min(1,Mathf.Min(area.x/1050,area.y/1030));root.localScale=Vector3.one*s;}
-        TMP_Text Tab(string text,float x,Action action){var rect=Rect(root,text+" tab",x,440,298,80);var hit=rect.gameObject.AddComponent<Image>();hit.color=TabIdle;var button=rect.gameObject.AddComponent<Button>();button.transition=Selectable.Transition.None;button.onClick.AddListener(()=>action());return Label(rect,"Label",text,0,0,260,70,42,Color.white);}
         static RectTransform Rect(Transform parent,string name,float x,float y,float w,float h){var r=new GameObject(name,typeof(RectTransform)).GetComponent<RectTransform>();r.SetParent(parent,false);r.gameObject.layer=parent.gameObject.layer;r.anchorMin=r.anchorMax=r.pivot=Vector2.one*.5f;r.anchoredPosition=new Vector2(x,y);r.sizeDelta=new Vector2(w,h);return r;}
         static Image Bar(Transform parent,string name,float x,float y,float w,float h,Color c){var r=Rect(parent,name,x,y,w,h);var g=r.gameObject.AddComponent<Image>();g.color=c;g.raycastTarget=false;return g;}
         static TMP_Text Label(Transform parent,string name,string text,float x,float y,float w,float h,float size,Color color){var r=Rect(parent,name,x,y,w,h);var t=r.gameObject.AddComponent<TextMeshProUGUI>();t.font=Resources.Load<TMP_FontAsset>("Common/Fonts/Asset/NanumBarunGothic SDF");t.text=text;t.fontSize=size;t.color=color;t.alignment=TextAlignmentOptions.Center;t.raycastTarget=false;return t;}

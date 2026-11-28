@@ -54,6 +54,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         {
             blindBack.SetActive(true);
             pointBig.SetActive(true);
+            pointBig.GetComponent<Assets.Scripts.Often.CueAimPopup>()?.ShowMode(false);
             pointBig.GetComponent<BallPointBig>().CueRotateState(transform.rotation);
         }
 

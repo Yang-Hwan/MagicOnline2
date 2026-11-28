@@ -15,7 +15,7 @@ namespace Assets.Scripts.Often
         static int entryRequest;
         public const string ScenePath = "Assets/Practice/Scenes/TableSet07.unity";
 
-        public static async void Enter(Mode mode = Mode.FourBall)
+        public static async void Enter(Mode mode = Mode.FourBall, bool computerOpponent = true)
         {
             int request=++entryRequest;string owner=Assets.Scripts.Exert.BackSys.GameApiClient.UserId;
             if (!Application.CanStreamedLevelBeLoaded(ScenePath))
@@ -34,10 +34,13 @@ namespace Assets.Scripts.Often
             OnlineSession = null;
             bool replay = mode == Mode.Replay || mode == Mode.MatchReplay;
             int balls = mode == Mode.Stage ? StageMissions.Get(StageMissions.Current).balls : mode == Mode.ThreeBall ? 3 : 4;
-            Configuration = !replay && mode != Mode.Stage ? MatchConfiguration.VersusComputer(balls) : MatchConfiguration.Practice(balls, replay);
+            Configuration = !replay && mode != Mode.Stage ? PracticeConfiguration(balls,computerOpponent) : MatchConfiguration.Practice(balls, replay);
             ReturnToPracticeMenu = false;
             SceneManager.LoadScene(ScenePath);
         }
+
+        public static MatchConfiguration PracticeConfiguration(int balls,bool computerOpponent) =>
+            computerOpponent ? MatchConfiguration.VersusComputer(balls) : MatchConfiguration.Practice(balls);
 
         internal static void ConfigureWaitingPractice(int balls)
         {
@@ -46,7 +49,7 @@ namespace Assets.Scripts.Often
             returnInProgress = false;
             ReturnToPracticeMenu = false;
             SelectedMode = balls == 3 ? Mode.ThreeBall : Mode.FourBall;
-            Configuration = MatchConfiguration.Practice(balls);
+            Configuration = PracticeConfiguration(balls,false);
         }
         internal static void EndWaitingPractice()
         {

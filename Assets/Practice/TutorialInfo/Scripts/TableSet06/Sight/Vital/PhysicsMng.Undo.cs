@@ -33,6 +33,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             {
                 practiceToolsToggle = ReplayButton("Practice Tools Toggle", "연습", 0, TogglePracticeTools);
                 practiceToolsToggle.transform.SetParent(undoButton.transform.parent, false);
+                Assets.Scripts.Often.GameplayActionButton.Apply(practiceToolsToggle.gameObject,1);
+                practiceToolsToggle.GetComponentInChildren<TMP_Text>(true).enabled=false;
                 var rect = (RectTransform)practiceToolsToggle.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * .5f;
                 practiceToolsToggle.GetComponentInChildren<TMP_Text>(true).fontSize = 24;
@@ -45,12 +47,11 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             var parent = buttonRect.parent;
             var left = parent.InverseTransformPoint(practiceIconCorners[1]);
             var right = parent.InverseTransformPoint(practiceIconCorners[2]);
-            float width = Mathf.Abs(right.x - left.x), height = width * .5f;
+            float width = Mathf.Abs(right.x - left.x), height = width;
             buttonRect.sizeDelta = new Vector2(width, height);
-            buttonRect.localPosition = new Vector3((left.x + right.x) * .5f, left.y + height * .5f + 10, 0);
+            buttonRect.localPosition = new Vector3((left.x + right.x) * .5f, left.y + height * .5f + 8, 0);
             practiceToolsToggle.GetComponentInChildren<TMP_Text>(true).rectTransform.sizeDelta = buttonRect.sizeDelta;
-            practiceToolsToggle.GetComponent<Image>().color = practiceToolsOpen
-                ? new Color(.22f, .48f, .38f, .98f) : new Color(.12f, .25f, .3f, .96f);
+            practiceToolsToggle.GetComponent<Image>().color = practiceToolsOpen ? new Color(.8f,1,.9f) : Color.white;
         }
 
         sealed class UndoSnapshot

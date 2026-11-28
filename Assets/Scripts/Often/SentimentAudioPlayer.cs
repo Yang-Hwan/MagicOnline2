@@ -22,7 +22,8 @@ namespace Assets.Scripts.Often
         public static void Play(GameObject actor, AudioClip clip)
         {
             if (!actor || !actor.activeInHierarchy || !clip) return;
-            var player = actor.GetComponent<SentimentAudioPlayer>() ?? actor.AddComponent<SentimentAudioPlayer>();
+            var player = actor.GetComponent<SentimentAudioPlayer>();
+            if (!player) player = actor.AddComponent<SentimentAudioPlayer>();
             if (!player.voice)
             {
                 player.voice = actor.AddComponent<AudioSource>();
@@ -41,6 +42,13 @@ namespace Assets.Scripts.Often
         public static void StopFor(GameObject actor)
         {
             if (actor) actor.GetComponent<SentimentAudioPlayer>()?.Stop();
+        }
+
+        public static bool IsPlaying(GameObject actor)
+        {
+            if (!actor) return false;
+            var player = actor.GetComponent<SentimentAudioPlayer>();
+            return player && player.voice && player.voice.isPlaying;
         }
 
         public static void StopAll()

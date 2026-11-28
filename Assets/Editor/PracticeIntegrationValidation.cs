@@ -210,7 +210,6 @@ public static class PracticeIntegrationValidation
                 var homePage = (RectTransform)page.parent.GetChild(0);
                 if (Mathf.Abs(page.rect.height - homePage.rect.height) > .5f)
                     throw new Exception("Practice page height must match the other menu pages");
-                ScreenCapture.CaptureScreenshot("Logs/practice-submenu.png");
                 Next(9);
             }
             else if (stage == 9 && elapsed > .5)

@@ -200,32 +200,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             }
         }
 
-        void Single()
-        {
-            string[] labels = { "3구 연습", "4구 연습", "개별 리플레이", "스테이지" };
-            string[] subtitles = { "자유롭게 배치하고 연습", "기본기부터 차근차근", "저장한 연습 다시 보기", "시범을 보고 100단계 도전" };
-            var modes = new[] { PracticeSceneFlow.Mode.ThreeBall, PracticeSceneFlow.Mode.FourBall, PracticeSceneFlow.Mode.Replay, PracticeSceneFlow.Mode.Stage };
-            for (int i = 0; i < 4; i++)
-            {
-                var mode = modes[i]; float x = i % 2 == 0 ? 420 : 920; float y = i < 2 ? 275 : 540;
-                if (mode == PracticeSceneFlow.Mode.Stage)
-                {
-                    var stageButton=Resources.Load<Texture2D>("PracticeMenu/StageButton");
-                    if(stageButton)
-                    {
-                        // The approved artwork already contains its title and subtitle. Its
-                        // textured margin covers the old replay illustration in the backplate.
-                        Art("StageButtonArt",body,stageButton,x-30,y-10,490,285).uvRect=
-                            new Rect(136f/1628,1f-912f/966,1356f/1628,842f/966);
-                        Hit("Practice"+i,body,x-30,y-10,490,285,OpenStages);
-                        continue;
-                    }
-                }
-                Hit("Practice" + i, body, x, y, 430, 255, () => { if(mode==PracticeSceneFlow.Mode.Stage) OpenStages(); else PracticeSceneFlow.Enter(mode); });
-                Text("PracticeLabel" + i, body, labels[i], x + 20, y + (i < 2 ? 130 : 150), 390, 55, 43, Color.black);
-                Text("PracticeDescription" + i, body, subtitles[i], x + 10, y + (i < 2 ? 193 : 201), 410, 42, 25, Color.white);
-            }
-        }
+        void Single() => BuildPracticeMenu();
 
         public static bool CanEnter(SkillMatchData hall, long balance) => hall != null && balance >= hall.PrizeCoin && balance <= hall.MaxCoin;
 

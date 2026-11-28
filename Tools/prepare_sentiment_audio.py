@@ -1,7 +1,8 @@
 """Build the 12 actor-specific emotion soundtracks (numpy/scipy; no downloads).
 
-Physical/animal/voice sounds use the bundled CC0 recordings. Ice, summoning,
-the lonely 'ooo', and beautiful chimes are original sound designs.
+Physical/animal/voice sounds use the bundled CC0 recordings, except s5_5 and s5_9,
+which use the user's supplied video recordings. Summoning and beautiful
+chimes are original sound designs.
 """
 from pathlib import Path
 import json
@@ -9,7 +10,7 @@ import uuid
 import wave
 
 import numpy as np
-from scipy.signal import butter, sosfilt
+from scipy.signal import butter, sosfilt, sosfiltfilt, resample_poly
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = ROOT / 'Tools/AudioSources/Sentiments'
@@ -62,6 +63,37 @@ def tone(frequency, length, decay=3, attack=.015):
     return fade(x * np.minimum(t / attack, 1) * np.exp(-decay * t), .002, .1)
 
 
+def heavy_explosion():
+    # Recorded blast supplies the initial detonation; the larger explosion adds
+    # a sustained pressure/debris tail. No distortion or synthetic sine thump.
+    blast = read('bomb_blast')
+    onset = np.flatnonzero(np.abs(blast) > np.max(np.abs(blast)) * .16)[0]
+    blast = blast[max(0, onset - round(.003 * RATE)):][:round(.9 * RATE)]
+    blast = sosfilt(butter(3, [70, 3800], btype='bandpass', fs=RATE, output='sos'), blast)
+    blast = normal(fade(blast, .002, .16), .7)
+    body = read('bomb_heavy')[:round(2.35 * RATE)]
+    body = sosfilt(butter(3, [45, 2300], btype='bandpass', fs=RATE, output='sos'), body)
+    body = normal(fade(body, .003, .6), .7)
+    sound = np.zeros(round(2.4 * RATE))
+    mix(sound, blast, 0, .95)
+    mix(sound, body, .005, .7)
+    return fade(sound, .001, .12)
+
+
+def heavy_wall_hit(start, end):
+    sound = read('hammer_heavy')[round(start * RATE):round(end * RATE)].copy()
+    onset = np.flatnonzero(np.abs(sound) > np.max(np.abs(sound)) * .12)[0]
+    sound = sound[max(0, onset - round(.002 * RATE)):]
+    # Slightly lower the recorded sledgehammer's pitch, retaining its masonry crack.
+    sound = resample_poly(sound, 9, 8)[:round(.54 * RATE)]
+    sound = sosfilt(butter(3, [45, 5500], btype='bandpass', fs=RATE, output='sos'), sound)
+    sound = normal(fade(sound, .0015, .09), .7)
+    result = np.zeros(round(.63 * RATE))
+    for delay, gain in [(0, 1), (.024, .18), (.057, .10), (.089, .06)]:
+        mix(result, sound, delay, gain)
+    return fade(result, .001, .08)
+
+
 def ooo(length, dark=False):
     t = np.arange(round(length * RATE)) / RATE
     # General soft vowel, with no copied recording or identifiable voice.
@@ -97,8 +129,8 @@ def main():
     meta(OUT, 'folderAsset: yes\nDefaultImporter:\n  externalObjects: {}\n  userData:\n  assetBundleName:\n  assetBundleVariant:\n')
     manifest = []
 
-    def save(code, label, sound, events, kind):
-        sound = normal(fade(sound, .0005, .025), .7)
+    def save(code, label, sound, events, kind, peak=.7):
+        sound = normal(fade(sound, .0005, .025), peak)
         path = OUT / (code + '.wav')
         with wave.open(str(path), 'wb') as stream:
             stream.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
@@ -127,25 +159,25 @@ def main():
         manifest.append({'code': code, 'label': label, 'duration': len(sound) / RATE,
                          'events': events, 'kind': kind})
 
-    bomb = cut('bomb', .25, 1.7, .58, True)
-    x = np.zeros(round(2.2 * RATE))
+    bomb = heavy_explosion()
+    x = np.zeros(round(3.85 * RATE))
     for time, gain in [(.65, .9), (1.35, 1)]:
         mix(x, bomb, time, gain)
-    save('s1_4', '폭탄 2발 폭발', x, [.65, 1.35], 'CC0 recording edit')
+    save('s1_4', '폭탄 2발 폭발', x, [.65, 1.35], 'CC0 recorded blast layered with a large explosion tail', peak=.7)
 
-    hammer = cut('hammer', 1.73, 2.15, .28, True)
-    x = np.zeros(round(2.25 * RATE))
-    for time, gain in [(.35, .9), (1, .95), (1.65, 1)]:
-        mix(x, hammer, time, gain)
-    save('s5_10', '망치로 벽을 3번 타격', x, [.35, 1, 1.65], 'CC0 recording edit')
+    x = np.zeros(round(2.5 * RATE))
+    for time, gain, start, end in [(.35, .94, 3.18, 3.80), (1, .98, 8.60, 9.22), (1.65, 1, 9.55, 10.17)]:
+        mix(x, heavy_wall_hit(start, end), time, gain)
+    save('s5_10', '큰 망치로 벽을 강하게 3번 타격', x, [.35, 1, 1.65], 'CC0 sledgehammer wall-demolition recording edit', peak=.72)
 
-    cry = cut('cry', 11.5, 15.3)
-    x = np.zeros(round(4.25 * RATE)); mix(x, cry, .12)
-    save('s5_11', '아이처럼 아~앙 우는 소리', x, [.12], 'CC0 adult-performed child-cry imitation')
+    cry = cut('child_cry', 33.4, 37.2, trim=True)
+    cry = sosfilt(butter(3, 120, btype='highpass', fs=RATE, output='sos'), cry)
+    x = np.zeros(round(1.6 * RATE)); mix(x, cry, .12)
+    save('s5_11', '유아 울음 (5살 정도 느낌)', x, [.12], 'CC0 preschool child crying edit; source describes approximately four years old')
 
     x = np.zeros(round(1.25 * RATE)); mix(x, cut('crow', 0, .633), .2)
     save('s5_4', '까마귀 까아', x, [.2], 'CC0 recording edit')
-    save('s5_5', '쓸쓸한 우우우~우~', ooo(2.8), [0], 'Original vowel sound design; reference mood only')
+    save('s5_5', '쓸쓸한 우우우~우~', read('user_s5_5')[:round(3.5 * RATE)], [0], 'First 3.5 seconds of user-provided video audio')
 
     gun = cut('gun', 0, .9, .42, True); glass = cut('glass', 0, 1.6, trim=True)
     x = np.zeros(round(3.25 * RATE))
@@ -157,7 +189,8 @@ def main():
     wind *= np.sin(np.pi * t / 2.8) ** 1.8 * np.exp(-t * .65)
     for time, frequency in [(.12, 3200), (.28, 4200), (.47, 5100), (.7, 6200), (.96, 7100)]:
         mix(wind, tone(frequency, .28, 24, .001), time, .18)
-    save('s5_7', '사~악 서리끼는 소리', wind, [0], 'Original granular frost and crystal design')
+    blizzard = fade(cut('blizzard', 1, 4.6), .16, .4)
+    save('s5_7', '눈보라 강풍', blizzard, [0], 'CC0 recorded snowstorm wind edit')
 
     x = np.zeros(round(4.8 * RATE)); bed = read('storm')[:len(x)]
     rain = sosfilt(butter(2, 1600, btype='highpass', fs=RATE, output='sos'), bed)
@@ -175,7 +208,7 @@ def main():
     mix(x, fade(rush, .15, .02), .05, .24)
     mix(x, tone(73.42, 1.9, 2.8, .002), 2.45, .7)
     mix(x, tone(110, 1.9, 3, .002), 2.45, .25)
-    save('s5_9', '악마소환', x, [0, 2.45], 'Original dark vowel, reverse swell and ritual impact')
+    save('s5_9', '악마소환', read('user_s5_9'), [0], 'User-provided video audio recording')
 
     save('s6_5', '아름다운 음악', chimes(3.2, [523.25, 659.25, 783.99, 987.77, 1046.5]), [0], 'Original celesta/chime composition')
     save('s8_4', '깔깔 웃음', cut('laugh', .32, 2.9), [0], 'CC0 recorded laughter edit')
@@ -184,6 +217,18 @@ def main():
     save('s8_5', '아름다운 빛·후광', x, [0, 1.4], 'Original luminous chime composition')
     (OUT / 'manifest.json').write_text(json.dumps({'items': manifest}, ensure_ascii=False, indent=2), encoding='utf-8')
     meta(OUT / 'manifest.json', 'TextScriptImporter:\n  externalObjects: {}\n  userData:\n  assetBundleName:\n  assetBundleVariant:\n')
+    # Separate from the electronic result-screen counter and coin-flight cue.
+    coin = read('user_score_coin')
+    # Keep the original bell's fundamental and a softer metallic overtone;
+    # reject broadband hiss, low rumble and harsh upper harmonics.
+    body = sosfiltfilt(butter(3, [1000, 1700], btype='bandpass', fs=RATE, output='sos'), coin)
+    sparkle = sosfiltfilt(butter(3, [3600, 4300], btype='bandpass', fs=RATE, output='sos'), coin)
+    coin = normal(fade(body + .4 * sparkle, .004, .05), .28)
+    path = OUT.parent / 'ScoreCoin.wav'
+    with wave.open(str(path), 'wb') as stream:
+        stream.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
+        stream.writeframes(np.round(coin * 32767).astype('<i2').tobytes())
+    meta(path, 'AudioImporter:' + (OUT / 's5_7.wav.meta').read_text(encoding='utf-8').split('AudioImporter:', 1)[1])
     print('Prepared 12 actor-specific soundtracks and their timing manifest.')
 
 

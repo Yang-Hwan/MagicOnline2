@@ -31,6 +31,7 @@ public static class WaitingPracticeValidation
             Check(PracticeSceneFlow.Configuration.Execution==MatchExecutionMode.LocalPractice && PracticeSceneFlow.OnlineSession==null,"Practice must remain local");
             configure.Invoke(null,new object[]{4});
             Check(PracticeSceneFlow.Configuration.BallCount==4 && PracticeSceneFlow.SelectedMode==PracticeSceneFlow.Mode.FourBall,"Four-ball arena mapping");
+            Check(!PracticeSceneFlow.Configuration.HasComputerOpponent,"Waiting practice must use self opponent");
             Check(ReferenceEquals(legacyPlayers,Assets.Scripts.Exert.Match.PoolPlayer.players),"Practice configuration changed match players");
             type.GetField("lobbyScene",Hidden).SetValue(flow,scene);
             type.GetField("originalTimeScale",Hidden).SetValue(flow,Time.timeScale);

@@ -34,8 +34,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             long delta = Math.Min(batch.remaining, amount);
             batch.remaining -= delta;
             pendingCoinDisplay[batch.player] -= delta;
-            if (batch.player < coinTxts.Length && coinTxts[batch.player])
+            if (batch.player < coinTxts.Length && coinTxts[batch.player]) {
                 coinTxts[batch.player].text = Utility.CoinNumToStr(DisplayedMatchCoin(batch.player));
+                if (delta > 0) Assets.Scripts.Often.GameAudio.Play(Assets.Scripts.Often.SoundCue.ScoreCoin, .6f, 1f);
+            }
         }
         public long DisplayedMatchCoin(int playerId)
         {

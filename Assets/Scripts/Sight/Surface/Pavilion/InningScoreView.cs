@@ -20,7 +20,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         Action<int,int> replaySeek;Func<int,int,bool> canReplaySeek,isReplayCurrent;
         RectTransform root,panel,buttonRect,viewport,content;
         CanvasGroup group;
-        InningScoreIcon icon;
+        RectTransform angleButton;
         ScrollRect scroll;
         TMP_Text[] names=new TMP_Text[2],totals=new TMP_Text[2];
         readonly List<RectTransform> columns=new List<RectTransform>();
@@ -93,7 +93,11 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             group=panel.gameObject.AddComponent<CanvasGroup>();group.alpha=0;group.blocksRaycasts=false;
             buttonRect=Node("Score Icon Button",root);buttonRect.anchorMin=buttonRect.anchorMax=buttonRect.pivot=Vector2.one*.5f;
             buttonRect.gameObject.AddComponent<CanvasRenderer>();
-            icon=buttonRect.gameObject.AddComponent<InningScoreIcon>();var button=buttonRect.gameObject.AddComponent<Button>();button.targetGraphic=icon;button.transition=Selectable.Transition.None;button.onClick.AddListener(Toggle);
+            var button=buttonRect.gameObject.AddComponent<Button>();button.onClick.AddListener(Toggle);
+            GameplayActionButton.Apply(buttonRect.gameObject,2);
+            angleButton=Node("Cue Angle Button",root);angleButton.anchorMin=angleButton.anchorMax=angleButton.pivot=Vector2.one*.5f;
+            angleButton.gameObject.AddComponent<Button>().onClick.AddListener(GameplayActionButton.OpenAngle);
+            GameplayActionButton.Apply(angleButton.gameObject,0);
             Text("Fixed Player Header",panel,"선수",22);Text("Fixed Total Header",panel,"합계",22);
             for(int row=0;row<2;row++)
             {
@@ -130,14 +134,14 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         public void Toggle(){SetOpen(!open);}
         public void SetOpen(bool value)
         {
-            open=value;group.blocksRaycasts=value;group.interactable=value;icon.Open=value;icon.SetVerticesDirty();
+            open=value;group.blocksRaycasts=value;group.interactable=value;
             if(value){follow=true;revision=-1;Refresh();}
         }
         void Update()
         {
             if(!root)return;Layout();Refresh();
             progress=Mathf.Lerp(progress,open?1:0,1-Mathf.Exp(-Time.unscaledDeltaTime*18));
-            group.alpha=progress;panel.anchoredPosition=panelPosition+Vector2.down*(1-progress)*22*scale;
+            group.alpha=progress;panel.anchoredPosition=panelPosition+(replayTopLayout?Vector2.down:Vector2.up)*(1-progress)*22*scale;
         }
         void LateUpdate()
         {
@@ -197,23 +201,59 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
             Rect table=new Rect(-w*.4f,-h*.36f,w*.8f,h*.65f);var camera=Camera.main;var cloth=GameObject.Find("Table/ClothSpace");
             if(camera && cloth && ProjectBounds(new Bounds(cloth.transform.position,cloth.transform.lossyScale),camera,out var projected))table=projected;
             float pw=replayTopLayout?Mathf.Min(table.width*.96f,900*scale):table.width*.96f;panel.sizeDelta=new Vector2(pw,(replayTopLayout?180:148)*scale);panelPosition=new Vector2(table.center.x,table.yMin+12*scale);
-            if(replayTopLayout)panelPosition=new Vector2(0,h*.5f-panel.sizeDelta.y-8*scale);
-            buttonRect.sizeDelta=Vector2.one*58*1.8f*scale;var wheel=GameObject.Find("DetailTurn");Vector2 iconPosition=new Vector2(w*.45f,0);
+            if(replayTopLayout) {
+                panel.localScale=Vector3.one;
+                panelPosition=new Vector2(0,h*.5f-panel.sizeDelta.y-8*scale);
+            } else {
+                // Keep the score table entirely in the HUD band above the cloth.
+                float hudTop=h*.5f-8*scale;
+                float hudBottom=table.yMax+24*scale;
+                float fit=Mathf.Clamp01((hudTop-hudBottom)/Mathf.Max(1,panel.sizeDelta.y));
+                panel.localScale=Vector3.one*fit;
+                panelPosition=new Vector2(table.center.x,hudTop-panel.sizeDelta.y*fit);
+            }
+            buttonRect.sizeDelta=Vector2.one*94*scale;var wheel=GameObject.Find("DetailTurn");Vector2 iconPosition=new Vector2(w*.45f,0);
             if(camera && wheel)
             {
-                var shapes=wheel.GetComponentsInChildren<Renderer>();
-                if(shapes.Length>0)
-                {
-                    var b=shapes[0].bounds;foreach(var shape in shapes)if(shape.enabled)b.Encapsulate(shape.bounds);
-                    var screen=camera.WorldToScreenPoint(b.center);RectTransformUtility.ScreenPointToLocalPointInRectangle(root,screen,UICamera,out var center);
+                // Anchor to the stationary round base, not the rotating handle or
+                // an oversized sphere enclosing every child of the dial.
+                var baseTransform=wheel.transform.Find("BaseZero");
+                var baseRenderer=baseTransform?baseTransform.GetComponent<Renderer>():null;
+                if(baseRenderer) {
+                    var bounds=baseRenderer.bounds;
+                    var screen=camera.WorldToScreenPoint(bounds.center);
+                    RectTransformUtility.ScreenPointToLocalPointInRectangle(root,screen,UICamera,out var center);
                     float top=center.y;
-                    for(int x=-1;x<=1;x+=2)for(int y=-1;y<=1;y+=2)for(int z=-1;z<=1;z+=2)
-                    {var p=camera.WorldToScreenPoint(b.center+Vector3.Scale(b.extents,new Vector3(x,y,z)));RectTransformUtility.ScreenPointToLocalPointInRectangle(root,p,UICamera,out var q);top=Mathf.Max(top,q.y);}
-                    iconPosition=new Vector2(center.x,top+42*scale);
+                    for(int x=-1;x<=1;x+=2)for(int y=-1;y<=1;y+=2)for(int z=-1;z<=1;z+=2) {
+                        var point=camera.WorldToScreenPoint(bounds.center+
+                            Vector3.Scale(bounds.extents,new Vector3(x,y,z)));
+                        RectTransformUtility.ScreenPointToLocalPointInRectangle(root,point,UICamera,out var q);
+                        top=Mathf.Max(top,q.y);
+                    }
+                    iconPosition=new Vector2(center.x,top+buttonRect.sizeDelta.y*.5f+26*scale);
+                    var pointObject=GameObject.Find("PointSmall");
+                    if(pointObject && pointObject.transform is RectTransform pointRect) {
+                        var pointScreen=RectTransformUtility.WorldToScreenPoint(UICamera,pointRect.position);
+                        RectTransformUtility.ScreenPointToLocalPointInRectangle(root,pointScreen,UICamera,out var pointCenter);
+                        float pointRadius=root.InverseTransformVector(pointRect.TransformVector(
+                            Vector3.right*pointRect.rect.width*.5f)).magnitude;
+                        float upperEdge=pointCenter.y-pointRadius;
+                        // Center the complete stack in the gap below the contact-point UI.
+                        // Practice sits above the score icon with its existing 10-unit gap.
+                        bool hasPractice=GameObject.Find("Practice Tools Toggle")!=null;
+                        float stackOffset=(buttonRect.sizeDelta.y+8*scale)*(hasPractice?1:.5f);
+                        iconPosition.y=(center.y+upperEdge)*.5f-stackOffset;
+                    }
                 }
             }
+            iconPosition.y+=buttonRect.sizeDelta.y*.6f;
             float iconMargin=buttonRect.sizeDelta.x*.5f+8*scale;
             iconPosition.x=Mathf.Clamp(iconPosition.x,-w*.5f+iconMargin,w*.5f-iconMargin);iconPosition.y=Mathf.Clamp(iconPosition.y,-h*.5f+iconMargin,h*.5f-100*scale);buttonRect.anchoredPosition=iconPosition;
+            angleButton.sizeDelta=buttonRect.sizeDelta;
+            bool practiceVisible=GameObject.Find("Practice Tools Toggle")!=null;
+            angleButton.anchoredPosition=iconPosition+Vector2.up*(buttonRect.sizeDelta.y+8*scale)*(practiceVisible?2:1);
+            angleButton.gameObject.SetActive(buttonRect.gameObject.activeSelf);
+
             if(Mathf.Abs(previousWidth-pw)<.1f)return;previousWidth=pw;revision=-1;
             float left=224*scale,right=96*scale,cw=pw-left-right;
             Place((RectTransform)panel.Find("Name Divider"),left-1,4*scale,1,112*scale);

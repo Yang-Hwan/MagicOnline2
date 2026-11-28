@@ -31,6 +31,8 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
 
         public void ConfigurePracticeTableEffects(Transform cloth,bool includeBomb=true)
         {
+            if(name=="s5_7"&&!GetComponent<PracticeFrostOverlay>())
+                gameObject.AddComponent<PracticeFrostOverlay>();
             if(name=="s8_5"&&cloth){
                 proudHalo=GetComponent<PracticeProudHalo>()??gameObject.AddComponent<PracticeProudHalo>();
                 proudHalo.Configure(cloth);
@@ -96,6 +98,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
         }
         public bool AnimationFinished(float elapsed)
         {
+            // These recordings outlast their visuals. Keep the actor alive until
+            // playback ends; explicit Hide/next-shot still interrupts it.
+            if((name=="s5_5"||name=="s5_9") && Assets.Scripts.Often.SentimentAudioPlayer.IsPlaying(gameObject))return false;
             if(proudHalo)return proudHalo.Finished;
             if(tearFountain)return tearFountain.Finished;
             if(skullCurse)return skullCurse.Finished;

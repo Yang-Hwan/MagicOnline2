@@ -12,7 +12,7 @@ namespace Assets.Scripts.Often
         Strike, Ball, Cushion, Pull, Aim, Turn, Start, Timeout, FinishReady,
         Score, Combo, Foul, Victory, Defeat, Draw, Count, CountDone, Coin,
         LevelUp, Reward, Attendance, Equip, Spark, Pulse, Flame,
-        Anger, Encourage, Disappoint, Grumble, Despair, Joy, Thanks, Relief
+        Anger, Encourage, Disappoint, Grumble, Despair, Joy, Thanks, Relief, ScoreCoin
     }
 
     // All sounds are local presentation. Never consume Unity's gameplay random state.
@@ -91,16 +91,16 @@ namespace Assets.Scripts.Often
             instance.PlayCue(cue, strength, pitch);
         }
 
-        static bool IsGame(SoundCue cue) => cue >= SoundCue.Strike && cue <= SoundCue.Foul;
+        static bool IsGame(SoundCue cue) => (cue >= SoundCue.Strike && cue <= SoundCue.Foul) || cue == SoundCue.ScoreCoin;
 
         void PlayCue(SoundCue cue, float strength, float pitch)
         {
             float now = Time.unscaledTime;
             bool impact = cue == SoundCue.Ball || cue == SoundCue.Cushion;
-            float interval = impact ? .025f : cue == SoundCue.Count ? .07f : cue == SoundCue.Coin ? .09f : .12f;
+            float interval = impact ? .025f : (cue == SoundCue.Count || cue == SoundCue.ScoreCoin) ? .07f : cue == SoundCue.Coin ? .09f : .12f;
             if (lastPlayed.TryGetValue(cue, out float last) && now - last < interval) return;
             string key = cue.ToString();
-            if (impact || cue >= SoundCue.Anger) key += "_" + random.Next(1, 4);
+            if (impact || (cue >= SoundCue.Anger && cue <= SoundCue.Relief)) key += "_" + random.Next(1, 4);
             if (!clips.TryGetValue(key, out var clip)) return;
             lastPlayed[cue] = now;
             AudioSource voice = null;
@@ -118,7 +118,7 @@ namespace Assets.Scripts.Often
                 ? 1 + (float)(random.NextDouble() * .03 - .015) : 1;
             voice.pitch = Mathf.Clamp(pitch * contactPitch, .7f, 1.5f);
             voice.volume = Mathf.Clamp01(strength) * (IsGame(cue) ? GameVolume : UiVolume);
-            if (cue >= SoundCue.Anger && lastPlayed.TryGetValue(SoundCue.Score, out float scored) && now - scored < .5f)
+            if (cue >= SoundCue.Anger && cue <= SoundCue.Relief && lastPlayed.TryGetValue(SoundCue.Score, out float scored) && now - scored < .5f)
                 voice.volume *= .5f;
             voice.Play();
             if (cue == SoundCue.Victory || cue == SoundCue.Defeat || cue == SoundCue.Draw || cue == SoundCue.LevelUp)

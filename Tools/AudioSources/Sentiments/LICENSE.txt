@@ -1,18 +1,46 @@
-Recorded source material: CC0 1.0 Universal.
+CC0 source recordings listed in sources.json: CC0 1.0 Universal.
+Exceptions: user_s5_5.wav, user_s5_9.wav and user_score_coin.wav
+are user-provided video audio, not CC0.
 https://creativecommons.org/publicdomain/zero/1.0/
 Authors, source pages, and public HQ preview URLs are recorded in sources.json.
 Retrieved 2026-11-27. Each source page was checked for the CC0 license link.
 
 The source WAV files are normalized mono PCM decodes of public HQ MP3 previews,
 not the original uploaded masters. They may be edited and redistributed under CC0.
-The cry recording is an adult's performance imitating a crying child.
+The legacy cry.wav is an adult imitating a child and is no longer used by s5_11.
+The unused baby_cry.wav is a newborn recording by blaubeerbenno (690629),
+retrieved 2026-11-28 under CC0. See sources.json.
 
-Derived game soundtracks retain the original recordings' CC0 status.
-Ice/frost, demon summoning, the lonely vowel, and beautiful chimes are original
-procedural sound designs in Tools/prepare_sentiment_audio.py.
+Derived soundtracks made from CC0 sources retain that status.
+Beautiful chimes are original procedural designs.
 
-s5_5 mood reference supplied by the user:
-https://www.youtube.com/watch?v=jWOG39mV3gA
-Title verified via YouTube oEmbed: "효과음 쓸쓸한 우우우~우~" by Fox Studio.
-The user's speaker playback was captured only as a local reference in ignored Logs.
-No captured YouTube samples are included in the shipped game assets or this folder.
+s5_5 was replaced on 2026-11-28 with audio supplied by the user in
+GOMCAM 20261128_1129330681.mp4. The extracted master is user_s5_5.wav.
+The source filename and SHA-256 are recorded in sources.json.
+The earlier synthetic vowel is no longer used for this actor.
+
+The s1_4 blast combines CC0 recordings by lorenzgillner (271979) and dmstudio
+(320782), retrieved 2026-11-28. See sources.json for their source pages.
+
+The s5_10 heavy wall hits use the CC0 sledgehammer/drywall destruction
+recording by jerry.berumen (827432), retrieved 2026-11-28. See sources.json.
+
+The current s5_11 uses child_cry.wav by tferrino (635910), CC0, retrieved
+2026-11-28. The source describes a child around four years old, not a newborn.
+The excerpt is high-pass filtered at 120 Hz to reduce city rumble.
+
+s5_7 uses blizzard.wav: Blizzard Sounds in New York State by River_flowers
+(720876), CC0, retrieved 2026-11-28. The earlier procedural frost and
+blizzard designs are no longer used. See sources.json.
+
+s5_9 was replaced with audio from the user-provided video
+GOMCAM 20261128_1242050409.mp4 on 2026-11-28.
+The master user_s5_9.wav and derived s5_9.wav are not CC0.
+The earlier procedural demon summoning soundtrack is no longer used.
+
+The unused score_coin.wav is by ilyaShevelev (847333), CC0,
+retrieved 2026-11-28. A coin dropping onto other coins. See sources.json.
+
+ScoreCoin.wav now uses user_score_coin.wav, extracted from the user-provided
+GOMCAM 20261128_1357520746_edit_1.mp4 on 2026-11-28.
+This source and its derived ScoreCoin.wav are not CC0.

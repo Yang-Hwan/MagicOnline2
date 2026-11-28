@@ -3,32 +3,32 @@
     {
       "code": "s1_4",
       "label": "폭탄 2발 폭발",
-      "duration": 2.2,
+      "duration": 3.8499773242630386,
       "events": [
         0.65,
         1.35
       ],
-      "kind": "CC0 recording edit"
+      "kind": "CC0 recorded blast layered with a large explosion tail"
     },
     {
       "code": "s5_10",
-      "label": "망치로 벽을 3번 타격",
-      "duration": 2.2499773242630385,
+      "label": "큰 망치로 벽을 강하게 3번 타격",
+      "duration": 2.5,
       "events": [
         0.35,
         1,
         1.65
       ],
-      "kind": "CC0 recording edit"
+      "kind": "CC0 sledgehammer wall-demolition recording edit"
     },
     {
       "code": "s5_11",
-      "label": "아이처럼 아~앙 우는 소리",
-      "duration": 4.249977324263039,
+      "label": "유아 울음 (5살 정도 느낌)",
+      "duration": 1.6,
       "events": [
         0.12
       ],
-      "kind": "CC0 adult-performed child-cry imitation"
+      "kind": "CC0 preschool child crying edit; source describes approximately four years old"
     },
     {
       "code": "s5_4",
@@ -42,11 +42,11 @@
     {
       "code": "s5_5",
       "label": "쓸쓸한 우우우~우~",
-      "duration": 2.8,
+      "duration": 3.5,
       "events": [
         0
       ],
-      "kind": "Original vowel sound design; reference mood only"
+      "kind": "First 3.5 seconds of user-provided video audio"
     },
     {
       "code": "s5_6",
@@ -61,12 +61,12 @@
     },
     {
       "code": "s5_7",
-      "label": "사~악 서리끼는 소리",
-      "duration": 2.8,
+      "label": "눈보라 강풍",
+      "duration": 3.6,
       "events": [
         0
       ],
-      "kind": "Original granular frost and crystal design"
+      "kind": "CC0 recorded snowstorm wind edit"
     },
     {
       "code": "s5_8",
@@ -82,12 +82,11 @@
     {
       "code": "s5_9",
       "label": "악마소환",
-      "duration": 4.4,
+      "duration": 6.336009070294785,
       "events": [
-        0,
-        2.45
+        0
       ],
-      "kind": "Original dark vowel, reverse swell and ritual impact"
+      "kind": "User-provided video audio recording"
     },
     {
       "code": "s6_5",

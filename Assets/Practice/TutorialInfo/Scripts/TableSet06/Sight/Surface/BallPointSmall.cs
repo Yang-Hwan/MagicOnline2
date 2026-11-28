@@ -53,6 +53,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             if (physics && physics.IsPracticeReplay) return;
             blindBack.SetActive(true);
             pointBig.SetActive(true);
+            pointBig.GetComponent<Assets.Scripts.Often.CueAimPopup>()?.ShowMode(false);
             pointBig.GetComponent<BallPointBig>().CueRotateState(transform.rotation);
         }
 

@@ -562,7 +562,9 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                     int version=++coinGainVersion;
                     if(!shotAchieveAni.PlayCoinGain(scorer,Math.Abs(gain-from),fraction=> {
                         if(version!=coinGainVersion || !isActiveAndEnabled)return;
-                        displayedCoinGain=fraction>=1 ? gain : from+(long)((decimal)(gain-from)*(decimal)fraction);
+                        long nextGain=fraction>=1 ? gain : from+(long)((decimal)(gain-from)*(decimal)fraction);
+                        if(nextGain!=displayedCoinGain)GameAudio.Play(SoundCue.ScoreCoin,.6f,1f);
+                        displayedCoinGain=nextGain;
                     }))displayedCoinGain=gain;
                 }
                 txtMatchCoinSelf.text = displayedCoinGain.ToString("+#,##0;-#,##0;0", System.Globalization.CultureInfo.InvariantCulture);

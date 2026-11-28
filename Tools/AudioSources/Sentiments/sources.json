@@ -73,6 +73,106 @@
       "preview": "https://cdn.freesound.org/previews/519/519483_2609218-hq.mp3",
       "license": "CC0-1.0",
       "duration": 8.5
+    },
+    {
+      "name": "user_s5_5",
+      "source": "GOMCAM 20261128_1129330681.mp4",
+      "provided": "2026-11-28",
+      "license": "User-provided recording; not covered by the CC0 license for the other sources",
+      "source_sha256": "a61b365c88950a1b8f55afd790608651145dc6856454523fad7133221d108308",
+      "duration": 8.448027210884353,
+      "format": "Mono 22050 Hz PCM16 decoded from the supplied video audio"
+    },
+    {
+      "name": "bomb_blast",
+      "author": "lorenzgillner",
+      "id": 271979,
+      "page": "https://freesound.org/people/lorenzgillner/sounds/271979/",
+      "preview": "https://cdn.freesound.org/previews/271/271979_5169846-hq.mp3",
+      "license": "CC0-1.0",
+      "retrieved": "2026-11-28",
+      "duration": 1.4471201814058956
+    },
+    {
+      "name": "bomb_heavy",
+      "author": "dmstudio",
+      "id": 320782,
+      "page": "https://freesound.org/people/dmstudio/sounds/320782/",
+      "preview": "https://cdn.freesound.org/previews/320/320782_4255471-hq.mp3",
+      "license": "CC0-1.0",
+      "retrieved": "2026-11-28",
+      "duration": 14.282947845804989
+    },
+    {
+      "name": "hammer_heavy",
+      "author": "jerry.berumen",
+      "id": 827432,
+      "page": "https://freesound.org/people/jerry.berumen/sounds/827432/",
+      "preview": "https://cdn.freesound.org/previews/827/827432_6753194-hq.mp3",
+      "license": "CC0-1.0",
+      "retrieved": "2026-11-28",
+      "duration": 16.91668934240363
+    },
+    {
+      "name": "baby_cry",
+      "author": "blaubeerbenno",
+      "id": 690629,
+      "page": "https://freesound.org/people/blaubeerbenno/sounds/690629/",
+      "preview": "https://cdn.freesound.org/previews/690/690629_3554529-hq.mp3",
+      "license": "CC0-1.0",
+      "retrieved": "2026-11-28",
+      "duration": 18.901360544217688,
+      "description": "Newborn baby cry; age described by the source author as less than one day old"
+    },
+    {
+      "name": "child_cry",
+      "author": "tferrino",
+      "id": 635910,
+      "page": "https://freesound.org/people/tferrino/sounds/635910/",
+      "preview": "https://cdn.freesound.org/previews/635/635910_7891112-hq.mp3",
+      "license": "CC0-1.0",
+      "retrieved": "2026-11-28",
+      "duration": 58.59374149659864,
+      "description": "Child crying/tantrum; source author describes approximately four years old. Edited and high-pass filtered for s5_11."
+    },
+    {
+      "name": "blizzard",
+      "author": "River_flowers",
+      "id": 720876,
+      "page": "https://freesound.org/people/River_flowers/sounds/720876/",
+      "preview": "https://cdn.freesound.org/previews/720/720876_15615043-hq.mp3",
+      "license": "CC0-1.0",
+      "retrieved": "2026-11-28",
+      "duration": 39.12562358276644,
+      "excerpt_start": 1
+    },
+    {
+      "name": "user_s5_9",
+      "source_filename": "GOMCAM 20261128_1242050409.mp4",
+      "source_sha256": "9650c2b646fcb874aa55c04e0d99b3974fbe2e676f30ef9f9ee98ced4619bcf9",
+      "license": "User-provided recording; not CC0",
+      "retrieved": "2026-11-28",
+      "duration": 6.336009070294785,
+      "format": "Mono 22050 Hz PCM16 decoded from supplied video audio"
+    },
+    {
+      "name": "score_coin",
+      "author": "ilyaShevelev",
+      "id": 847333,
+      "page": "https://freesound.org/people/ilyaShevelev/sounds/847333/",
+      "preview": "https://cdn.freesound.org/previews/847/847333_18549149-hq.mp3",
+      "license": "CC0-1.0",
+      "retrieved": "2026-11-28",
+      "description": "Coin dropped onto a small pile of coins; used by ScoreCoin.wav"
+    },
+    {
+      "name": "user_score_coin",
+      "source_filename": "GOMCAM 20261128_1357520746_edit_1.mp4",
+      "source_sha256": "65bdc8009fd62c7fb05a8f40fe3ae51f932b6087d2c3057b6bc597d24d72e1ca",
+      "license": "User-provided recording; not CC0",
+      "retrieved": "2026-11-28",
+      "duration": 0.6826757369614512,
+      "usage": "ScoreCoin.wav; full extracted audio, original pitch"
     }
   ]
 }

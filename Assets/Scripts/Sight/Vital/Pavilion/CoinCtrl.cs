@@ -83,6 +83,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
                 //Debug.Log($"Coins value :{value}, playerid : {PoolPlayer.player(turnId).playerId},  matchCoin : {PoolPlayer.player(turnId).matchCoin} ");
                 //update UI text whenever "Coins" variable is changed
                 coinTxts[turnId].text = Utility.CoinNumToStr(Coins);
+                if(value>0)GameAudio.Play(SoundCue.ScoreCoin,.6f,1f);
                 //coinUIText.text = Coins.ToString();
             }
         }

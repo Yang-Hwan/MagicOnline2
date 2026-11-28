@@ -61,7 +61,7 @@ public static class BottomMenuValidation
                 view.DesignRoot.Find("Nav" + i).GetComponent<Button>().onClick.Invoke();
                 Require(view.CurrentPage == i, "Navigation index " + i);
                 Render(1672, 941, "Logs/BottomMenu/" + i + ".png");
-                if (i == 1) Require(view.GetComponentsInChildren<Button>().Count(b => b.name.StartsWith("Practice")) == 4, "Missing practice routes");
+                if (i == 1) Require(view.GetComponentsInChildren<Button>().Count(b => b.name.StartsWith("Single")) == 3, "Missing practice routes");
                 if (i == 4) Require(view.GetComponentsInChildren<Button>().Where(b => b.name.StartsWith("Product")).All(b => !b.interactable), "Unconfigured payment enabled");
             }
             // Only synthetic in-memory chart rows; no API writes, account mutations, or matchmaking.

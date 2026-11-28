@@ -26,6 +26,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
         Button cancel, sourceCancel, practice;
         WaitingLights waitingLights;
         Image selfPortrait, otherPortrait;
+        Sprite practiceArtwork;
         EquipmentPortrait selfEquipment, otherEquipment;
         Sprite selfFallback, otherFallback;
         string otherAsset;
@@ -96,11 +97,27 @@ namespace Assets.Scripts.Sight.Surface.Consist
             colors.pressedColor = new Color(1, 1, 1, .2f); colors.selectedColor = Color.clear; cancel.colors = colors;
             cancel.onClick.AddListener(() => { if (sourceCancel && sourceCancel.interactable) sourceCancel.onClick.Invoke(); });
             Label("CancelLabel", 670, 848, 330, 61, 33, new Color(1, .91f, 0)).text = "대기 취소";
-            var practiceHit = Panel("WaitingPractice", 1055, 847, 350, 62, new Color(.06f,.24f,.28f));
+            var practiceHit = Panel("WaitingPractice", 1035, 832, 510, 98, Color.white);
             practiceHit.raycastTarget = true;
+            var practiceTexture=Resources.Load<Texture2D>("Menu/waiting-practice-button");
+            if(practiceTexture) {
+                // Crop only transparent generation padding; normalize for platform resizing.
+                float sx=practiceTexture.width/2172f,sy=practiceTexture.height/724f;
+                practiceArtwork=Sprite.Create(practiceTexture,new Rect(43*sx,(724-568)*sy,2064*sx,394*sy),Vector2.one*.5f,100,0,SpriteMeshType.FullRect);
+                practiceHit.sprite=practiceArtwork;practiceHit.type=Image.Type.Simple;practiceHit.preserveAspect=true;
+            }
             practice = practiceHit.gameObject.AddComponent<Button>(); practice.targetGraphic = practiceHit;
+            var practiceColors=practice.colors;
+            practiceColors.normalColor=Color.white;practiceColors.highlightedColor=new Color(1,1,.86f);
+            practiceColors.selectedColor=Color.white;practiceColors.pressedColor=new Color(.68f,.86f,.94f);
+            practiceColors.fadeDuration=.08f;practice.colors=practiceColors;
             practice.onClick.AddListener(() => Assets.Scripts.Often.WaitingRoomPractice.Enter(GetComponentInParent<PnlLobby>()));
-            Label("PracticeLabel", 1055, 847, 350, 62, 28, new Color(.88f,1f,.94f)).text = "기다리는 동안 연습";
+            if(practiceTexture) {
+                Label("PracticeLabel", 1080, 800, 430, 27, 21, Color.white).text="매칭을 유지하며 가볍게 연습";
+            } else {
+                practiceHit.color=new Color(.06f,.24f,.28f);
+                Label("PracticeLabel",1035,832,510,98,28,Color.white).text="기다리는 동안 연습";
+            }
             practiceLabel = design.Find("PracticeLabel").gameObject;
             Refresh();
         }
@@ -221,7 +238,7 @@ namespace Assets.Scripts.Sight.Surface.Consist
             image.enabled = false;
             return image;
         }
-        void OnDestroy() { if (material) { if (Application.isPlaying) Destroy(material); else DestroyImmediate(material); } }
+        void OnDestroy() { if(practiceArtwork){if(Application.isPlaying)Destroy(practiceArtwork);else DestroyImmediate(practiceArtwork);} if (material) { if (Application.isPlaying) Destroy(material); else DestroyImmediate(material); } }
         TMP_Text Label(string name, float x, float y, float w, float h, float size, Color color)
         {
             var text = Node(name, design, x, y, w, h).gameObject.AddComponent<TextMeshProUGUI>();
