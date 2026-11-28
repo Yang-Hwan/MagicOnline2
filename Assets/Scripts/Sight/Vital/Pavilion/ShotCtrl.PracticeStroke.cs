@@ -35,7 +35,7 @@ namespace Assets.Scripts.Sight.Vital.Pavilion
         {
             float follow = equipment.EffectiveFollow(pull);
             power = Mathf.Clamp01(power)*equipment.PowerScale;
-            Vector3 forward = Vector3.ProjectOnPlane(cueSlider.forward, Vector3.up).normalized;
+            Vector3 forward = Assets.Scripts.Often.ElevatedCuePhysics.Direction(cueSlider.forward);
             Vector3 impulse = power * (maxVelocity * cueBall.body.mass) * forward;
             Vector3 centre = cueBall.body.worldCenterOfMass;
             Vector3 offset = cueDisplacement.position - centre;

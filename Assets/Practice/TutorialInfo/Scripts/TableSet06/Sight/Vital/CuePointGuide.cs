@@ -26,10 +26,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             }
             var old=frame.GetComponent<Image>();
             // This graphic now draws the white fill as well as the guide rings.
-            if(old) old.enabled=false;
+            if(old) old.enabled=frame.GetComponent<Assets.Scripts.Often.CueAimGesture>()!=null;
             var bottom=frame.Find("bottom");
             if(bottom) {
-                bottom.gameObject.SetActive(true);
+                bottom.gameObject.SetActive(false);
                 // Keep the requested white bottom line legible over the white fill.
                 var shadow=bottom.GetComponent<Shadow>();
                 if(!shadow)shadow=bottom.gameObject.AddComponent<Shadow>();
@@ -59,16 +59,29 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             mesh.Clear();var rect=GetPixelAdjustedRect();
             float r=Mathf.Min(rect.width,rect.height)*.5f;
             if(r<=3)return;
-            Disc(mesh,rect.center,r-1,Color.white);
-            Ring(mesh,rect.center,r-3,4,new Color(1,1,1,.95f));
+            ShadedBall(mesh,rect.center,r-1);
             Ring(mesh,rect.center,r*EquipmentRatio,2,new Color(0,0,0,.25f));
-            // Centre the upward arrow halfway between the ball centre and its top rim.
-            var arrowCentre=rect.center+Vector2.up*(r*.5f);
-            var a=arrowCentre+Vector2.down*30;
-            var b=arrowCentre+Vector2.up*30;
-            Line(mesh,a,b,4,new Color(0,0,0,.4f));
-            Line(mesh,b,b+new Vector2(-16,-18),4,new Color(0,0,0,.4f));
-            Line(mesh,b,b+new Vector2(16,-18),4,new Color(0,0,0,.4f));
+            Line(mesh,rect.center+Vector2.left*r*.9f,rect.center+Vector2.right*r*.9f,2,new Color(0,0,0,.3f));
+            Line(mesh,rect.center+Vector2.down*r*.9f,rect.center+Vector2.up*r*.9f,2,new Color(0,0,0,.3f));
+            var floor=rect.center+Vector2.down*(r+34);
+            Line(mesh,floor+Vector2.left*r*.8f,floor+Vector2.right*r*.8f,3,new Color(.8f,.83f,.83f));
+            Line(mesh,floor,floor+Vector2.up*28,3,new Color(.8f,.83f,.83f));
+        }
+
+        public static void ShadedBall(VertexHelper mesh,Vector2 centre,float radius)
+        {
+            const int rings=28,segments=96;
+            int start=mesh.currentVertCount;
+            var light=new Vector3(-.4f,.55f,.73f).normalized;
+            for(int j=0;j<=rings;j++)for(int i=0;i<=segments;i++){
+                float r=(float)j/rings,a=i*2*Mathf.PI/segments,x=r*Mathf.Cos(a),y=r*Mathf.Sin(a);
+                var normal=new Vector3(x,y,Mathf.Sqrt(Mathf.Max(0,1-r*r)));
+                float diffuse=Mathf.Max(0,Vector3.Dot(normal,light));
+                float gloss=Mathf.Pow(Mathf.Max(0,Vector3.Dot(normal,new Vector3(-.25f,.35f,.9f).normalized)),100);
+                var tint=new Color(.94f,.91f,.80f)*( .42f+.58f*diffuse)+Color.white*gloss*.55f;tint.a=1;
+                mesh.AddVert(centre+new Vector2(x,y)*radius,tint,Vector2.zero);
+                if(j>0&&i>0){int k=start+j*(segments+1)+i;mesh.AddTriangle(k,k-1,k-segments-1);mesh.AddTriangle(k-1,k-segments-2,k-segments-1);}
+            }
         }
 
         static void Disc(VertexHelper mesh,Vector2 centre,float radius,Color tint)
@@ -99,7 +112,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             }
         }
 
-        static void Line(VertexHelper mesh,Vector2 a,Vector2 b,float width,Color tint)
+        public static void Line(VertexHelper mesh,Vector2 a,Vector2 b,float width,Color tint)
         {
             Vector2 d=(b-a).normalized;
             var n=new Vector2(-d.y,d.x)*width*.5f;

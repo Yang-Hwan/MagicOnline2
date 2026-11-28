@@ -62,7 +62,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public static void ConfigureBody(Rigidbody body)
         {
             body.linearDamping = 0; body.angularDamping = 0;
-            // The shot controller delivers horizontal impulses; this profile models level-table shots.
+            // Keep the ball on the cloth. Elevated impulses may add masse torque, not a jump.
             body.useGravity = false; body.constraints |= RigidbodyConstraints.FreezePositionY;
             body.maxAngularVelocity = 1000;
             body.sleepThreshold = 0; // Low-speed tail is ended by the explicit settled test.

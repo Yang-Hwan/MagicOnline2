@@ -9,6 +9,14 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
     {
         struct Ranked { public MatchShotCommand shot; public float score; public int order; }
         public const int ShortlistCount=192;
+        public const float MinimumObjectThickness=.10f;
+        // Fraction of the combined ball diameter overlapped by the incoming ray.
+        public static float ObjectThickness(Vector3 incoming,Vector3 centreDelta)
+        {
+            var direction=Vector3.ProjectOnPlane(incoming,Vector3.up).normalized;
+            var normal=Vector3.ProjectOnPlane(centreDelta,Vector3.up).normalized;
+            return Mathf.Clamp01(1-Mathf.Abs(Vector3.Dot(direction,Vector3.Cross(Vector3.up,normal))));
+        }
         static readonly float[] Powers={.22f,.32f,.42f,.52f,.64f,.77f,.9f};
         static readonly Vector2[] Contacts={Vector2.zero,new Vector2(-.45f,0),new Vector2(.45f,0),new Vector2(0,-.35f),new Vector2(0,.35f),new Vector2(-.65f,0),new Vector2(.65f,0),new Vector2(-.45f,-.35f),new Vector2(.45f,-.35f),new Vector2(-.45f,.35f),new Vector2(.45f,.35f)};
         static Vector2 Flat(Vector3 p) => new Vector2(p.x,p.z);
@@ -78,7 +86,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 foreach(var contact in Contacts)
                 {
                     var shot=new MatchShotCommand{seat=seat,yaw=yaw,power=power,contact=contact,followThrough=ShotCtrl.DefaultFollowThrough};
-                    ranked.Add(new Ranked{shot=shot,score=QuickScore(shot,positions,radii,area,targetMask,cushions),order=order++});
+                    float score=QuickScore(shot,positions,radii,area,targetMask,cushions);
+                    if(!float.IsNegativeInfinity(score))ranked.Add(new Ranked{shot=shot,score=score,order=order++});
                 }
             }
             ranked.Sort((a,b)=>{int score=b.score.CompareTo(a.score);return score!=0?score:a.order.CompareTo(b.order);});
@@ -132,6 +141,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 if(hit>=0)
                 {
                     if(balls.Length==4 && hit==1-shot.seat)return -10000-travel;
+                    Vector2 impactNormal=(balls[hit]-position).normalized;
+                    if((targets&(1<<hit))!=0 && 1-Mathf.Abs(Vector2.Dot(direction,Perpendicular(impactNormal)))<MinimumObjectThickness)
+                        return float.NegativeInfinity;
                     mask |= 1<<hit;
                     if((mask&targets)==targets)return rails>=cushions?10000-travel*2-shot.contact.magnitude*3:-1000;
                     Vector2 normal=(balls[hit]-position).normalized;
@@ -171,6 +183,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             contact=Vector2.ClampMagnitude(seed.contact+spin,.8f),followThrough=seed.followThrough};
         public static float Score(ShotPrediction prediction,BallC[] balls,int seat,float power,int cushions)
         {
+            if(prediction.MinimumObjectThickness<MinimumObjectThickness)return float.NegativeInfinity;
             int targets=balls.Length==4 ? 12 : ((1<<balls.Length)-1)&~(1<<seat);
             int hit=prediction.HitBallMask&targets;
             if(balls.Length==4 && (prediction.HitBallMask&(1<<(1-seat)))!=0)return -10000-power;

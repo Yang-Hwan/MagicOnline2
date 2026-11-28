@@ -12,6 +12,7 @@ namespace Assets.Scripts.Often
         public string matchId;
         public int shotId, seat, turnRevision;
         public float power, followThrough, yaw;
+        public float elevation; // Missing in older recordings/commands means the original horizontal shot.
         public Vector2 contact;
         public MatchShotCommand Copy() => (MatchShotCommand)MemberwiseClone();
     }
@@ -66,6 +67,7 @@ namespace Assets.Scripts.Often
             Finite(shot.power) && shot.power > 0 && shot.power <= 1 &&
             Finite(shot.followThrough) && shot.followThrough >= 0 && shot.followThrough <= 1 &&
             Finite(shot.yaw) && shot.yaw >= 0 && shot.yaw < 360 &&
+            Finite(shot.elevation) && shot.elevation >= 0 && shot.elevation <= 80 &&
             Finite(shot.contact.x) && Finite(shot.contact.y) && shot.contact.sqrMagnitude <= 1;
 
         // sender must be Photon EventData.Sender (or the local actor for local input).

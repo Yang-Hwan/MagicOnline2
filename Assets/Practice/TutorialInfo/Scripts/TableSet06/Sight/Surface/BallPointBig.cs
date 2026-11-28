@@ -72,6 +72,13 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         [SerializeField] private ShotCtrl shotController;
         [SerializeField] private GameObject blindBack;
 
+        Assets.Scripts.Often.CueAimPopup aimPopup;
+        void ApplySelectedPoint(Vector2 value)
+        {
+            value=Vector2.ClampMagnitude(value,CuePointGuide.Limit(bigBallFrm,point));
+            point.anchoredPosition=value;point_v.anchoredPosition=ChAngToPos(value);
+            OnCueSpinState?.Invoke(value);SetCuePosition(-value/radius,ChAngToPos(value)/radius);
+        }
         private void Awake()
         {
             bigBallFrm = transform.Find("BallFrm").GetComponent<RectTransform>();
@@ -79,9 +86,14 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
             RectTransform rectTransform = GetComponent<RectTransform>();
             radius = 0.5f * (bigBallFrm.sizeDelta.x - point.sizeDelta.x);
             CuePointGuide.Install(bigBallFrm);
+            aimPopup=gameObject.AddComponent<Assets.Scripts.Often.CueAimPopup>();
+            aimPopup.Configure(bigBallFrm,ApplySelectedPoint,
+                ()=>Mathf.Clamp(Mathf.DeltaAngle(0,shotController.cueVertical.localEulerAngles.x),0,80),
+                angle=>shotController.cueVertical.localRotation=Quaternion.Euler(angle,0,0),ClosePopup);
             if(blindBack){
                 var dim=blindBack.GetComponent<UnityEngine.UI.Image>()??blindBack.AddComponent<UnityEngine.UI.Image>();
                 Assets.Scripts.Often.ModalBackdrop.Attach(dim,(RectTransform)transform,ClosePopup);
+            dim.color=new Color(0,0,0,.90f);
             }
             //Debug.Log($"rt.x : {bigBallFrm.sizeDelta.x}, po.x : {point.sizeDelta.x}");
 
@@ -105,7 +117,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         {
             canControl = true;
             ShotCtrl.canControl = false;
-            InputOutput.OnMouseState += InputOutput_OnMouseState;
+            if(blindBack)blindBack.SetActive(true);
+            if(aimPopup)aimPopup.Refresh();
         }
         private void OnDisable()
         {
@@ -192,7 +205,8 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Surface
         public void CueRotateState(Quaternion quaternion)
         {
             Quaternion qua = quaternion;
-            transform.rotation = qua;
+            transform.rotation = Quaternion.identity;
+            bigBallFrm.rotation = qua;
             this.movAngle = qua.eulerAngles.z;
 
             point.anchoredPosition = Vector2.ClampMagnitude(point.anchoredPosition, CuePointGuide.Limit(bigBallFrm, point));

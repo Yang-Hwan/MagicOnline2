@@ -82,7 +82,10 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 if(!Valid())yield break;
                 computerPrediction=new ShotPrediction(this);
                 var candidates=ComputerShotPlanner.Candidates(ballcs,1,ComputerShotPlanner.PlayingArea(this),PoolCoach.Instance.Configuration.CushionCount);
-                MatchShotCommand best=candidates[0];
+                // Verify a very gentle fallback too, so rejecting thin routes cannot select
+                // an unverified candidate when the search budget expires.
+                candidates.Insert(0,new MatchShotCommand{seat=1,yaw=0,power=.001f,followThrough=ShotCtrl.DefaultFollowThrough});
+                MatchShotCommand best=null;
                 float bestScore=float.NegativeInfinity;
                 float started=Time.realtimeSinceStartup, deadline=started+18f;
                 long frameStart=System.Diagnostics.Stopwatch.GetTimestamp();
@@ -127,7 +130,17 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                     if(FrameMs()>=FrameBudget()){yield return null;frameStart=System.Diagnostics.Stopwatch.GetTimestamp();}
                 }
                 ComputerBestScore=bestScore;
-                best=ComputerShotPlanner.ApplyAccuracy(best,computerAccuracyRandom,ComputerSkill);
+                if(best==null)yield break; // Never execute a rejected or unfinished route.
+                var inaccurate=ComputerShotPlanner.ApplyAccuracy(best,computerAccuracyRandom,ComputerSkill);
+                if(!ReferenceEquals(inaccurate,best)) {
+                    computerPrediction.Begin(1,shotController.BuildOnlineImpulse(inaccurate),24f,80f,
+                        caromCushions:PoolCoach.Instance.Configuration.CushionCount);
+                    while(!computerPrediction.Advance(FrameBudget(),2048)) {
+                        yield return null;if(!Valid())yield break;
+                    }
+                    // Execution error must not reintroduce a forbidden thin hit.
+                    if(computerPrediction.MinimumObjectThickness>=ComputerShotPlanner.MinimumObjectThickness)best=inaccurate;
+                }
                 LastComputerShot=best;
                 ComputerSearchSeconds=Time.realtimeSinceStartup-started;
                 LogComputerSearch();

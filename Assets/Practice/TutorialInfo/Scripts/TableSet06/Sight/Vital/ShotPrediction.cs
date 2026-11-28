@@ -31,7 +31,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             requiredCaromCushions=caromCushions;
             accelerateCaromFlight=accelerateCarom;
             ClosestFirstBallDistance=ClosestSecondBallDistance=float.PositiveInfinity;
-            HitBallMask=0;RailContacts=0;RailsAtSecondBall=-1;
+            HitBallMask=0;RailContacts=0;RailsAtSecondBall=-1;MinimumObjectThickness=1;
             Cancel();ContactPathIndex=-1;FirstContactDistance=-1;PathDistance=0;FreeFlightSteps=0;ContactSolverSteps=0;resolvedContact=false;contactReleaseSteps=0;work=CalculateSteps(cue,impulse,maxTime,maxDistance,firstContactOnly,afterContactLength);
         }
         public bool Advance(double budgetMilliseconds=2,int maxTicks=16)
@@ -51,6 +51,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
         public readonly List<Vector3> targetPath = new List<Vector3>();
         public readonly List<Vector3> timedCuePath = new List<Vector3>();
         public int HitBallMask { get; private set; }
+        public float MinimumObjectThickness { get; private set; } = 1;
         public int RailContacts { get; private set; }
         public int RailsAtSecondBall { get; private set; } = -1;
         public float ClosestFirstBallDistance { get; private set; } = float.PositiveInfinity;
@@ -136,6 +137,9 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 return;
             }
             if(!collision.collider.TryGetComponent<ShotPredictionContact>(out var other))return;
+            if(balls.Length!=4 || other.index>=2)
+                MinimumObjectThickness=Mathf.Min(MinimumObjectThickness,
+                    ComputerShotPlanner.ObjectThickness(impactIncomingVelocity,balls[other.index].position-balls[index].position));
             int previousMask=HitBallMask;
             HitBallMask |= 1 << other.index;
             if(previousMask!=0 && HitBallMask!=previousMask && RailsAtSecondBall<0)RailsAtSecondBall=RailContacts;

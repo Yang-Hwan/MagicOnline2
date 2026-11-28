@@ -53,6 +53,12 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
 
         void RenderQuickPreview()
         {
+            if(Assets.Scripts.Often.ElevatedCuePhysics.Angle(cueSlider.forward)>.001f) {
+                quickPreviewDistance=0;
+                foreach(var line in cueBallLines)if(line)line.positionCount=0;
+                foreach(var line in targetBallLines)if(line)line.positionCount=0;
+                return; // A straight cast would misrepresent a curved masse approach.
+            }
             Vector3 origin=cueBall.body.position,dir=Vector3.ProjectOnPlane(cueSlider.forward,Vector3.up).normalized;
             float radius=cueBall.GetComponent<SphereCollider>().radius*Mathf.Abs(cueBall.transform.lossyScale.x);
             float nearest=Assets.Scripts.Often.CueGuideLength.Approach;BallC target=null;float thickness=0;
@@ -155,7 +161,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
                 // the approach preview rather than publishing an invisible path.
                 if(prediction.cuePath.Count<2 || prediction.PathDistance<.0001f)return;
                 // Keep the geometric approach when a weak shot stops before contact.
-                if(prediction.FirstContactDistance<0)return;
+                if(prediction.FirstContactDistance<0 && Assets.Scripts.Often.ElevatedCuePhysics.Angle(cueSlider.forward)<=.001f)return;
                 float cueLimit=Assets.Scripts.Often.CueGuideLength.CueLimit(prediction.FirstContactDistance,Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter.GuideScale);
                 DrawPredictedPath(cueBallLines,cueBallLineMaterials,prediction.cuePath,cueLimit);
                 bool reachesTarget=Assets.Scripts.Often.CueGuideLength.ReachesContact(prediction.cuePath,

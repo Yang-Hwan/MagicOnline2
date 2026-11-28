@@ -477,7 +477,7 @@ namespace Assets.TutorialInfo.Scripts.TableSet06.Sight.Vital
             var equipment=Assets.Scripts.Exert.Network.MatchEquipmentRuntime.Shooter;
             power=Mathf.Clamp01(power)*equipment.PowerScale;
             float follow=equipment.EffectiveFollow(pull);
-            Vector3 forward = Vector3.ProjectOnPlane(cueSlider.forward, Vector3.up).normalized;
+            Vector3 forward = Assets.Scripts.Often.ElevatedCuePhysics.Direction(cueSlider.forward);
             Vector3 impulse = power * (maxVelocity * cueBall.body.mass) * forward;
             Vector3 centre = cueBall.body.worldCenterOfMass;
             Vector3 offset = cueDisplacement.position - centre;

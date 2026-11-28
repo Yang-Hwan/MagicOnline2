@@ -604,6 +604,7 @@ namespace Assets.Scripts.Sight.Surface.Pavilion
                 power = Mathf.Clamp01(impulse.impulse.magnitude),
                 followThrough = Mathf.Clamp01(impulse.followThrough < 0 ? .2f : impulse.followThrough),
                 yaw = cueBall.transform.eulerAngles.y,
+                elevation = ElevatedCuePhysics.Angle(impulse.impulse),
                 contact = new Vector2(localPoint.x, localPoint.z)
             };
             matchReplayArchive.Begin(command, cueBall.transform.rotation);
